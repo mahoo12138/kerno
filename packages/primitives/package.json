@@ -30,6 +30,56 @@
       "source": "./src/button/define.ts",
       "default": "./dist/button/define.js"
     },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "source": "./src/icon/index.ts",
+      "default": "./dist/icon/index.js"
+    },
+    "./icon/define": {
+      "types": "./dist/icon/define.d.ts",
+      "source": "./src/icon/define.ts",
+      "default": "./dist/icon/define.js"
+    },
+    "./input": {
+      "types": "./dist/input/index.d.ts",
+      "source": "./src/input/index.ts",
+      "default": "./dist/input/index.js"
+    },
+    "./input/define": {
+      "types": "./dist/input/define.d.ts",
+      "source": "./src/input/define.ts",
+      "default": "./dist/input/define.js"
+    },
+    "./checkbox": {
+      "types": "./dist/checkbox/index.d.ts",
+      "source": "./src/checkbox/index.ts",
+      "default": "./dist/checkbox/index.js"
+    },
+    "./checkbox/define": {
+      "types": "./dist/checkbox/define.d.ts",
+      "source": "./src/checkbox/define.ts",
+      "default": "./dist/checkbox/define.js"
+    },
+    "./radio": {
+      "types": "./dist/radio/index.d.ts",
+      "source": "./src/radio/index.ts",
+      "default": "./dist/radio/index.js"
+    },
+    "./radio/define": {
+      "types": "./dist/radio/define.d.ts",
+      "source": "./src/radio/define.ts",
+      "default": "./dist/radio/define.js"
+    },
+    "./switch": {
+      "types": "./dist/switch/index.d.ts",
+      "source": "./src/switch/index.ts",
+      "default": "./dist/switch/index.js"
+    },
+    "./switch/define": {
+      "types": "./dist/switch/define.d.ts",
+      "source": "./src/switch/define.ts",
+      "default": "./dist/switch/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

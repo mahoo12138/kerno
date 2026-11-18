@@ -44,6 +44,8 @@ export class KButton extends FormAssociatedElement {
   @prop({ reflect: true }) accessor size: ButtonSize = 'md';
   /** Corner geometry family (`'rounded' | 'chamfer' | 'scallop' | 'notch'`). */
   @prop({ reflect: true }) accessor shape: ButtonShape = 'rounded';
+  /** Displays an inline spinner, sets `aria-busy="true"` and blocks activation while keeping focus. */
+  @prop({ type: Boolean, reflect: true }) accessor loading = false;
   /** Form behavior when activated. */
   @prop() accessor type: ButtonType = 'button';
   /** Submitted with the form as `name=value` when this button submits it. */
@@ -53,6 +55,7 @@ export class KButton extends FormAssociatedElement {
   #shapeObserver: ResizeObserver | null = null;
   #shapeSvg: SVGSVGElement | null = null;
   #shapePath: SVGPathElement | null = null;
+  #spinnerEl: HTMLSpanElement | null = null;
 
   constructor() {
     super();
@@ -86,8 +89,31 @@ export class KButton extends FormAssociatedElement {
     if (changed.has('disabled') || changed.has('formDisabled')) {
       this.#base.disabled = this.isDisabled;
     }
+    if (changed.has('loading')) {
+      this.#syncLoading();
+    }
     if (changed.has('shape') || changed.has('size')) {
       this.#syncShapeMode();
+    }
+  }
+
+  #syncLoading(): void {
+    if (this.loading) {
+      this.#base.setAttribute('aria-busy', 'true');
+      if (!this.#spinnerEl) {
+        const span = document.createElement('span');
+        span.className = 'spinner';
+        span.setAttribute('part', 'spinner');
+        span.setAttribute('aria-hidden', 'true');
+        span.innerHTML =
+          '<svg viewBox="0 0 16 16" fill="none"><path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M8 2.2a5.8 5.8 0 1 1-4.1 1.7"/></svg>';
+        this.#base.insertBefore(span, this.#base.querySelector('.prefix'));
+        this.#spinnerEl = span;
+      }
+    } else {
+      this.#base.removeAttribute('aria-busy');
+      this.#spinnerEl?.remove();
+      this.#spinnerEl = null;
     }
   }
 
@@ -139,7 +165,7 @@ export class KButton extends FormAssociatedElement {
   }
 
   #onClick = (event: MouseEvent): void => {
-    if (this.isDisabled) {
+    if (this.isDisabled || this.loading) {
       event.preventDefault();
       event.stopImmediatePropagation();
       return;

@@ -157,9 +157,27 @@ export const buttonStyles = css`
   }
 
   .prefix,
-  .suffix {
+  .suffix,
+  .spinner {
     display: inline-flex;
     align-items: center;
+  }
+
+  .spinner svg {
+    width: 1em;
+    height: 1em;
+    animation: k-button-spin 0.85s linear infinite;
+  }
+
+  :host([loading]) .base {
+    cursor: wait;
+    opacity: 0.85;
+  }
+
+  @keyframes k-button-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .prefix:not(.has-content),

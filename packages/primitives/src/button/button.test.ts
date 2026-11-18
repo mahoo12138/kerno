@@ -150,4 +150,23 @@ describe('<k-button>', () => {
     expect(base.style.clipPath).toBe('');
     expect(base.querySelector('.shape-stroke')).toBeNull();
   });
+
+  it('shows spinner, sets aria-busy and blocks activation while loading', async () => {
+    const el = (await mount('<k-button loading>Saving</k-button>')) as KButton;
+    const base = el.shadowRoot!.querySelector('.base')!;
+    expect(base.getAttribute('aria-busy')).toBe('true');
+    expect(el.shadowRoot!.querySelector('[part="spinner"]')).not.toBeNull();
+
+    const onClick = vi.fn();
+    el.addEventListener('click', onClick);
+    el.click();
+    expect(onClick).not.toHaveBeenCalled();
+
+    el.loading = false;
+    await el.updateComplete;
+    expect(base.hasAttribute('aria-busy')).toBe(false);
+    expect(el.shadowRoot!.querySelector('[part="spinner"]')).toBeNull();
+    el.click();
+    expect(onClick).toHaveBeenCalledOnce();
+  });
 });

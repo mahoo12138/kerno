@@ -197,11 +197,12 @@
     </section>
 
     <section>
-      <h2>Button Variants, Sizes &amp; Slots</h2>
+      <h2>Button Variants, Sizes, Loading &amp; Icons</h2>
       <div class="row">
         <k-button variant="accent">Accent</k-button>
         <k-button>Standard</k-button>
         <k-button variant="subtle">Subtle</k-button>
+        <k-button variant="accent" loading>Saving</k-button>
         <k-button variant="accent" disabled>Accent</k-button>
         <k-button disabled>Standard</k-button>
         <k-button variant="subtle" disabled>Subtle</k-button>
@@ -211,56 +212,72 @@
         <k-button size="md">Medium</k-button>
         <k-button size="lg">Large</k-button>
         <k-button variant="accent">
-          <svg slot="prefix" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 1.5l1.9 4 4.4.5-3.3 3 .9 4.3L8 11.1l-3.9 2.2.9-4.3-3.3-3 4.4-.5z" />
-          </svg>
+          <k-icon slot="prefix" name="star"></k-icon>
           Star
         </k-button>
         <k-button>
           Next
-          <span slot="suffix" aria-hidden="true">→</span>
+          <k-icon slot="suffix" name="chevron-right"></k-icon>
         </k-button>
+      </div>
+      <div class="row">
+        <code>Built-in &lt;k-icon&gt; glyphs:</code>
+        <k-icon name="check" size="lg"></k-icon>
+        <k-icon name="search" size="lg"></k-icon>
+        <k-icon name="info" size="lg"></k-icon>
+        <k-icon name="warning" size="lg"></k-icon>
+        <k-icon name="danger" size="lg"></k-icon>
+        <k-icon name="loader" size="lg"></k-icon>
       </div>
     </section>
 
     <section>
-      <h2>Customization &amp; Nested Themes</h2>
-      <code>--k-button-radius · --k-button-bg · ::part(base)</code>
-      <div class="row pill">
-        <k-button variant="accent">Pill (CSS var)</k-button>
-        <k-button
-          style="
-            --k-button-bg: #7c3aed;
-            --k-button-bg-hover: #8b5cf6;
-            --k-button-bg-active: #6d28d9;
-            --k-button-fg: #fff;
-            --k-button-border-color: transparent;
-          "
-        >
-          Inline override
-        </k-button>
-      </div>
-      <div
-        class="row"
-        data-k-theme="dark"
-        style="
-          padding: 12px;
-          border-radius: var(--k-radius-md);
-          background: var(--k-color-bg-canvas);
-        "
-      >
-        <code>data-k-theme="dark" (nested)</code>
-        <k-button variant="accent">Accent</k-button>
-        <k-button>Standard</k-button>
-      </div>
-    </section>
+      <h2>Primitive Controls &amp; Native Form Association</h2>
+      <form id="demo-form" style="display: grid; gap: 14px">
+        <div class="row">
+          <k-input
+            name="username"
+            placeholder="Username (required)"
+            value="kerno"
+            clearable
+            required
+          >
+            <k-icon slot="prefix" name="search"></k-icon>
+          </k-input>
+          <k-input
+            name="password"
+            type="password"
+            placeholder="Password (min 4)"
+            value="secret"
+            minlength="4"
+            password-toggle
+            required
+          ></k-input>
+          <k-input name="tag" shape="chamfer" placeholder="Chamfer input" clearable></k-input>
+        </div>
 
-    <section>
-      <h2>Form Association</h2>
-      <form id="demo-form" class="row">
-        <input name="email" type="email" placeholder="email" required />
-        <k-button type="submit" variant="accent" name="intent" value="subscribe">Submit</k-button>
-        <k-button type="reset">Reset</k-button>
+        <div class="row">
+          <code>Plan:</code>
+          <k-radio-group name="plan" value="pro" required>
+            <k-radio value="free">Free</k-radio>
+            <k-radio value="pro">Pro</k-radio>
+            <k-radio value="enterprise">Enterprise</k-radio>
+          </k-radio-group>
+        </div>
+
+        <div class="row" style="gap: 16px">
+          <k-checkbox name="terms" value="accepted" checked required>Accept terms</k-checkbox>
+          <k-checkbox name="beta" indeterminate>Beta access (indeterminate)</k-checkbox>
+          <k-switch name="telemetry" value="on" checked>Telemetry</k-switch>
+        </div>
+
+        <div class="row">
+          <k-button type="submit" variant="accent" name="intent" value="save">
+            <k-icon slot="prefix" name="check"></k-icon>
+            Save Settings
+          </k-button>
+          <k-button type="reset">Reset Form</k-button>
+        </div>
       </form>
       <div class="row">
         <k-button id="fs-toggle" size="sm">Toggle fieldset disabled</k-button>
@@ -273,8 +290,10 @@
             margin: 0;
           "
         >
-          <k-button>Inside fieldset</k-button>
-          <k-button variant="accent">Also inside</k-button>
+          <k-input placeholder="Inside fieldset" size="sm"></k-input>
+          <k-checkbox checked size="sm">Checkbox</k-checkbox>
+          <k-switch checked size="sm">Switch</k-switch>
+          <k-button variant="accent" size="sm">Button</k-button>
         </fieldset>
       </div>
       <output id="form-output">Submit the form to see FormData.</output>
