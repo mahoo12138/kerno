@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@kerno/core": "workspace:^",
+    "@kerno/effects": "workspace:^",
     "@kerno/primitives": "workspace:^",
     "@kerno/tokens": "workspace:^"
   }

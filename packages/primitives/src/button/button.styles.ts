@@ -17,6 +17,7 @@ export const buttonStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
+    --_radius: ${token('radius.md')};
     --_bg: ${token('color.control.default')};
     --_bg-hover: ${token('color.control.hover')};
     --_bg-active: ${token('color.control.active')};
@@ -31,6 +32,12 @@ export const buttonStyles = css`
 
   :host([hidden]) {
     display: none;
+  }
+
+  :host([shape='chamfer']),
+  :host([shape='scallop']),
+  :host([shape='notch']) {
+    --_radius: 6px;
   }
 
   :host([size='sm']) {
@@ -63,6 +70,7 @@ export const buttonStyles = css`
 
   .base {
     all: unset;
+    position: relative;
     box-sizing: border-box;
     display: inline-flex;
     flex: 1 1 auto;
@@ -72,7 +80,7 @@ export const buttonStyles = css`
     min-height: var(--k-button-height, var(--_height));
     padding-inline: var(--k-button-padding-x, var(--_padding-x));
     border: ${token('control.borderWidth')} solid var(--k-button-border-color, var(--_border-color));
-    border-radius: var(--k-button-radius, ${token('radius.md')});
+    border-radius: var(--k-button-radius, var(--_radius));
     background: var(--k-button-bg, var(--_bg));
     color: var(--k-button-fg, var(--_fg));
     font-family: ${token('font.family.sans')};
@@ -86,6 +94,33 @@ export const buttonStyles = css`
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
       border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
       color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
+  }
+
+  :host([shape='chamfer']) .base,
+  :host([shape='scallop']) .base,
+  :host([shape='notch']) .base {
+    border-color: transparent;
+  }
+
+  .shape-stroke {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    fill: none;
+    stroke: var(--k-button-border-color, var(--_border-color));
+    stroke-width: ${token('control.borderWidth')};
+  }
+
+  .base:disabled .shape-stroke {
+    stroke: ${token('color.stroke.default')};
+  }
+
+  :host([variant='accent']) .base:disabled .shape-stroke,
+  :host([variant='subtle']) .base:disabled .shape-stroke {
+    stroke: transparent;
   }
 
   .base:hover {

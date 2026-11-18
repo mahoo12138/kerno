@@ -49,6 +49,16 @@
         align-items: center;
         gap: 8px;
       }
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+      }
+      .grid-6 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 12px;
+      }
       code {
         font-family: var(--k-font-family-mono);
         font-size: var(--k-font-size-xs);
@@ -70,6 +80,26 @@
         background: var(--k-color-control-default);
         color: inherit;
       }
+      .acrylic-stage {
+        position: relative;
+        padding: 24px;
+        border-radius: var(--k-radius-lg);
+        background:
+          radial-gradient(circle at 18% 25%, #3b82f6 0%, transparent 45%),
+          radial-gradient(circle at 82% 30%, #ec4899 0%, transparent 45%),
+          radial-gradient(circle at 50% 80%, #10b981 0%, transparent 50%),
+          linear-gradient(135deg, #1e1b4b, #0f172a);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+      }
+      .surface-demo {
+        min-height: 76px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+      }
     </style>
   </head>
   <body>
@@ -84,21 +114,98 @@
     </header>
 
     <section>
-      <h2>Variants</h2>
-      <div class="row">
-        <k-button variant="accent">Accent</k-button>
-        <k-button>Standard</k-button>
-        <k-button variant="subtle">Subtle</k-button>
+      <h2>Shape System — Rounded · Chamfer · Scallop · Notch</h2>
+      <div class="grid-4">
+        <k-surface shape="rounded" radius="12" elevation="2" class="surface-demo">
+          <strong>Rounded</strong>
+          <code>shape="rounded"</code>
+        </k-surface>
+        <k-surface shape="chamfer" radius="12" elevation="2" class="surface-demo">
+          <strong>Chamfer</strong>
+          <code>shape="chamfer"</code>
+        </k-surface>
+        <k-surface shape="scallop" radius="12" elevation="2" class="surface-demo">
+          <strong>Scallop</strong>
+          <code>shape="scallop"</code>
+        </k-surface>
+        <k-surface shape="notch" radius="12" elevation="2" class="surface-demo">
+          <strong>Notch</strong>
+          <code>shape="notch"</code>
+        </k-surface>
       </div>
       <div class="row">
-        <k-button variant="accent" disabled>Accent</k-button>
-        <k-button disabled>Standard</k-button>
-        <k-button variant="subtle" disabled>Subtle</k-button>
+        <k-button variant="accent" shape="rounded">Rounded</k-button>
+        <k-button variant="accent" shape="chamfer">Chamfer</k-button>
+        <k-button variant="accent" shape="scallop">Scallop</k-button>
+        <k-button variant="accent" shape="notch">Notch</k-button>
+        <k-button shape="chamfer">Standard Chamfer</k-button>
+        <k-button shape="scallop">Standard Scallop</k-button>
+        <k-button shape="notch">Standard Notch</k-button>
       </div>
     </section>
 
     <section>
-      <h2>Sizes &amp; slots</h2>
+      <h2>Acrylic Material &amp; Surface</h2>
+      <div class="row">
+        <k-button id="acrylic-fallback-toggle" size="sm">Toggle reduced-transparency</k-button>
+        <code>Backdrop blur + tint + procedural 64×64 grain</code>
+      </div>
+      <div class="acrylic-stage" id="acrylic-stage">
+        <k-surface acrylic shape="rounded" radius="12" elevation="3" class="surface-demo">
+          <strong>Acrylic Rounded</strong>
+          <code>acrylic shape="rounded"</code>
+        </k-surface>
+        <k-surface acrylic shape="chamfer" radius="14" elevation="3" class="surface-demo">
+          <strong>Acrylic Chamfer</strong>
+          <code>acrylic shape="chamfer"</code>
+        </k-surface>
+        <k-surface acrylic shape="scallop" radius="14" elevation="3" class="surface-demo">
+          <strong>Acrylic Scallop</strong>
+          <code>acrylic shape="scallop"</code>
+        </k-surface>
+      </div>
+    </section>
+
+    <section>
+      <h2>Elevation Hierarchy (0–5) &amp; Motion</h2>
+      <div class="row">
+        <k-button id="elevation-shape-toggle" size="sm">Toggle shape: Rounded / Chamfer</k-button>
+        <k-button id="motion-fade" size="sm">Fade In</k-button>
+        <k-button id="motion-scale" size="sm">Scale In</k-button>
+        <k-button id="motion-slide" size="sm">Slide In</k-button>
+      </div>
+      <div class="grid-6" id="elevation-grid">
+        <k-surface elevation="0" radius="10" class="surface-demo"
+          ><code>elevation="0"</code></k-surface
+        >
+        <k-surface elevation="1" radius="10" class="surface-demo"
+          ><code>elevation="1"</code></k-surface
+        >
+        <k-surface elevation="2" radius="10" class="surface-demo"
+          ><code>elevation="2"</code></k-surface
+        >
+        <k-surface elevation="3" radius="10" class="surface-demo"
+          ><code>elevation="3"</code></k-surface
+        >
+        <k-surface elevation="4" radius="10" class="surface-demo"
+          ><code>elevation="4"</code></k-surface
+        >
+        <k-surface elevation="5" radius="10" class="surface-demo"
+          ><code>elevation="5"</code></k-surface
+        >
+      </div>
+    </section>
+
+    <section>
+      <h2>Button Variants, Sizes &amp; Slots</h2>
+      <div class="row">
+        <k-button variant="accent">Accent</k-button>
+        <k-button>Standard</k-button>
+        <k-button variant="subtle">Subtle</k-button>
+        <k-button variant="accent" disabled>Accent</k-button>
+        <k-button disabled>Standard</k-button>
+        <k-button variant="subtle" disabled>Subtle</k-button>
+      </div>
       <div class="row">
         <k-button size="sm">Small</k-button>
         <k-button size="md">Medium</k-button>
@@ -117,7 +224,7 @@
     </section>
 
     <section>
-      <h2>Customization</h2>
+      <h2>Customization &amp; Nested Themes</h2>
       <code>--k-button-radius · --k-button-bg · ::part(base)</code>
       <div class="row pill">
         <k-button variant="accent">Pill (CSS var)</k-button>
@@ -149,7 +256,7 @@
     </section>
 
     <section>
-      <h2>Form association</h2>
+      <h2>Form Association</h2>
       <form id="demo-form" class="row">
         <input name="email" type="email" placeholder="email" required />
         <k-button type="submit" variant="accent" name="intent" value="subscribe">Submit</k-button>

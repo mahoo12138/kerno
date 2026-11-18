@@ -132,4 +132,22 @@ describe('<k-button>', () => {
     expect(el.isDisabled).toBe(false);
     expect(el.shadowRoot!.querySelector('button')!.disabled).toBe(false);
   });
+
+  it('keeps pure CSS for shape="rounded" and activates geometry clipping for chamfer/scallop/notch', async () => {
+    const el = (await mount('<k-button>Shape</k-button>')) as KButton;
+    const base = el.shadowRoot!.querySelector<HTMLElement>('.base')!;
+    expect(base.style.clipPath).toBe('');
+    expect(base.querySelector('.shape-stroke')).toBeNull();
+
+    el.shape = 'chamfer';
+    await el.updateComplete;
+    expect(el.getAttribute('shape')).toBe('chamfer');
+    expect(base.style.clipPath).toContain('path(');
+    expect(base.querySelector('.shape-stroke path')?.getAttribute('d')).toContain('M ');
+
+    el.shape = 'rounded';
+    await el.updateComplete;
+    expect(base.style.clipPath).toBe('');
+    expect(base.querySelector('.shape-stroke')).toBeNull();
+  });
 });
