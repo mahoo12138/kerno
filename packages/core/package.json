@@ -1,0 +1,25 @@
+{
+  "name": "@kerno/core",
+  "version": "0.0.0",
+  "description": "Kerno runtime: element base class, registration, events, forms and focus infrastructure.",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "tslib": "^2.9.1"
+  }
+}

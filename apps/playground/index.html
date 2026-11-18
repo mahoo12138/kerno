@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kerno Playground</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 32px;
+        display: grid;
+        gap: 24px;
+        max-width: 960px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      h1 {
+        margin: 0;
+        font-size: var(--k-font-size-2xl);
+        font-weight: var(--k-font-weight-semibold);
+      }
+      h1 small {
+        display: block;
+        font-size: var(--k-font-size-sm);
+        font-weight: var(--k-font-weight-regular);
+        color: var(--k-color-fg-secondary);
+      }
+      section {
+        display: grid;
+        gap: 12px;
+        padding: 20px;
+        border-radius: var(--k-radius-lg);
+        background: var(--k-color-bg-layer);
+        border: 1px solid var(--k-color-stroke-default);
+        box-shadow: var(--k-elevation-1);
+      }
+      h2 {
+        margin: 0;
+        font-size: var(--k-font-size-md);
+        font-weight: var(--k-font-weight-semibold);
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+      code {
+        font-family: var(--k-font-family-mono);
+        font-size: var(--k-font-size-xs);
+        color: var(--k-color-fg-secondary);
+      }
+      .pill k-button {
+        --k-button-radius: var(--k-radius-full);
+      }
+      output {
+        font-family: var(--k-font-family-mono);
+        font-size: var(--k-font-size-xs);
+        color: var(--k-color-accent-text);
+      }
+      input {
+        font: inherit;
+        padding: 6px 10px;
+        border-radius: var(--k-radius-md);
+        border: 1px solid var(--k-color-stroke-control);
+        background: var(--k-color-control-default);
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Kerno <small>Build interfaces with structure.</small></h1>
+      <div class="row" id="theme-switch">
+        <k-button size="sm" data-theme="auto">Auto</k-button>
+        <k-button size="sm" data-theme="light">Light</k-button>
+        <k-button size="sm" data-theme="dark">Dark</k-button>
+        <k-button size="sm" data-theme="ocean">Ocean (custom)</k-button>
+      </div>
+    </header>
+
+    <section>
+      <h2>Variants</h2>
+      <div class="row">
+        <k-button variant="accent">Accent</k-button>
+        <k-button>Standard</k-button>
+        <k-button variant="subtle">Subtle</k-button>
+      </div>
+      <div class="row">
+        <k-button variant="accent" disabled>Accent</k-button>
+        <k-button disabled>Standard</k-button>
+        <k-button variant="subtle" disabled>Subtle</k-button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Sizes &amp; slots</h2>
+      <div class="row">
+        <k-button size="sm">Small</k-button>
+        <k-button size="md">Medium</k-button>
+        <k-button size="lg">Large</k-button>
+        <k-button variant="accent">
+          <svg slot="prefix" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 1.5l1.9 4 4.4.5-3.3 3 .9 4.3L8 11.1l-3.9 2.2.9-4.3-3.3-3 4.4-.5z" />
+          </svg>
+          Star
+        </k-button>
+        <k-button>
+          Next
+          <span slot="suffix" aria-hidden="true">→</span>
+        </k-button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Customization</h2>
+      <code>--k-button-radius · --k-button-bg · ::part(base)</code>
+      <div class="row pill">
+        <k-button variant="accent">Pill (CSS var)</k-button>
+        <k-button
+          style="
+            --k-button-bg: #7c3aed;
+            --k-button-bg-hover: #8b5cf6;
+            --k-button-bg-active: #6d28d9;
+            --k-button-fg: #fff;
+            --k-button-border-color: transparent;
+          "
+        >
+          Inline override
+        </k-button>
+      </div>
+      <div
+        class="row"
+        data-k-theme="dark"
+        style="
+          padding: 12px;
+          border-radius: var(--k-radius-md);
+          background: var(--k-color-bg-canvas);
+        "
+      >
+        <code>data-k-theme="dark" (nested)</code>
+        <k-button variant="accent">Accent</k-button>
+        <k-button>Standard</k-button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Form association</h2>
+      <form id="demo-form" class="row">
+        <input name="email" type="email" placeholder="email" required />
+        <k-button type="submit" variant="accent" name="intent" value="subscribe">Submit</k-button>
+        <k-button type="reset">Reset</k-button>
+      </form>
+      <div class="row">
+        <k-button id="fs-toggle" size="sm">Toggle fieldset disabled</k-button>
+        <fieldset
+          id="fs"
+          class="row"
+          style="
+            border: 1px dashed var(--k-color-stroke-strong);
+            border-radius: var(--k-radius-md);
+            margin: 0;
+          "
+        >
+          <k-button>Inside fieldset</k-button>
+          <k-button variant="accent">Also inside</k-button>
+        </fieldset>
+      </div>
+      <output id="form-output">Submit the form to see FormData.</output>
+    </section>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

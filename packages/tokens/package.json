@@ -1,0 +1,26 @@
+{
+  "name": "@kerno/tokens",
+  "version": "0.0.0",
+  "description": "Kerno design tokens and theming.",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./tokens.css": "./dist/css/tokens.css",
+    "./base.css": "./dist/css/base.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b && node scripts/build-css.mjs"
+  }
+}
