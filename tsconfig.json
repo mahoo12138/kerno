@@ -4,6 +4,7 @@
     { "path": "./packages/tokens" },
     { "path": "./packages/core" },
     { "path": "./packages/effects" },
-    { "path": "./packages/primitives" }
+    { "path": "./packages/primitives" },
+    { "path": "./packages/components" }
   ]
 }

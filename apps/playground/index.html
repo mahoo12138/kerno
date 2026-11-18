@@ -114,6 +114,83 @@
     </header>
 
     <section>
+      <h2>Composite &amp; Overlay Components (Phase 4)</h2>
+      <k-nav value="overview" label="Section navigation">
+        <k-nav-item value="overview">
+          <k-icon slot="prefix" name="star"></k-icon>
+          Overview
+        </k-nav-item>
+        <k-nav-item value="effects">Effects</k-nav-item>
+        <k-nav-item value="forms">Forms</k-nav-item>
+        <k-nav-item value="disabled" disabled>Enterprise (Locked)</k-nav-item>
+      </k-nav>
+
+      <div class="row">
+        <k-button id="open-dialog-btn" variant="accent">Open Modal Dialog</k-button>
+
+        <k-popover acrylic placement="bottom-start">
+          <k-button slot="trigger">Toggle Acrylic Popover</k-button>
+          <div style="display: grid; gap: 8px">
+            <strong>Acrylic Popover</strong>
+            <span>Anchored floating panel with Escape &amp; outside-click dismissal.</span>
+          </div>
+        </k-popover>
+
+        <k-tooltip content="Token-driven floating tooltip (Escape to dismiss)">
+          <k-button>Hover or Focus Tooltip</k-button>
+        </k-tooltip>
+
+        <k-dropdown acrylic>
+          <k-button slot="trigger">
+            Actions
+            <k-icon slot="suffix" name="chevron-down"></k-icon>
+          </k-button>
+          <k-menu>
+            <k-menu-item value="edit">
+              <k-icon slot="prefix" name="check"></k-icon>
+              Edit Item
+            </k-menu-item>
+            <k-menu-item value="duplicate">
+              <k-icon slot="prefix" name="star"></k-icon>
+              Duplicate
+            </k-menu-item>
+            <k-menu-item value="delete" disabled>
+              <k-icon slot="prefix" name="danger"></k-icon>
+              Delete (Disabled)
+            </k-menu-item>
+          </k-menu>
+        </k-dropdown>
+
+        <output id="overlay-output">Select a menu or nav item.</output>
+      </div>
+
+      <k-tabs value="arch">
+        <k-tab panel="arch">Architecture</k-tab>
+        <k-tab panel="tokens">Design Tokens</k-tab>
+        <k-tab panel="a11y">Accessibility</k-tab>
+        <k-tab-panel name="arch">
+          Layered Web Components architecture: Tokens → Core → Effects → Primitives → Components.
+        </k-tab-panel>
+        <k-tab-panel name="tokens">
+          Two-tier token system (Primitive palette + Semantic tokens) with scoped theme nesting.
+        </k-tab-panel>
+        <k-tab-panel name="a11y">
+          Full WAI-ARIA roving tabindex, focus trapping, delegatesFocus and ElementInternals form
+          association.
+        </k-tab-panel>
+      </k-tabs>
+
+      <k-dialog id="demo-dialog" label="Kerno Modal Dialog" acrylic>
+        <p style="margin: 0">
+          Managed by <code>overlayManager</code>: traps Tab focus, locks page scroll, and restores
+          focus to the trigger when dismissed via Escape, backdrop click or action button.
+        </p>
+        <k-button slot="footer" id="dialog-cancel">Cancel</k-button>
+        <k-button slot="footer" id="dialog-confirm" variant="accent">Confirm</k-button>
+      </k-dialog>
+    </section>
+
+    <section>
       <h2>Shape System — Rounded · Chamfer · Scallop · Notch</h2>
       <div class="grid-4">
         <k-surface shape="rounded" radius="12" elevation="2" class="surface-demo">

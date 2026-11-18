@@ -2,6 +2,8 @@ import '@kerno/tokens/tokens.css';
 import '@kerno/tokens/base.css';
 import '@kerno/effects/define';
 import '@kerno/primitives/define';
+import '@kerno/components/define';
+import type { KDialog } from '@kerno/components';
 import { fadeIn, scaleIn, slideIn, type KSurface } from '@kerno/effects';
 import { applyTheme, createTheme, darkTheme, type BuiltInThemeName } from '@kerno/tokens';
 
@@ -79,4 +81,22 @@ form.addEventListener('reset', () => {
 const fieldset = document.querySelector<HTMLFieldSetElement>('#fs')!;
 document.querySelector('#fs-toggle')!.addEventListener('click', () => {
   fieldset.disabled = !fieldset.disabled;
+});
+
+// Phase 4 Overlay & Composite demos
+const dialog = document.querySelector<KDialog>('#demo-dialog')!;
+const overlayOutput = document.querySelector<HTMLOutputElement>('#overlay-output')!;
+document.querySelector('#open-dialog-btn')!.addEventListener('click', () => dialog.show());
+document.querySelector('#dialog-cancel')!.addEventListener('click', () => dialog.close());
+document.querySelector('#dialog-confirm')!.addEventListener('click', () => {
+  overlayOutput.textContent = 'Dialog confirmed.';
+  dialog.close();
+});
+document.addEventListener('k-select', (e) => {
+  const detail = (e as CustomEvent<{ value: string }>).detail;
+  overlayOutput.textContent = `Menu selected: ${detail.value}`;
+});
+document.addEventListener('k-nav-select', (e) => {
+  const detail = (e as CustomEvent<{ value: string }>).detail;
+  overlayOutput.textContent = `Nav selected: ${detail.value}`;
 });

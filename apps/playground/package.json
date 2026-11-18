@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@kerno/components": "workspace:^",
     "@kerno/core": "workspace:^",
     "@kerno/effects": "workspace:^",
     "@kerno/primitives": "workspace:^",

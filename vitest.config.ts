@@ -11,6 +11,7 @@ export default defineConfig({
   },
   test: {
     include: ['packages/*/src/**/*.test.ts'],
+    fileParallelism: false,
     browser: {
       enabled: true,
       headless: true,

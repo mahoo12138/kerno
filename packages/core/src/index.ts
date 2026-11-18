@@ -19,3 +19,14 @@ export { define } from './define.js';
 export { emit, type EmitOptions } from './events.js';
 export { FormAssociatedElement } from './form.js';
 export { uniqueId, isTabbable, getTabbableElements, getActiveElement } from './focus.js';
+export {
+  overlayManager,
+  computeFloatingPosition,
+  autoPosition,
+  type Placement,
+  type FloatingOptions,
+  type FloatingCoords,
+  type Rect,
+  type OverlayConfig,
+  type OverlayCloseReason,
+} from './overlay.js';
