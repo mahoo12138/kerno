@@ -93,10 +93,12 @@ describe('<k-tile>, <k-tile-group> & <k-tile-bound>', () => {
     await Promise.all([t1.updateComplete, t2.updateComplete, t3.updateComplete]);
 
     expect(tileSpan(t1)).toEqual({ columns: 4, rows: 2 });
+    expect(getComputedStyle(t1).position).toBe('absolute');
     expect(t1.style.width).toBe('270px'); // 4 * 70 - 10
     expect(t1.style.height).toBe('130px'); // 2 * 70 - 10
     expect(t1.style.transform).toBe('translate(0px, 0px)');
     expect(t2.style.transform).toBe('translate(0px, 140px)');
+    expect(t2.getBoundingClientRect().top - t1.getBoundingClientRect().top).toBeCloseTo(140, 0);
     expect(t3.style.width).toBe('60px');
 
     // Programmatic moveTile() reorders DOM children and fires cancelable tilereorder
@@ -106,6 +108,12 @@ describe('<k-tile>, <k-tile-group> & <k-tile-bound>', () => {
     expect(moved).toBe(true);
     expect(onReorder).toHaveBeenCalledOnce();
     expect(group.tiles.map((t) => t.id)).toEqual(['t2', 't3', 't1']);
+
+    // Pressing and releasing any tile must tilt internal planes without wiping sibling translate(x, y) transforms
+    const transformsBefore = group.tiles.map((t) => t.style.transform);
+    t2.press('center');
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    expect(group.tiles.map((t) => t.style.transform)).toEqual(transformsBefore);
   });
 
   it('couples multiple <k-tile-group> desktop entrances inside <k-tile-bound>', async () => {

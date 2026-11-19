@@ -235,18 +235,16 @@ code {
 }
 
 /* Metro / Fluent Start Tile Grid */
-.start-tiles {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+k-tile-bound {
+  display: block;
+  justify-self: end;
 }
 
 .metro-tile {
-  min-height: 92px;
   cursor: pointer;
   color: #ffffff;
-  --k-surface-padding: 14px;
-  --k-surface-border-width: 1.5px;
+  --k-surface-padding: 0px;
+  --k-surface-border-width: 2px;
   --k-surface-reveal-color: rgba(255, 255, 255, 0.22);
   --k-surface-reveal-border-color: rgba(255, 255, 255, 0.65);
   --k-surface-reveal-press-color: rgba(255, 255, 255, 0.65);

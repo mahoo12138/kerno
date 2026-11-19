@@ -19,8 +19,15 @@ export const tileStyles = css`
     --k-surface-padding: 0px;
     --k-tilt-mode: absolute;
     position: relative;
+    transition: none;
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  .backdrop,
+  .canvas,
+  .clip {
+    transition: transform 60ms cubic-bezier(0.1, 0.9, 0.2, 1);
   }
 
   .content {
@@ -63,7 +70,7 @@ export const tileStyles = css`
     outline: none !important;
   }
 
-  :host(:not([focus-ring='native']):focus-within) {
+  :host(:not([focus-ring='native']):has(> [slot='action']:focus-visible)) {
     outline: ${token('focus.ringWidth')} solid ${token('color.stroke.focusOuter')};
     outline-offset: -2px;
     box-shadow: inset 0 0 0 3px ${token('color.stroke.focusInner')};
@@ -111,6 +118,7 @@ export class KTile extends KSurface {
     super();
     this.reveal = true;
     this.pressure = true;
+    this.useInternalPressurePlanes();
     this.addEventListener('pointerdown', this.#onTilePointerDown);
     this.addEventListener('keydown', this.#onKeyDown);
     this.addEventListener('keyup', this.#onKeyUp);

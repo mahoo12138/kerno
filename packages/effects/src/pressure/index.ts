@@ -18,6 +18,8 @@ export interface PressureOptions {
   pressScale?: number;
   /** Perspective distance in pixels. Defaults to `600`. */
   perspective?: number;
+  /** Optional custom transform writer (avoids mutating `host.style.transform` when parent layouts position host via transform). */
+  onTransform?: (cssTransform: string | null) => void;
 }
 
 export interface TiltTransform {
@@ -152,6 +154,12 @@ export class PressureController implements ReactiveController {
     return this.#pressed;
   }
 
+  /** Overrides how the computed tilt CSS transform is applied (e.g., to internal shadow planes). */
+  setTransformHandler(handler: ((cssTransform: string | null) => void) | undefined): void {
+    this.#options = { ...this.#options, ...(handler ? { onTransform: handler } : {}) };
+    if (!handler) delete this.#options.onTransform;
+  }
+
   /** Applies pressure at `(localX, localY)` relative to the host's top-left corner. */
   pressAt(localX: number, localY: number): void {
     if (!this.#enabled || prefersReducedMotion()) return;
@@ -176,13 +184,21 @@ export class PressureController implements ReactiveController {
       opts,
     );
     this.#pressed = true;
-    this.host.style.transform = cssTransform;
+    if (this.#options.onTransform) {
+      this.#options.onTransform(cssTransform);
+    } else {
+      this.host.style.transform = cssTransform;
+    }
   }
 
   reset(): void {
-    if (!this.#pressed && !this.host.style.transform) return;
+    if (!this.#pressed) return;
     this.#pressed = false;
-    this.host.style.transform = '';
+    if (this.#options.onTransform) {
+      this.#options.onTransform(null);
+    } else {
+      this.host.style.transform = '';
+    }
   }
 
   hostConnected(): void {

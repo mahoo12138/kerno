@@ -92,6 +92,8 @@ export class KSurface extends KernoElement {
   #backdrop!: HTMLDivElement;
   #clip!: HTMLDivElement;
   #canvas!: HTMLCanvasElement;
+  #motionState: SurfaceMotionState | null = null;
+  #pressureTransform: string | null = null;
 
   protected override setup(): void {
     this.#shadowCanvas = this.renderRoot.querySelector('.shadow-canvas') as HTMLCanvasElement;
@@ -157,18 +159,38 @@ export class KSurface extends KernoElement {
   }
 
   /**
+   * Routes `PressureController` 3D tilt to internal surface planes instead of
+   * `:host.style.transform`, so layout parents like `<k-tile-group>` keep
+   * exclusive ownership of the host's `transform`.
+   */
+  protected useInternalPressurePlanes(): void {
+    this.pressureController.setTransformHandler((cssTransform) => {
+      this.#pressureTransform = cssTransform;
+      this.#applyPlaneTransforms();
+    });
+  }
+
+  /**
    * Applies external 3D motion (used by `<k-tile>` flip launch and
    * `<k-tile-group>` turnstile/entrance animations) to internal surface planes
    * without making `:host` an opacity backdrop root.
    */
   motion(state: SurfaceMotionState | null): void {
+    this.#motionState = state;
+    this.#applyPlaneTransforms();
+  }
+
+  #applyPlaneTransforms(): void {
     const planes: HTMLElement[] = [
       this.#shadowCanvas,
       this.#backdrop,
       this.#canvas,
       this.#clip,
     ].filter(Boolean);
-    if (!state) {
+    const state = this.#motionState;
+    const tilt = this.#pressureTransform;
+
+    if (!state && !tilt) {
       for (const el of planes) {
         el.style.transform = '';
         el.style.transformOrigin = '';
@@ -176,24 +198,31 @@ export class KSurface extends KernoElement {
       }
       return;
     }
+
     const parts: string[] = [];
-    if (state.x || state.y) {
-      parts.push(`translate(${state.x ?? 0}px, ${state.y ?? 0}px)`);
+    if (state) {
+      if (state.x || state.y) {
+        parts.push(`translate(${state.x ?? 0}px, ${state.y ?? 0}px)`);
+      }
+      if (state.scale !== undefined && state.scale !== 1) {
+        parts.push(`scale(${state.scale})`);
+      }
+      if (state.perspective && (state.rotateX || state.rotateY)) {
+        parts.push(`perspective(${state.perspective}px)`);
+      }
+      if (state.rotateX) parts.push(`rotateX(${state.rotateX}deg)`);
+      if (state.rotateY) parts.push(`rotateY(${state.rotateY}deg)`);
+    } else if (tilt) {
+      parts.push(tilt);
     }
-    if (state.scale !== undefined && state.scale !== 1) {
-      parts.push(`scale(${state.scale})`);
-    }
-    if (state.perspective && (state.rotateX || state.rotateY)) {
-      parts.push(`perspective(${state.perspective}px)`);
-    }
-    if (state.rotateX) parts.push(`rotateX(${state.rotateX}deg)`);
-    if (state.rotateY) parts.push(`rotateY(${state.rotateY}deg)`);
+
     const transform = parts.join(' ');
     const origin =
-      state.originX !== undefined || state.originY !== undefined
+      state && (state.originX !== undefined || state.originY !== undefined)
         ? `${state.originX ?? 0}px ${state.originY ?? 0}px`
         : '';
-    const opacity = state.opacity !== undefined && state.opacity < 1 ? String(state.opacity) : '';
+    const opacity =
+      state && state.opacity !== undefined && state.opacity < 1 ? String(state.opacity) : '';
     for (const el of planes) {
       el.style.transform = transform;
       el.style.transformOrigin = origin;
