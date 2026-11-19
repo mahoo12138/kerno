@@ -29,10 +29,10 @@ export const darkTheme: Theme = {
         disabled: 'rgba(255, 255, 255, 0.45)',
       },
       control: {
-        default: 'rgba(255, 255, 255, 0.06)',
-        hover: 'rgba(255, 255, 255, 0.085)',
-        active: 'rgba(255, 255, 255, 0.035)',
-        disabled: 'rgba(255, 255, 255, 0.04)',
+        default: 'rgba(255, 255, 255, 0.2)',
+        hover: 'rgba(255, 255, 255, 0.2)',
+        active: 'rgba(255, 255, 255, 0.4)',
+        disabled: 'rgba(255, 255, 255, 0.1)',
       },
       subtle: {
         default: 'transparent',

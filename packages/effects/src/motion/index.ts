@@ -36,6 +36,111 @@ const DEFAULT_DURATIONS: Record<MotionDuration, number> = {
 
 const DEFAULT_EASINGS: Record<MotionEasing, string> = baseTokens.motion.easing;
 
+export type CubicBezierTuple = readonly [number, number, number, number];
+
+export type WindowsEasingId =
+  | 'fast-out-slow-in'
+  | 'slow-out-fast-in'
+  | 'fast-out-linear-in'
+  | 'linear-out-slow-in'
+  | 'direct-enter'
+  | 'gravity-bounce'
+  | 'minimal-overshoot'
+  | 'moderate-overshoot'
+  | 'maximal-overshoot'
+  | 'spring-in-out'
+  | 'linear';
+
+/**
+ * Windows 10 / WinUI 3 canonical motion curves (`ax-design/surface/src/easing.ts`).
+ */
+export const WINDOWS_EASINGS: Readonly<Record<WindowsEasingId, CubicBezierTuple>> = {
+  'fast-out-slow-in': [0.1, 0.9, 0.2, 1],
+  'slow-out-fast-in': [0.9, 0.1, 1, 0.2],
+  'fast-out-linear-in': [0.7, 0, 1, 0.5],
+  'linear-out-slow-in': [0, 0.5, 0.3, 1],
+  'direct-enter': [0, 0, 0, 1],
+  'gravity-bounce': [0.1, 0.25, 0.75, 0.9],
+  'minimal-overshoot': [0.55, 0.55, 0, 1.07],
+  'moderate-overshoot': [0.5, 0.5, 0, 1.15],
+  'maximal-overshoot': [0.5, 0.5, 0, 1.2],
+  'spring-in-out': [0.5, -0.5, 0.5, 1.5],
+  linear: [0, 0, 1, 1],
+};
+
+/** Returns a CSS `cubic-bezier(...)` string for a canonical Windows 10 motion curve id. */
+export function windowsEasing(id: WindowsEasingId): string {
+  const [x1, y1, x2, y2] = WINDOWS_EASINGS[id];
+  return `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`;
+}
+
+/**
+ * Parses a Windows easing id or CSS `cubic-bezier(...)` string into a 4-tuple.
+ */
+export function parseEasing(
+  value: string,
+  fallback: CubicBezierTuple = WINDOWS_EASINGS['fast-out-slow-in'],
+): CubicBezierTuple {
+  const s = value.trim();
+  if (!s) return fallback;
+  if (s in WINDOWS_EASINGS) return WINDOWS_EASINGS[s as WindowsEasingId];
+  const m = /^cubic-bezier\(\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^)]+)\s*\)$/i.exec(s);
+  if (m) {
+    const x1 = Number(m[1]);
+    const y1 = Number(m[2]);
+    const x2 = Number(m[3]);
+    const y2 = Number(m[4]);
+    if (
+      Number.isFinite(x1) &&
+      Number.isFinite(y1) &&
+      Number.isFinite(x2) &&
+      Number.isFinite(y2) &&
+      x1 >= 0 &&
+      x1 <= 1 &&
+      x2 >= 0 &&
+      x2 <= 1
+    ) {
+      return [x1, y1, x2, y2];
+    }
+  }
+  return fallback;
+}
+
+/** Evaluates a cubic-bezier curve at normalized progress `t` in `[0, 1]`. */
+export function bezierAt(curve: CubicBezierTuple, t: number): number {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  const [x1, y1, x2, y2] = curve;
+  if (x1 === y1 && x2 === y2) return t;
+  const cx = 3 * x1;
+  const bx = 3 * (x2 - x1) - cx;
+  const ax = 1 - cx - bx;
+  const cy = 3 * y1;
+  const by = 3 * (y2 - y1) - cy;
+  const ay = 1 - cy - by;
+  let u = t;
+  for (let i = 0; i < 6; i++) {
+    const x = ((ax * u + bx) * u + cx) * u - t;
+    if (Math.abs(x) < 1e-6) break;
+    const dx = (3 * ax * u + 2 * bx) * u + cx;
+    if (Math.abs(dx) < 1e-6) break;
+    u -= x / dx;
+  }
+  if (u < 0 || u > 1) {
+    let lo = 0;
+    let hi = 1;
+    u = t;
+    for (let i = 0; i < 12; i++) {
+      const x = ((ax * u + bx) * u + cx) * u;
+      if (Math.abs(x - t) < 1e-6) break;
+      if (x < t) lo = u;
+      else hi = u;
+      u = (lo + hi) * 0.5;
+    }
+  }
+  return ((ay * u + by) * u + cy) * u;
+}
+
 /** Checks whether reduced motion is requested by the user or explicit override. */
 export function prefersReducedMotion(override?: boolean): boolean {
   if (typeof override === 'boolean') return override;

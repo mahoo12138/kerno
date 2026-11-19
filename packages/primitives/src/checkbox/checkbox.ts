@@ -1,8 +1,10 @@
 import { FormAssociatedElement, prop, type PropertyValues } from '@kerno/core';
+import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
 import { getIcon } from '../icon/registry.js';
 import { checkboxStyles } from './checkbox.styles.js';
 
 export type CheckboxSize = 'sm' | 'md' | 'lg';
+export type CheckboxShape = CornerKind;
 
 /**
  * Form-associated checkbox supporting `checked`, `indeterminate`, constraint
@@ -29,12 +31,18 @@ export class KCheckbox extends FormAssociatedElement {
   @prop({ type: Boolean, reflect: true }) accessor indeterminate = false;
   @prop() accessor value = 'on';
   @prop({ reflect: true }) accessor size: CheckboxSize = 'md';
+  @prop({ reflect: true }) accessor shape: CheckboxShape = 'rounded';
 
   #base!: HTMLDivElement;
   #control!: HTMLButtonElement;
   #indicator!: HTMLSpanElement;
   #defaultChecked = false;
   #defaultCaptured = false;
+  readonly #shapeOutline = new ShapeOutlineController(this, {
+    getTarget: () => this.#control ?? null,
+    getKind: () => this.shape,
+    fallbackRadius: 4,
+  });
 
   constructor() {
     super();
@@ -76,7 +84,7 @@ export class KCheckbox extends FormAssociatedElement {
     syncSlot();
   }
 
-  protected override update(_changed: PropertyValues): void {
+  protected override update(changed: PropertyValues): void {
     const disabled = this.isDisabled;
     this.#control.disabled = disabled;
     this.#base.classList.toggle('disabled', disabled);
@@ -87,6 +95,15 @@ export class KCheckbox extends FormAssociatedElement {
 
     const iconName = this.indeterminate ? 'minus' : 'check';
     this.#indicator.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true">${getIcon(iconName) ?? ''}</svg>`;
+
+    if (
+      changed.has('shape') ||
+      changed.has('size') ||
+      changed.has('disabled') ||
+      changed.has('formDisabled')
+    ) {
+      this.#shapeOutline.sync();
+    }
 
     this.setFormValue(this.checked ? this.value : null);
     this.setValidity(

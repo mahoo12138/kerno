@@ -5,16 +5,22 @@ import { token } from '@kerno/tokens';
  * Public customization surface for `<k-slider>`:
  *
  * --k-slider-track-height
- * --k-slider-thumb-size
+ * --k-slider-thumb-width
+ * --k-slider-thumb-height
  * --k-slider-track-bg
  * --k-slider-fill-bg
  * --k-slider-thumb-bg
+ *
+ * Styled after authentic Windows 10 (MDL2 / Fluent 1) Slider:
+ * - Crisp 2px horizontal track
+ * - Vertical capsule thumb (8px × 24px pill) in Accent Blue
  */
 export const sliderStyles = css`
   :host {
     --_percent: 50%;
-    --_track-h: var(--k-slider-track-height, 4px);
-    --_thumb: var(--k-slider-thumb-size, 18px);
+    --_track-h: var(--k-slider-track-height, 2px);
+    --_thumb-w: var(--k-slider-thumb-width, 8px);
+    --_thumb-h: var(--k-slider-thumb-height, var(--k-slider-thumb-size, 24px));
 
     display: flex;
     flex-direction: column;
@@ -56,7 +62,7 @@ export const sliderStyles = css`
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: var(--_thumb);
+    height: var(--_thumb-h);
     margin: 0;
     background: transparent;
     cursor: pointer;
@@ -73,25 +79,25 @@ export const sliderStyles = css`
 
   .range::-webkit-slider-runnable-track {
     height: var(--_track-h);
-    border-radius: ${token('radius.full')};
+    border-radius: 0px;
     background: linear-gradient(
       to right,
       var(--k-slider-fill-bg, ${token('color.accent.default')}) 0%,
       var(--k-slider-fill-bg, ${token('color.accent.default')}) var(--_percent),
-      var(--k-slider-track-bg, ${token('color.stroke.control')}) var(--_percent),
-      var(--k-slider-track-bg, ${token('color.stroke.control')}) 100%
+      var(--k-slider-track-bg, ${token('color.stroke.strong')}) var(--_percent),
+      var(--k-slider-track-bg, ${token('color.stroke.strong')}) 100%
     );
   }
 
   .range::-moz-range-track {
     height: var(--_track-h);
-    border-radius: ${token('radius.full')};
-    background: var(--k-slider-track-bg, ${token('color.stroke.control')});
+    border-radius: 0px;
+    background: var(--k-slider-track-bg, ${token('color.stroke.strong')});
   }
 
   .range::-moz-range-progress {
     height: var(--_track-h);
-    border-radius: ${token('radius.full')};
+    border-radius: 0px;
     background: var(--k-slider-fill-bg, ${token('color.accent.default')});
   }
 
@@ -99,28 +105,23 @@ export const sliderStyles = css`
     -webkit-appearance: none;
     appearance: none;
     box-sizing: border-box;
-    width: var(--_thumb);
-    height: var(--_thumb);
-    margin-top: calc((var(--_track-h) - var(--_thumb)) / 2);
+    width: var(--_thumb-w);
+    height: var(--_thumb-h);
+    margin-top: calc((var(--_track-h) - var(--_thumb-h)) / 2);
     border-radius: ${token('radius.full')};
-    border: 4px solid ${token('color.bg.layer')};
+    border: none;
     background: var(--k-slider-thumb-bg, ${token('color.accent.default')});
-    box-shadow:
-      0 0 0 1px ${token('color.stroke.control')},
-      ${token('elevation.1')};
     transition:
-      transform ${token('motion.duration.fast')} ${token('motion.easing.decelerate')},
-      border-width ${token('motion.duration.fast')} ${token('motion.easing.decelerate')};
+      background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
+      transform ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .range:hover:not(:disabled)::-webkit-slider-thumb {
-    border-width: 3px;
-    transform: scale(1.06);
+    background: ${token('color.fg.default')};
   }
 
   .range:active:not(:disabled)::-webkit-slider-thumb {
-    border-width: 5px;
-    transform: scale(0.96);
+    background: ${token('color.accent.active')};
   }
 
   .range:focus-visible::-webkit-slider-thumb {
@@ -130,13 +131,10 @@ export const sliderStyles = css`
 
   .range::-moz-range-thumb {
     box-sizing: border-box;
-    width: var(--_thumb);
-    height: var(--_thumb);
+    width: var(--_thumb-w);
+    height: var(--_thumb-h);
     border-radius: ${token('radius.full')};
-    border: 4px solid ${token('color.bg.layer')};
+    border: none;
     background: var(--k-slider-thumb-bg, ${token('color.accent.default')});
-    box-shadow:
-      0 0 0 1px ${token('color.stroke.control')},
-      ${token('elevation.1')};
   }
 `;

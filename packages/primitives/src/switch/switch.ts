@@ -1,7 +1,9 @@
 import { FormAssociatedElement, prop, type PropertyValues } from '@kerno/core';
+import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
 import { switchStyles } from './switch.styles.js';
 
 export type SwitchSize = 'sm' | 'md' | 'lg';
+export type SwitchShape = CornerKind;
 
 /**
  * Form-associated toggle switch with `role="switch"` semantics, motion-token
@@ -27,11 +29,17 @@ export class KSwitch extends FormAssociatedElement {
   @prop({ type: Boolean, reflect: true }) accessor checked = false;
   @prop() accessor value = 'on';
   @prop({ reflect: true }) accessor size: SwitchSize = 'md';
+  @prop({ reflect: true }) accessor shape: SwitchShape = 'rounded';
 
   #base!: HTMLDivElement;
   #track!: HTMLButtonElement;
   #defaultChecked = false;
   #defaultCaptured = false;
+  readonly #shapeOutline = new ShapeOutlineController(this, {
+    getTarget: () => this.#track ?? null,
+    getKind: () => this.shape,
+    fallbackRadius: 999,
+  });
 
   constructor() {
     super();
@@ -71,12 +79,21 @@ export class KSwitch extends FormAssociatedElement {
     syncSlot();
   }
 
-  protected override update(_changed: PropertyValues): void {
+  protected override update(changed: PropertyValues): void {
     const disabled = this.isDisabled;
     this.#track.disabled = disabled;
     this.#base.classList.toggle('disabled', disabled);
     this.#track.setAttribute('aria-checked', this.checked ? 'true' : 'false');
     this.#track.setAttribute('aria-required', this.required ? 'true' : 'false');
+
+    if (
+      changed.has('shape') ||
+      changed.has('size') ||
+      changed.has('disabled') ||
+      changed.has('formDisabled')
+    ) {
+      this.#shapeOutline.sync();
+    }
 
     this.setFormValue(this.checked ? this.value : null);
     this.setValidity(

@@ -11,10 +11,12 @@ import {
   type PropertyValues,
 } from '@kerno/core';
 import { scaleIn, scaleOut, type MotionHandle } from '@kerno/effects/motion';
+import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
 import { getIcon } from '../icon/registry.js';
 import { optionStyles, selectStyles } from './select.styles.js';
 
 export type SelectSize = 'sm' | 'md' | 'lg';
+export type SelectShape = CornerKind;
 
 /**
  * Option inside `<k-select>`.
@@ -86,6 +88,7 @@ export class KSelect extends FormAssociatedElement {
   @prop({ reflect: true }) accessor value = '';
   @prop({ reflect: true }) accessor placeholder = 'Select…';
   @prop({ reflect: true }) accessor size: SelectSize = 'md';
+  @prop({ reflect: true }) accessor shape: SelectShape = 'rounded';
   @prop({ type: Boolean, reflect: true }) accessor open = false;
 
   readonly #overlayId = uniqueId('k-select');
@@ -99,6 +102,10 @@ export class KSelect extends FormAssociatedElement {
   #stopPositioning: (() => void) | null = null;
   #wasOpen = false;
   #exitAnim: MotionHandle | null = null;
+  readonly #shapeOutline = new ShapeOutlineController(this, {
+    getTarget: () => this.#combobox ?? null,
+    getKind: () => this.shape,
+  });
 
   constructor() {
     super();
@@ -158,10 +165,19 @@ export class KSelect extends FormAssociatedElement {
     slot.addEventListener('slotchange', () => this.#syncOptions());
   }
 
-  protected override update(_changed: PropertyValues): void {
+  protected override update(changed: PropertyValues): void {
     this.#combobox.disabled = this.isDisabled;
     this.#combobox.setAttribute('aria-expanded', this.open ? 'true' : 'false');
     this.#syncOptions();
+
+    if (
+      changed.has('shape') ||
+      changed.has('size') ||
+      changed.has('disabled') ||
+      changed.has('formDisabled')
+    ) {
+      this.#shapeOutline.sync();
+    }
 
     if (this.open && !this.#wasOpen && !this.isDisabled) {
       this.#wasOpen = true;

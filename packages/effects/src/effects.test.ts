@@ -4,29 +4,40 @@ import './define.js';
 import {
   DEFAULT_PRESS_SPEED,
   DEFAULT_RELEASE_ACCELERATE_RATE,
+  WINDOWS_EASINGS,
   advancePressAnimation,
+  applyHomography,
   applyPressGradientStops,
+  bezierAt,
+  borderInner,
   boxShadowToDropShadow,
   clampRadii,
+  computePhysicalTilt,
   computePressureTransform,
   createPath2D,
   fadeIn,
   flushFrames,
   getNoiseTile,
+  innerToSvgPath,
   isRoundedOnly,
   normalizeElevation,
   normalizeShape,
   paintAcrylicCanvas,
   parseColorToRgba,
   parseDurationMs,
+  parseEasing,
   parseRadius,
   resolveDurationMs,
+  resolveShape,
   scaleIn,
   scheduleFrame,
   slideIn,
+  tiltHomography,
   toClipPath,
   toMaskImage,
+  toParametricSpec,
   toSvgPath,
+  windowsEasing,
   type KSurface,
   type PressTimeline,
   type SurfaceLayer,
@@ -94,6 +105,60 @@ describe('Shape geometry engine', () => {
       // Extreme outer vertex (1, 1) is cut away by all 4 corner geometries when radius=16.
       expect(ctx.isPointInPath(path, 1, 1)).toBe(false);
     }
+  });
+
+  it('resolves parametric edge features (arc, triangle, rect, trapezoid, cusp), shoulder fillets, borderInner and 3D homography', () => {
+    const ticket = resolveShape(
+      toParametricSpec(160, 80, {
+        kind: 'rounded',
+        radius: 10,
+        edges: {
+          left: { kind: 'arc', depth: -12, span: 24 },
+          right: { kind: 'arc', depth: -12, span: 24 },
+          top: { kind: 'triangle', depth: 8, span: 16, tipRadius: 2, shoulderRadius: 3 },
+          bottom: { kind: 'cusp', depth: -8, span: 28 },
+        },
+      }),
+    );
+    expect(ticket.outline.segments.length).toBeGreaterThan(8);
+    expect(ticket.bounds.left).toBeCloseTo(0, 6);
+    expect(ticket.bounds.top).toBeLessThan(0);
+
+    const ring = borderInner(ticket.outline, { widths: [2, 2, 2, 2] });
+    expect(ring.inner.length).toBeGreaterThan(10);
+    expect(innerToSvgPath(ring.inner)).toMatch(/^M.+ Z$/);
+
+    const H = tiltHomography({
+      width: 160,
+      height: 80,
+      rotateX: 5,
+      rotateY: -4,
+      translateZ: -0.8,
+      perspective: 600,
+    });
+    const p = applyHomography(H, { x: 80, y: 40 });
+    expect(p.x).toBeCloseTo(80, 0);
+    expect(p.y).toBeCloseTo(40, 0);
+
+    // SVG path with CSS parametric edge features on <k-surface>
+    const calloutSvg = toSvgPath(120, 60, {
+      kind: 'scallop',
+      radius: 12,
+      shoulderRadius: 4,
+      edges: {
+        top: { kind: 'rect', depth: 6, span: 36, tipRadius: 3, shoulderRadius: 3 },
+        bottom: {
+          kind: 'trapezoid',
+          depth: -6,
+          span: 40,
+          ratio: 0.7,
+          tipRadius: 2,
+          shoulderRadius: 2,
+        },
+      },
+    });
+    expect(calloutSvg).toContain('A4 4');
+    expect(calloutSvg.endsWith('Z')).toBe(true);
   });
 });
 
@@ -271,6 +336,11 @@ describe('Motion system', () => {
     const slid = slideIn(el, { y: 6 }, { reducedMotion: true });
     expect(slid.duration).toBe(0);
     await slid.finished;
+
+    expect(windowsEasing('fast-out-slow-in')).toBe('cubic-bezier(0.1, 0.9, 0.2, 1)');
+    expect(parseEasing('minimal-overshoot')).toEqual(WINDOWS_EASINGS['minimal-overshoot']);
+    expect(bezierAt(WINDOWS_EASINGS.linear, 0.42)).toBeCloseTo(0.42, 4);
+    expect(bezierAt(WINDOWS_EASINGS['fast-out-slow-in'], 0.5)).toBeGreaterThan(0.8);
   });
 });
 
@@ -390,6 +460,12 @@ describe('Reveal Highlight & Pressure', () => {
     expect(topRight.rotateX).toBe(4);
     expect(topRight.rotateY).toBe(4);
     expect(topRight.cssTransform).toContain('perspective(600px)');
+
+    const physicalSmall = computePhysicalTilt(80, 18, 80, 36, { depth: 1.5, zoom: 0.8 });
+    const physicalLarge = computePhysicalTilt(400, 18, 400, 36, { depth: 1.5, zoom: 0.8 });
+    // Smaller button rotates through a larger angle than a wide bar for the same 1.5px physical sink depth
+    expect(physicalSmall.rotateY).toBeGreaterThan(physicalLarge.rotateY);
+    expect(physicalSmall.cssTransform).toContain('translateZ(');
 
     document.body.innerHTML = `<k-surface pressure style="width: 100px; height: 50px">Press</k-surface>`;
     const el = document.querySelector('k-surface') as KSurface;

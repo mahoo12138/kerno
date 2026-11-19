@@ -775,29 +775,174 @@
         <!-- 5. Shape, Elevation & Motion -->
         <section class="studio-section" id="sec-shape" data-marker-label="Shape & Elevation">
           <div class="section-head">
-            <h2>Shape System, Elevation &amp; Motion</h2>
-            <p>Unified Path2D + SVG clip-path geometry shared across Surfaces and Primitives.</p>
+            <h2>Shape System, Parametric Edge Features &amp; Elevation</h2>
+            <p>
+              Full parametric <code>@kerno/effects/shape</code> solver (corners
+              <code>rounded | chamfer | scallop | notch</code> + <code>shoulderRadius</code> +
+              <code>shiftX/Y</code> and side edge features
+              <code>flat | arc | rect | triangle | trapezoid | cusp</code>) shared across Surfaces
+              and Primitives.
+            </p>
           </div>
 
           <div class="panel-box">
             <div class="grid-4">
-              <k-surface shape="rounded" radius="12" elevation="2" reveal class="surface-demo">
+              <k-surface
+                shape="rounded"
+                radius="12"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+              >
                 <strong>Rounded</strong>
                 <code>shape="rounded"</code>
               </k-surface>
-              <k-surface shape="chamfer" radius="12" elevation="2" reveal class="surface-demo">
+              <k-surface
+                shape="chamfer"
+                radius="12"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+              >
                 <strong>Chamfer</strong>
                 <code>shape="chamfer"</code>
               </k-surface>
-              <k-surface shape="scallop" radius="12" elevation="2" reveal class="surface-demo">
+              <k-surface
+                shape="scallop"
+                radius="12"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+              >
                 <strong>Scallop</strong>
                 <code>shape="scallop"</code>
               </k-surface>
-              <k-surface shape="notch" radius="12" elevation="2" reveal class="surface-demo">
+              <k-surface
+                shape="notch"
+                radius="12"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+              >
                 <strong>Notch</strong>
                 <code>shape="notch"</code>
               </k-surface>
             </div>
+
+            <div class="grid-6" id="parametric-shape-gallery">
+              <k-surface
+                shape="rounded"
+                radius="10"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+                style="
+                  --k-edge-left-kind: arc;
+                  --k-edge-left-depth: -10px;
+                  --k-edge-left-span: 22px;
+                  --k-edge-right-kind: arc;
+                  --k-edge-right-depth: -10px;
+                  --k-edge-right-span: 22px;
+                "
+              >
+                <strong>Ticket Stub</strong>
+                <code>edge: arc (-10px)</code>
+              </k-surface>
+              <k-surface
+                shape="rounded"
+                radius="10"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+                style="
+                  --k-edge-bottom-kind: triangle;
+                  --k-edge-bottom-depth: 9px;
+                  --k-edge-bottom-span: 18px;
+                  --k-edge-bottom-at: 30%;
+                  --k-edge-bottom-tip-radius: 2px;
+                  --k-edge-bottom-shoulder-radius: 3px;
+                "
+              >
+                <strong>Callout Bubble</strong>
+                <code>edge: triangle (+9px)</code>
+              </k-surface>
+              <k-surface
+                shape="rounded"
+                radius="10"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+                style="
+                  --k-edge-top-kind: rect;
+                  --k-edge-top-depth: 7px;
+                  --k-edge-top-span: 46%;
+                  --k-edge-top-at: 27%;
+                  --k-edge-top-tip-radius: 5px;
+                  --k-edge-top-shoulder-radius: 5px;
+                "
+              >
+                <strong>Folder Tab</strong>
+                <code>edge: rect (+7px)</code>
+              </k-surface>
+              <k-surface
+                shape="scallop"
+                radius="14"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+                style="--k-corner-shoulder-radius: 6px"
+              >
+                <strong>Filleted Scallop</strong>
+                <code>shoulder-radius: 6px</code>
+              </k-surface>
+              <k-surface
+                shape="rounded"
+                radius="12"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+                style="
+                  --k-edge-top-kind: cusp;
+                  --k-edge-top-depth: -8px;
+                  --k-edge-top-span: 36px;
+                  --k-edge-bottom-kind: cusp;
+                  --k-edge-bottom-depth: -8px;
+                  --k-edge-bottom-span: 36px;
+                "
+              >
+                <strong>Pinched Cusp</strong>
+                <code>edge: cusp (-8px)</code>
+              </k-surface>
+              <k-surface
+                shape="chamfer"
+                radius="10"
+                elevation="2"
+                reveal
+                pressure
+                class="surface-demo"
+                style="
+                  --k-edge-top-kind: trapezoid;
+                  --k-edge-top-depth: -7px;
+                  --k-edge-top-span: 48%;
+                  --k-edge-top-ratio: 0.7;
+                  --k-edge-top-tip-radius: 3px;
+                  --k-edge-top-shoulder-radius: 4px;
+                "
+              >
+                <strong>Dock Bay</strong>
+                <code>edge: trapezoid (-7px)</code>
+              </k-surface>
+            </div>
+
             <div class="row">
               <k-button variant="accent" shape="rounded">Rounded</k-button>
               <k-button variant="accent" shape="chamfer">Chamfer</k-button>
@@ -946,10 +1091,13 @@
         <!-- 7. Primitive Controls & Form Association -->
         <section class="studio-section" id="sec-controls" data-marker-label="Controls & Forms">
           <div class="section-head">
-            <h2>Primitive Controls &amp; Native Form Association</h2>
+            <h2>Windows 10 (Fluent 1 / MDL2) Primitive Controls &amp; Form Association</h2>
             <p>
-              All form controls submit natively via ElementInternals, validate constraints, and
-              reset cleanly.
+              Authentic Windows 10 UWP control language: borderless <code>BaseLow</code> buttons
+              that reveal a crisp <code>2px</code> border frame on hover, <code>2px</code>-framed
+              TextBox &amp; ComboBox, transparent-track ToggleSwitch, ring RadioButton,
+              vertical-pill Slider, parametric <code>shape</code> support, and native
+              <code>ElementInternals</code> form association.
             </p>
           </div>
 
@@ -958,10 +1106,30 @@
               <k-button variant="accent">Accent</k-button>
               <k-button>Standard</k-button>
               <k-button variant="subtle">Subtle</k-button>
+              <k-button variant="accent" shape="chamfer">Chamfer Accent</k-button>
+              <k-button shape="scallop">Scallop</k-button>
+              <k-button shape="notch">Notch</k-button>
               <k-button variant="accent" loading>Saving</k-button>
               <k-button variant="accent" disabled>Accent</k-button>
               <k-button disabled>Standard</k-button>
-              <k-button variant="subtle" disabled>Subtle</k-button>
+            </div>
+
+            <div class="row">
+              <k-input
+                shape="chamfer"
+                placeholder="Chamfer input with bottom focus bar"
+                value="Fluent Chamfer"
+              >
+                <k-icon slot="prefix" name="star"></k-icon>
+              </k-input>
+              <k-select shape="chamfer" value="axiom">
+                <k-option value="axiom">Axiom Surface Philosophy</k-option>
+                <k-option value="fluent">Windows 10 Fluent Design</k-option>
+                <k-option value="parametric">Parametric Shape Solver</k-option>
+              </k-select>
+              <k-switch shape="chamfer" checked>Chamfer Switch</k-switch>
+              <k-checkbox shape="chamfer" checked>Chamfer Check</k-checkbox>
+              <k-checkbox shape="notch" checked>Notch Check</k-checkbox>
             </div>
 
             <k-separator></k-separator>

@@ -12,6 +12,7 @@ export const optionStyles = css`
 
   .base {
     all: unset;
+    position: relative;
     box-sizing: border-box;
     display: flex;
     width: 100%;
@@ -20,7 +21,7 @@ export const optionStyles = css`
     gap: ${token('spacing.sm')};
     min-height: ${token('control.height.md')};
     padding: 4px ${token('spacing.sm')};
-    border-radius: ${token('radius.md')};
+    border-radius: 0px;
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
     font-size: ${token('font.size.sm')};
@@ -37,7 +38,12 @@ export const optionStyles = css`
 
   :host([selected]) .base {
     font-weight: ${token('font.weight.semibold')};
-    color: ${token('color.accent.text')};
+    background: color-mix(in srgb, ${token('color.accent.default')} 22%, transparent);
+    color: ${token('color.fg.default')};
+  }
+
+  :host([selected]) .base:hover:not(:disabled) {
+    background: color-mix(in srgb, ${token('color.accent.default')} 32%, transparent);
   }
 
   .base:disabled {
@@ -67,6 +73,7 @@ export const selectStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
+    --_radius: 0px;
 
     display: inline-flex;
     vertical-align: middle;
@@ -75,6 +82,12 @@ export const selectStyles = css`
 
   :host([hidden]) {
     display: none;
+  }
+
+  :host([shape='chamfer']),
+  :host([shape='scallop']),
+  :host([shape='notch']) {
+    --_radius: 6px;
   }
 
   :host([size='sm']) {
@@ -91,6 +104,7 @@ export const selectStyles = css`
 
   .combobox {
     all: unset;
+    position: relative;
     box-sizing: border-box;
     display: inline-flex;
     flex: 1 1 auto;
@@ -99,9 +113,9 @@ export const selectStyles = css`
     gap: ${token('spacing.sm')};
     min-height: var(--_height);
     padding-inline: var(--_padding-x);
-    border-radius: ${token('radius.md')};
-    border: ${token('control.borderWidth')} solid ${token('color.stroke.control')};
-    background: ${token('color.control.default')};
+    border-radius: var(--_radius);
+    border: 2px solid ${token('color.stroke.strong')};
+    background: ${token('color.bg.layer')};
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
     font-size: var(--_font-size);
@@ -112,17 +126,52 @@ export const selectStyles = css`
       border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
+  :host([shape='chamfer']) .combobox,
+  :host([shape='scallop']) .combobox,
+  :host([shape='notch']) .combobox {
+    border-color: transparent;
+  }
+
+  .shape-stroke {
+    position: absolute;
+    inset: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    pointer-events: none;
+    overflow: visible;
+    fill: none;
+    stroke: ${token('color.stroke.strong')};
+    stroke-width: 2px;
+    transition: stroke ${token('motion.duration.fast')} ${token('motion.easing.standard')};
+  }
+
   :host([data-user-invalid]) .combobox {
     border-color: ${token('color.status.danger.solid')};
   }
 
   .combobox:hover:not(:disabled) {
-    background: ${token('color.control.hover')};
+    border-color: color-mix(in srgb, ${token('color.fg.default')} 68%, transparent);
   }
 
+  :host([shape='chamfer']) .combobox:hover:not(:disabled),
+  :host([shape='scallop']) .combobox:hover:not(:disabled),
+  :host([shape='notch']) .combobox:hover:not(:disabled) {
+    border-color: transparent;
+  }
+
+  .combobox:hover:not(:disabled) .shape-stroke {
+    stroke: color-mix(in srgb, ${token('color.fg.default')} 68%, transparent);
+  }
+
+  :host([open]) .combobox,
   .combobox:focus-visible {
-    outline: ${token('focus.ringWidth')} solid ${token('color.stroke.focusOuter')};
-    outline-offset: ${token('focus.ringOffset')};
+    border-color: ${token('color.accent.default')};
+    outline: none;
+  }
+
+  :host([open]) .shape-stroke,
+  .combobox:focus-visible .shape-stroke {
+    stroke: ${token('color.accent.default')};
   }
 
   .combobox:disabled {
@@ -132,11 +181,18 @@ export const selectStyles = css`
     border-color: ${token('color.stroke.default')};
   }
 
+  .display {
+    position: relative;
+    z-index: 2;
+  }
+
   .display.placeholder {
     color: ${token('color.fg.tertiary')};
   }
 
   .arrow {
+    position: relative;
+    z-index: 2;
     display: inline-flex;
     width: 14px;
     height: 14px;
@@ -165,9 +221,9 @@ export const selectStyles = css`
     min-width: 180px;
     max-height: 240px;
     overflow: auto;
-    padding: ${token('spacing.xs')};
-    border-radius: ${token('radius.lg')};
-    border: ${token('control.borderWidth')} solid ${token('color.stroke.default')};
+    padding: 2px;
+    border-radius: 0px;
+    border: 2px solid ${token('color.stroke.strong')};
     background: ${token('color.bg.layer')};
     color: ${token('color.fg.default')};
     box-shadow: ${token('elevation.4')};

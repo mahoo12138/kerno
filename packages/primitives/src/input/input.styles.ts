@@ -8,19 +8,24 @@ import { token } from '@kerno/tokens';
  * --k-input-font-size, --k-input-bg, --k-input-bg-hover, --k-input-bg-focus,
  * --k-input-fg, --k-input-placeholder-color,
  * --k-input-border-color, --k-input-border-color-focus
+ *
+ * Styled after authentic Windows 10 (MDL2 / Fluent 1) TextBox:
+ * - Sharp geometry (`0px` radius by default; `6px` for chamfer/scallop/notch)
+ * - Crisp `2px` border that brightens on hover and turns solid Accent Blue on focus
  */
 export const inputStyles = css`
   :host {
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: ${token('radius.md')};
-    --_bg: ${token('color.control.default')};
-    --_bg-hover: ${token('color.control.hover')};
+    --_radius: 0px;
+    --_bg: ${token('color.bg.layer')};
+    --_bg-hover: ${token('color.bg.layer')};
     --_bg-focus: ${token('color.bg.layer')};
     --_fg: ${token('color.fg.default')};
     --_placeholder: ${token('color.fg.tertiary')};
-    --_border-color: ${token('color.stroke.control')};
+    --_border-color: ${token('color.stroke.strong')};
+    --_border-hover: color-mix(in srgb, ${token('color.fg.default')} 68%, transparent);
     --_border-focus: ${token('color.accent.default')};
 
     display: inline-flex;
@@ -52,6 +57,7 @@ export const inputStyles = css`
 
   :host([data-user-invalid]) {
     --_border-color: ${token('color.status.danger.solid')};
+    --_border-hover: ${token('color.status.danger.solid')};
     --_border-focus: ${token('color.status.danger.solid')};
   }
 
@@ -64,7 +70,7 @@ export const inputStyles = css`
     gap: var(--k-input-gap, ${token('spacing.xs')});
     min-height: var(--k-input-height, var(--_height));
     padding-inline: var(--k-input-padding-x, var(--_padding-x));
-    border: ${token('control.borderWidth')} solid var(--k-input-border-color, var(--_border-color));
+    border: 2px solid var(--k-input-border-color, var(--_border-color));
     border-radius: var(--k-input-radius, var(--_radius));
     background: var(--k-input-bg, var(--_bg));
     color: var(--k-input-fg, var(--_fg));
@@ -74,20 +80,17 @@ export const inputStyles = css`
     cursor: text;
     transition:
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
-      border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
-      box-shadow ${token('motion.duration.fast')} ${token('motion.easing.standard')};
+      border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .base:hover:not(.disabled) {
     background: var(--k-input-bg-hover, var(--_bg-hover));
+    border-color: var(--k-input-border-color, var(--_border-hover));
   }
 
   .base:focus-within:not(.disabled) {
     background: var(--k-input-bg-focus, var(--_bg-focus));
     border-color: var(--k-input-border-color-focus, var(--_border-focus));
-    outline: ${token('focus.ringWidth')} solid
-      var(--k-input-border-color-focus, var(--_border-focus));
-    outline-offset: -1px;
   }
 
   .base.disabled {
@@ -106,14 +109,19 @@ export const inputStyles = css`
 
   .shape-stroke {
     position: absolute;
-    inset: calc(-1 * ${token('control.borderWidth')});
-    width: calc(100% + 2 * ${token('control.borderWidth')});
-    height: calc(100% + 2 * ${token('control.borderWidth')});
+    inset: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
     pointer-events: none;
     overflow: visible;
     fill: none;
     stroke: var(--k-input-border-color, var(--_border-color));
-    stroke-width: ${token('control.borderWidth')};
+    stroke-width: 2px;
+    transition: stroke ${token('motion.duration.fast')} ${token('motion.easing.standard')};
+  }
+
+  .base:hover:not(.disabled) .shape-stroke {
+    stroke: var(--k-input-border-color, var(--_border-hover));
   }
 
   .base:focus-within:not(.disabled) .shape-stroke {
@@ -123,6 +131,8 @@ export const inputStyles = css`
 
   .input {
     all: unset;
+    position: relative;
+    z-index: 2;
     flex: 1 1 auto;
     min-width: 0;
     width: 100%;
@@ -144,6 +154,8 @@ export const inputStyles = css`
 
   .prefix,
   .suffix {
+    position: relative;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
     color: ${token('color.fg.secondary')};
@@ -157,12 +169,14 @@ export const inputStyles = css`
 
   .action-btn {
     all: unset;
+    position: relative;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 20px;
     height: 20px;
-    border-radius: ${token('radius.sm')};
+    border-radius: 0px;
     color: ${token('color.fg.secondary')};
     cursor: pointer;
     flex-shrink: 0;

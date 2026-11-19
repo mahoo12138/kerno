@@ -9,10 +9,14 @@ import { token } from '@kerno/tokens';
  * --k-radio-checked-bg
  * --k-radio-dot-color
  * --k-radio-border-color
+ *
+ * Styled after authentic Windows 10 (MDL2 / Fluent 1) RadioButton:
+ * - Unchecked: transparent circle, 2px high-contrast border
+ * - Checked: 2px solid Accent Blue outer ring, solid high-contrast center dot
  */
 export const radioStyles = css`
   :host {
-    --_size: 18px;
+    --_size: 20px;
     --_font-size: ${token('font.size.sm')};
 
     display: inline-flex;
@@ -25,12 +29,12 @@ export const radioStyles = css`
   }
 
   :host([size='sm']) {
-    --_size: 15px;
+    --_size: 16px;
     --_font-size: ${token('font.size.xs')};
   }
 
   :host([size='lg']) {
-    --_size: 22px;
+    --_size: 24px;
     --_font-size: ${token('font.size.md')};
   }
 
@@ -53,6 +57,7 @@ export const radioStyles = css`
 
   .control {
     all: unset;
+    position: relative;
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
@@ -60,9 +65,8 @@ export const radioStyles = css`
     width: var(--k-radio-size, var(--_size));
     height: var(--k-radio-size, var(--_size));
     border-radius: ${token('radius.full')};
-    border: ${token('control.borderWidth')} solid
-      var(--k-radio-border-color, ${token('color.stroke.strong')});
-    background: var(--k-radio-bg, ${token('color.control.default')});
+    border: 2px solid var(--k-radio-border-color, ${token('color.fg.secondary')});
+    background: var(--k-radio-bg, transparent);
     flex-shrink: 0;
     transition:
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
@@ -70,16 +74,20 @@ export const radioStyles = css`
   }
 
   .base:hover:not(.disabled) .control {
-    background: ${token('color.control.hover')};
+    border-color: var(--k-radio-border-color, ${token('color.fg.default')});
+  }
+
+  .base:active:not(.disabled) .control {
+    border-color: ${token('color.fg.tertiary')};
   }
 
   :host([checked]) .control {
-    background: var(--k-radio-checked-bg, ${token('color.accent.default')});
-    border-color: transparent;
+    background: var(--k-radio-checked-bg, transparent);
+    border-color: ${token('color.accent.default')};
   }
 
   :host([checked]) .base:hover:not(.disabled) .control {
-    background: ${token('color.accent.hover')};
+    border-color: ${token('color.accent.hover')};
   }
 
   :host([data-user-invalid]) .control {
@@ -93,30 +101,39 @@ export const radioStyles = css`
   }
 
   .control:disabled {
-    background: ${token('color.control.disabled')};
-    border-color: ${token('color.stroke.default')};
+    background: transparent;
+    border-color: ${token('color.fg.disabled')};
   }
 
   :host([checked]) .control:disabled {
-    background: ${token('color.accent.disabled')};
-    border-color: transparent;
+    border-color: ${token('color.fg.disabled')};
   }
 
   .indicator {
-    width: 44%;
-    height: 44%;
+    width: 50%;
+    height: 50%;
     border-radius: ${token('radius.full')};
-    background: var(--k-radio-dot-color, ${token('color.accent.fg')});
+    background: var(--k-radio-dot-color, ${token('color.fg.default')});
     transform: scale(0);
-    transition: transform ${token('motion.duration.fast')} ${token('motion.easing.decelerate')};
+    transition:
+      transform 140ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   :host([checked]) .indicator {
     transform: scale(1);
   }
 
+  :host([checked]) .base:hover:not(.disabled) .indicator {
+    transform: scale(1.1);
+  }
+
+  :host([checked]) .base:active:not(.disabled) .indicator {
+    transform: scale(0.9);
+  }
+
   :host([checked]) .control:disabled .indicator {
-    background: ${token('color.accent.fgDisabled')};
+    background: ${token('color.fg.disabled')};
   }
 
   .label:not(.has-content) {

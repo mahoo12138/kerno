@@ -9,7 +9,7 @@ import {
 import {
   createPath2D,
   isRoundedOnly,
-  normalizeShape,
+  readElementShapeCss,
   toClipPath,
   toMaskImage,
   type ShapeInput,
@@ -180,7 +180,7 @@ export class SurfaceController implements ReactiveController {
 
     this.#dirty = false;
     const cfg = this.#config;
-    const shape = normalizeShape(cfg.getShape());
+    const shape = readElementShapeCss(this.host, w, h, cfg.getShape());
     const roundedOnly = isRoundedOnly(shape);
     const acrylic = cfg.getAcrylic();
     const clipEl = cfg.clipTarget ?? this.host;
@@ -188,7 +188,8 @@ export class SurfaceController implements ReactiveController {
 
     // 1. Geometry clip, backdrop mask & border-radius sync (cached to avoid
     //    re-decoding SVG data URLs during 60fps Reveal hover repaints).
-    const geometryKey = `${w}|${h}|${acrylic ? 1 : 0}|${shape.topLeft.kind}:${shape.topLeft.radius}|${shape.topRight.kind}:${shape.topRight.radius}|${shape.bottomRight.kind}:${shape.bottomRight.radius}|${shape.bottomLeft.kind}:${shape.bottomLeft.radius}`;
+    const clipCss = roundedOnly ? '' : toClipPath(w, h, shape);
+    const geometryKey = `${w}|${h}|${acrylic ? 1 : 0}|${roundedOnly ? `${shape.topLeft.radius},${shape.topRight.radius},${shape.bottomRight.radius},${shape.bottomLeft.radius}` : clipCss}`;
     if (geometryKey !== this.#lastGeometryKey) {
       this.#lastGeometryKey = geometryKey;
       if (roundedOnly) {
@@ -203,7 +204,6 @@ export class SurfaceController implements ReactiveController {
           backdropEl.style.webkitMaskImage = '';
         }
       } else {
-        const clipCss = toClipPath(w, h, shape);
         clipEl.style.borderRadius = '0px';
         clipEl.style.clipPath = clipCss;
         cfg.canvas.style.borderRadius = '0px';

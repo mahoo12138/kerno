@@ -1,0 +1,633 @@
+import {
+  EPSILON,
+  add,
+  angleOf,
+  arcDirection,
+  arcSweep,
+  cross,
+  distance,
+  dot,
+  normalize,
+  scale,
+  sub,
+} from './math.js';
+import type {
+  Clamp,
+  Contour,
+  ParametricShapeSpec,
+  Point,
+  Quad,
+  ResolvedShape,
+  Segment,
+  Vertex,
+} from './parametric-types.js';
+
+const MIN_FEATURE_SPAN = 0.5;
+
+export interface ResolveOptions {
+  borderWidths?: Quad<number>;
+  minNeck?: number;
+}
+
+interface Node {
+  p: Point;
+  radius: number;
+  side: number;
+  arc?: { center: Point; r: number; through: Point };
+}
+
+const INWARD_X = [1, -1, -1, 1] as const;
+const INWARD_Y = [1, 1, -1, -1] as const;
+
+export function resolveShape(
+  spec: ParametricShapeSpec,
+  options: ResolveOptions = {},
+): ResolvedShape {
+  const { width: w, height: h } = spec;
+  const clamps: Clamp[] = [];
+  const borders = options.borderWidths ?? [0, 0, 0, 0];
+  const minNeck =
+    options.minNeck !== undefined
+      ? options.minNeck
+      : 2 * Math.max(borders[0], borders[1], borders[2], borders[3]);
+
+  const shiftX = spec.corners.map((c) => c.shiftX);
+  const shiftY = spec.corners.map((c) => c.shiftY);
+  const fitShifts = (
+    values: number[],
+    a: number,
+    b: number,
+    limit: number,
+    index: number,
+  ): void => {
+    const sum = Math.max(0, values[a]!) + Math.max(0, values[b]!);
+    if (sum > limit && sum > 0) {
+      const factor = limit / sum;
+      if (values[a]! > 0) values[a]! *= factor;
+      if (values[b]! > 0) values[b]! *= factor;
+      clamps.push({ kind: 'corner-shift', index, factor });
+    }
+  };
+  fitShifts(shiftX, 0, 1, w, 0);
+  fitShifts(shiftX, 3, 2, w, 2);
+  fitShifts(shiftY, 1, 2, h, 1);
+  fitShifts(shiftY, 0, 3, h, 3);
+
+  const base: Point[] = [
+    { x: 0, y: 0 },
+    { x: w, y: 0 },
+    { x: w, y: h },
+    { x: 0, y: h },
+  ];
+  const P = base.map((p, i) => ({
+    x: p.x + INWARD_X[i]! * shiftX[i]!,
+    y: p.y + INWARD_Y[i]! * shiftY[i]!,
+  }));
+
+  const edgeLength = [0, 1, 2, 3].map((i) => distance(P[i]!, P[(i + 1) % 4]!));
+  const edgeDir = [0, 1, 2, 3].map((i) => normalize(sub(P[(i + 1) % 4]!, P[i]!)));
+  const edgeNormal = edgeDir.map((e) => ({ x: e.y, y: -e.x }));
+
+  const rep = [0, 1, 2, 3];
+  const kept: number[] = [];
+  for (let i = 0; i < 4; i++) {
+    const last = kept[kept.length - 1];
+    if (last !== undefined && distance(P[i]!, P[last]!) < EPSILON) rep[i] = last;
+    else kept.push(i);
+  }
+  if (kept.length > 1 && distance(P[kept[kept.length - 1]!]!, P[kept[0]!]!) < EPSILON) {
+    const dropped = kept.pop()!;
+    for (let i = 0; i < 4; i++) if (rep[i] === dropped) rep[i] = kept[0]!;
+  }
+  if (kept.length < 3) {
+    return {
+      outline: { segments: [] },
+      vertices: [],
+      bounds: { left: 0, top: 0, right: 0, bottom: 0 },
+      clamps,
+    };
+  }
+  const keptIndex = (c: number): number => kept.indexOf(c);
+  const prevKept = (c: number): number => kept[(keptIndex(c) + kept.length - 1) % kept.length]!;
+  const nextKept = (c: number): number => kept[(keptIndex(c) + 1) % kept.length]!;
+  const collapsed = (side: number): boolean => rep[side] === rep[(side + 1) % 4];
+
+  const radii = [0, 0, 0, 0];
+  for (let i = 0; i < 4; i++) {
+    const ri = rep[i]!;
+    radii[ri] = Math.max(radii[ri]!, Math.max(0, spec.corners[i]!.radius));
+  }
+  const tangents = [0, 0, 0, 0];
+  const cornerAngle = [0, 0, 0, 0];
+  for (const c of kept) {
+    const u = normalize(sub(P[prevKept(c)]!, P[c]!));
+    const v = normalize(sub(P[nextKept(c)]!, P[c]!));
+    cornerAngle[c] = Math.acos(Math.max(-1, Math.min(1, dot(u, v))));
+    tangents[c] = cornerAngle[c]! < EPSILON ? 0 : radii[c]! / Math.tan(cornerAngle[c]! / 2);
+  }
+  const cornerFactor = [1, 1, 1, 1];
+  for (const c of kept) {
+    const d = nextKept(c);
+    const sum = tangents[c]! + tangents[d]!;
+    const len = distance(P[c]!, P[d]!);
+    if (sum > len + EPSILON) {
+      const f = len / sum;
+      cornerFactor[c] = Math.min(cornerFactor[c]!, f);
+      cornerFactor[d] = Math.min(cornerFactor[d]!, f);
+    }
+  }
+  for (const c of kept) {
+    if (cornerFactor[c]! >= 1) continue;
+    radii[c]! *= cornerFactor[c]!;
+    tangents[c]! *= cornerFactor[c]!;
+    clamps.push({ kind: 'corner-radius', index: c, factor: cornerFactor[c]! });
+  }
+  const tangentAtSide = (corner: number): number => tangents[rep[corner]!]!;
+
+  const features = spec.edges.map((edge, i) => {
+    const active = edge.kind !== 'flat' && edge.depth !== 0 && edge.span > 0 && !collapsed(i);
+    if (!active) return null;
+    const start = tangentAtSide(i);
+    const end = edgeLength[i]! - tangentAtSide((i + 1) % 4);
+    const available = Math.max(0, end - start);
+    let span = edge.span;
+    if (span > available) {
+      clamps.push({ kind: 'edge-span', index: i, factor: available / span });
+      span = available;
+    }
+    if (span < MIN_FEATURE_SPAN) return null;
+    const half = span / 2;
+    const center = Math.min(Math.max(edge.at * edgeLength[i]!, start + half), end - half);
+    let depth = edge.depth;
+    if ((edge.kind === 'arc' || edge.kind === 'cusp') && Math.abs(depth) > half) {
+      clamps.push({ kind: 'edge-depth', index: i, factor: half / Math.abs(depth) });
+      depth = Math.sign(depth) * half;
+    }
+    return { span, center, depth };
+  });
+
+  const fitDepths = (a: number, b: number, extent: number): void => {
+    const fa = features[a];
+    const fb = features[b];
+    const inA = fa && fa.depth < 0 ? -fa.depth : 0;
+    const inB = fb && fb.depth < 0 ? -fb.depth : 0;
+    const limit = Math.max(0, extent - borders[a]! - borders[b]! - minNeck);
+    if (inA + inB > limit && inA + inB > 0) {
+      const factor = limit / (inA + inB);
+      if (fa && fa.depth < 0) fa.depth *= factor;
+      if (fb && fb.depth < 0) fb.depth *= factor;
+      clamps.push({ kind: 'edge-depth', index: a, factor });
+    }
+  };
+  fitDepths(0, 2, h);
+  fitDepths(1, 3, w);
+
+  const nodes: Node[] = [];
+  const vertices: Vertex[] = [];
+  const push = (p: Point, radius: number, side: number, arc?: Node['arc']): void => {
+    const last = nodes[nodes.length - 1];
+    if (last && !last.arc && distance(last.p, p) < EPSILON) {
+      last.radius = Math.max(last.radius, radius);
+      last.side = side;
+      last.arc = arc;
+      return;
+    }
+    nodes.push({ p, radius, side, arc });
+  };
+
+  for (let i = 0; i < 4; i++) {
+    const prevSide = (i + 3) % 4;
+    const corner = spec.corners[i]!;
+    const t = tangents[i]!;
+    if (rep[i] !== i) {
+      // Merged into an earlier corner
+    } else if (t < EPSILON) {
+      push(P[i]!, 0, i);
+    } else {
+      const A = add(P[i]!, scale(normalize(sub(P[prevKept(i)]!, P[i]!)), t));
+      const B = add(P[i]!, scale(normalize(sub(P[nextKept(i)]!, P[i]!)), t));
+      const notchPoint = sub(add(A, B), P[i]!);
+      const shoulder = Math.max(0, corner.shoulderRadius ?? 0);
+      switch (corner.shape) {
+        case 'round':
+          push(A, 0, prevSide);
+          push(P[i]!, radii[i]!, i);
+          push(B, 0, i);
+          break;
+        case 'bevel':
+          push(A, shoulder, prevSide);
+          push(B, shoulder, i);
+          break;
+        case 'notch':
+          push(A, shoulder, prevSide);
+          push(notchPoint, 0, i);
+          push(B, shoulder, i);
+          break;
+        case 'scoop': {
+          const u = normalize(sub(A, notchPoint));
+          const v = normalize(sub(B, notchPoint));
+          const center = add(
+            notchPoint,
+            scale(normalize(add(u, v)), radii[i]! / Math.sin(cornerAngle[i]! / 2)),
+          );
+          const through = add(center, scale(normalize(sub(notchPoint, center)), radii[i]!));
+          push(A, shoulder, prevSide, { center, r: radii[i]!, through });
+          push(B, shoulder, i);
+          break;
+        }
+      }
+    }
+
+    const f = features[i];
+    if (!f) continue;
+    const edge = spec.edges[i]!;
+    const e = edgeDir[i]!;
+    const n = edgeNormal[i]!;
+    const along = (s: number, out: number): Point => add(add(P[i]!, scale(e, s)), scale(n, out));
+    const half = f.span / 2;
+    if (edge.kind === 'arc') {
+      const s0 = along(f.center - half, 0);
+      const s1 = along(f.center + half, 0);
+      const d = f.depth;
+      const r = (half * half + d * d) / (2 * Math.abs(d));
+      const apex = along(f.center, d);
+      const center = add(apex, scale(n, d > 0 ? -r : r));
+      push(s0, Math.max(0, edge.shoulderRadius), i, { center, r, through: apex });
+      push(s1, Math.max(0, edge.shoulderRadius), i);
+    } else if (edge.kind === 'cusp') {
+      const s0 = along(f.center - half, 0);
+      const s1 = along(f.center + half, 0);
+      const d = f.depth;
+      const r = (half * half + d * d) / (2 * Math.abs(d));
+      const tip = along(f.center, d);
+      const inward = scale(n, d > 0 ? r : -r);
+      const c0 = add(s0, inward);
+      const c1 = add(s1, inward);
+      const near = (c: Point, from: Point, to: Point): Point =>
+        add(c, scale(normalize(add(scale(sub(from, c), 0.98), scale(sub(to, c), 0.02))), r));
+      push(s0, 0, i, { center: c0, r, through: near(c0, s0, tip) });
+      push(tip, Math.max(0, edge.tipRadius), i, { center: c1, r, through: near(c1, s1, tip) });
+      push(s1, 0, i);
+    } else {
+      const ratio =
+        edge.kind === 'rect'
+          ? 1
+          : edge.kind === 'triangle'
+            ? 0
+            : Math.max(0, Math.min(1, edge.ratio));
+      const top = f.span * ratio;
+      push(along(f.center - half, 0), Math.max(0, edge.shoulderRadius), i);
+      push(along(f.center - top / 2, f.depth), Math.max(0, edge.tipRadius), i);
+      push(along(f.center + top / 2, f.depth), Math.max(0, edge.tipRadius), i);
+      push(along(f.center + half, 0), Math.max(0, edge.shoulderRadius), i);
+    }
+  }
+
+  if (
+    nodes.length > 1 &&
+    !nodes[nodes.length - 1]!.arc &&
+    distance(nodes[nodes.length - 1]!.p, nodes[0]!.p) < EPSILON
+  ) {
+    const last = nodes.pop()!;
+    nodes[0]!.radius = Math.max(nodes[0]!.radius, last.radius);
+  }
+
+  for (const node of nodes) {
+    vertices.push({ x: node.p.x, y: node.p.y, radius: node.radius, side: node.side });
+  }
+
+  const outline = roundNodes(nodes, clamps);
+  return { outline, vertices, bounds: boundsOf(outline), clamps };
+}
+
+interface Fillet {
+  inPoint: Point;
+  outPoint: Point;
+  arc?: { center: Point; r: number; through: Point };
+}
+
+function roundNodes(nodes: Node[], clamps: Clamp[]): Contour {
+  const count = nodes.length;
+  const prev = (k: number): Node => nodes[(k + count - 1) % count]!;
+  const next = (k: number): Node => nodes[(k + 1) % count]!;
+
+  const angle = new Array<number>(count).fill(0);
+  const tangent = new Array<number>(count).fill(0);
+  const shoulders: (Shoulder | null)[] = new Array<Shoulder | null>(count).fill(null);
+
+  for (let k = 0; k < count; k++) {
+    const node = nodes[k]!;
+    if (node.radius <= 0) continue;
+    if (node.arc || prev(k).arc) {
+      const shoulder = shoulderAt(nodes, k);
+      if (shoulder) {
+        shoulders[k] = shoulder;
+        tangent[k] = shoulder.tangent(node.radius);
+      }
+      continue;
+    }
+    const u = normalize(sub(prev(k).p, node.p));
+    const v = normalize(sub(next(k).p, node.p));
+    const theta = Math.acos(Math.max(-1, Math.min(1, dot(u, v))));
+    if (theta < 1e-6 || Math.PI - theta < 1e-6) continue;
+    angle[k] = theta;
+    tangent[k] = node.radius / Math.tan(theta / 2);
+  }
+
+  const factor = new Array<number>(count).fill(1);
+  for (let k = 0; k < count; k++) {
+    if (nodes[k]!.arc) continue;
+    const k1 = (k + 1) % count;
+    const start = shoulders[k] && shoulders[k]!.arcOut ? 0 : tangent[k]!;
+    const end = shoulders[k1] && !shoulders[k1]!.arcOut ? 0 : tangent[k1]!;
+    const sum = start + end;
+    const len = distance(nodes[k]!.p, nodes[k1]!.p);
+    if (sum > len * (1 + 1e-9) && sum > 0) {
+      const f = len / sum;
+      factor[k] = Math.min(factor[k]!, f);
+      factor[k1] = Math.min(factor[k1]!, f);
+    }
+  }
+
+  const fillets: Fillet[] = nodes.map((node, k) => {
+    const plain: Fillet = { inPoint: node.p, outPoint: node.p };
+    if (node.radius <= 0) return plain;
+    if (node.arc && prev(k).arc) {
+      return arcArcFillet(prev(k), node, next(k).p, k, clamps) ?? plain;
+    }
+    if (node.arc || prev(k).arc) {
+      const shoulder = shoulders[k];
+      return (
+        (shoulder && lineArcFillet(shoulder, node.radius, tangent[k]! * factor[k]!, k, clamps)) ??
+        plain
+      );
+    }
+    if (tangent[k] === 0) return plain;
+    if (factor[k]! < 1) clamps.push({ kind: 'vertex-radius', index: k, factor: factor[k]! });
+    const r = node.radius * factor[k]!;
+    const t = tangent[k]! * factor[k]!;
+    const u = normalize(sub(prev(k).p, node.p));
+    const v = normalize(sub(next(k).p, node.p));
+    const bisector = normalize(add(u, v));
+    const center = add(node.p, scale(bisector, r / Math.sin(angle[k]! / 2)));
+    return {
+      inPoint: add(node.p, scale(u, t)),
+      outPoint: add(node.p, scale(v, t)),
+      arc: { center, r, through: add(center, scale(normalize(sub(node.p, center)), r)) },
+    };
+  });
+
+  const segments: Segment[] = [];
+  const pushArc = (
+    center: Point,
+    r: number,
+    p0: Point,
+    p1: Point,
+    through: Point,
+    side: number,
+    sideEnd: number,
+  ): void => {
+    if (distance(p0, p1) < EPSILON) return;
+    segments.push({
+      type: 'arc',
+      cx: center.x,
+      cy: center.y,
+      r,
+      start: angleOf(center, p0),
+      end: angleOf(center, p1),
+      anticlockwise: arcDirection(center, p0, p1, through),
+      x0: p0.x,
+      y0: p0.y,
+      x1: p1.x,
+      y1: p1.y,
+      side,
+      sideEnd,
+    });
+  };
+
+  for (let k = 0; k < count; k++) {
+    const node = nodes[k]!;
+    const fillet = fillets[k]!;
+    if (fillet.arc) {
+      pushArc(
+        fillet.arc.center,
+        fillet.arc.r,
+        fillet.inPoint,
+        fillet.outPoint,
+        fillet.arc.through,
+        nodes[(k + count - 1) % count]!.side,
+        node.side,
+      );
+    }
+    const from = fillet.outPoint;
+    const to = fillets[(k + 1) % count]!.inPoint;
+    if (node.arc) {
+      pushArc(node.arc.center, node.arc.r, from, to, node.arc.through, node.side, node.side);
+    } else if (distance(from, to) > EPSILON) {
+      segments.push({ type: 'line', x0: from.x, y0: from.y, x1: to.x, y1: to.y, side: node.side });
+    }
+  }
+  return { segments };
+}
+
+function arcFraction(
+  arc: { center: Point; through: Point },
+  from: Point,
+  to: Point,
+  q: Point,
+): number {
+  const anticlockwise = arcDirection(arc.center, from, to, arc.through);
+  const start = angleOf(arc.center, from);
+  const total = arcSweep(start, angleOf(arc.center, to), anticlockwise);
+  return total === 0 ? 0 : arcSweep(start, angleOf(arc.center, q), anticlockwise) / total;
+}
+
+interface Shoulder {
+  arcOut: boolean;
+  solve(rho: number): { os: number; center: Point } | null;
+  tangent(rho: number): number;
+  node: Point;
+  dir: Point;
+  arc: { center: Point; r: number; through: Point };
+  canTake(q: Point): boolean;
+}
+
+function shoulderAt(nodes: Node[], k: number): Shoulder | null {
+  const count = nodes.length;
+  const node = nodes[k]!;
+  const before = nodes[(k + count - 1) % count]!;
+  const after = nodes[(k + 1) % count]!;
+  const arcOut = !!node.arc;
+  const arc = arcOut ? node.arc! : before.arc!;
+  const lineEnd = arcOut ? before.p : after.p;
+  if (arcOut && before.arc) return null;
+
+  const S = node.p;
+  const e = normalize(sub(S, lineEnd));
+  const n0 = { x: -e.y, y: e.x };
+  const n = dot(sub(arc.through, S), n0) < 0 ? scale(n0, -1) : n0;
+  const cs = dot(sub(arc.center, S), e);
+  const cn = dot(sub(arc.center, S), n);
+  const R = arc.r;
+  const available = distance(S, lineEnd);
+
+  const solve = (rho: number): { os: number; center: Point } | null => {
+    const radicand = (R + rho) * (R + rho) - (rho - cn) * (rho - cn);
+    if (radicand < 0) return null;
+    const os = cs - Math.sqrt(radicand);
+    return { os, center: add(add(S, scale(e, os)), scale(n, rho)) };
+  };
+  const tangent = (rho: number): number => {
+    const solved = solve(rho);
+    return solved ? Math.min(available, Math.max(0, -solved.os)) : available;
+  };
+  const other = arcOut ? after.p : before.p;
+  const limit = arcFraction(arc, S, other, arc.through);
+  const canTake = (q: Point): boolean => arcFraction(arc, S, other, q) < limit;
+  return { arcOut, solve, tangent, node: S, dir: e, arc, canTake };
+}
+
+function lineArcFillet(
+  shoulder: Shoulder,
+  radius: number,
+  room: number,
+  k: number,
+  clamps: Clamp[],
+): Fillet | null {
+  const { solve, arc, canTake } = shoulder;
+  const onArcOf = (center: Point): Point =>
+    add(arc.center, scale(normalize(sub(center, arc.center)), arc.r));
+  const fits = (s: { os: number; center: Point } | null): s is { os: number; center: Point } =>
+    !!s && -s.os <= room && canTake(onArcOf(s.center));
+  let rho = radius;
+  let solved = solve(rho);
+  if (!fits(solved)) {
+    let lo = 0;
+    let hi = rho;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      if (fits(solve(mid))) lo = mid;
+      else hi = mid;
+    }
+    clamps.push({ kind: 'vertex-radius', index: k, factor: rho > 0 ? lo / rho : 0 });
+    rho = lo;
+    solved = solve(rho);
+    if (!solved || rho < EPSILON) return null;
+  }
+  const { node: S, dir, arcOut } = shoulder;
+  const center = solved.center;
+  const onLine = add(S, scale(dir, solved.os));
+  const onArc = onArcOf(center);
+  const through = add(center, scale(normalize(sub(S, center)), rho));
+  const filletArc = { center, r: rho, through };
+  return arcOut
+    ? { inPoint: onLine, outPoint: onArc, arc: filletArc }
+    : { inPoint: onArc, outPoint: onLine, arc: filletArc };
+}
+
+function arcArcFillet(
+  before: Node,
+  node: Node,
+  end: Point,
+  k: number,
+  clamps: Clamp[],
+): Fillet | null {
+  const a = before.arc!;
+  const b = node.arc!;
+  const P = node.p;
+  const base = normalize(sub(end, before.p));
+  const rel = sub(before.p, P);
+  const toBase = sub(rel, scale(base, dot(rel, base)));
+  const limitA = arcFraction(a, P, before.p, a.through);
+  const limitB = arcFraction(b, P, end, b.through);
+  const solve = (rho: number): { center: Point; onA: Point; onB: Point } | null => {
+    const ra = a.r + rho;
+    const rb = b.r + rho;
+    const dc = distance(a.center, b.center);
+    if (dc < EPSILON || dc > ra + rb) return null;
+    const along = (ra * ra - rb * rb + dc * dc) / (2 * dc);
+    const h2 = ra * ra - along * along;
+    if (h2 < 0) return null;
+    const u = normalize(sub(b.center, a.center));
+    const mid = add(a.center, scale(u, along));
+    const off = scale({ x: -u.y, y: u.x }, Math.sqrt(h2));
+    const f0 = add(mid, off);
+    const f1 = sub(mid, off);
+    const center = dot(sub(f0, P), toBase) > dot(sub(f1, P), toBase) ? f0 : f1;
+    const onA = add(a.center, scale(normalize(sub(center, a.center)), a.r));
+    const onB = add(b.center, scale(normalize(sub(center, b.center)), b.r));
+    if (!(arcFraction(a, P, before.p, onA) < limitA && arcFraction(b, P, end, onB) < limitB)) {
+      return null;
+    }
+    return { center, onA, onB };
+  };
+  let rho = node.radius;
+  let solved = solve(rho);
+  if (!solved) {
+    let lo = 0;
+    let hi = rho;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      if (solve(mid)) lo = mid;
+      else hi = mid;
+    }
+    clamps.push({ kind: 'vertex-radius', index: k, factor: rho > 0 ? lo / rho : 0 });
+    rho = lo;
+    solved = solve(rho);
+    if (!solved || rho < EPSILON) return null;
+  }
+  const through = add(solved.center, scale(normalize(sub(P, solved.center)), rho));
+  return {
+    inPoint: solved.onA,
+    outPoint: solved.onB,
+    arc: { center: solved.center, r: rho, through },
+  };
+}
+
+function boundsOf(contour: Contour): ResolvedShape['bounds'] {
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  const include = (x: number, y: number): void => {
+    if (x < left) left = x;
+    if (x > right) right = x;
+    if (y < top) top = y;
+    if (y > bottom) bottom = y;
+  };
+  for (const s of contour.segments) {
+    include(s.x0, s.y0);
+    include(s.x1, s.y1);
+    if (s.type !== 'arc') continue;
+    for (let q = 0; q < 4; q++) {
+      const a = (q * Math.PI) / 2;
+      if (angleInArc(a, s.start, s.end, s.anticlockwise)) {
+        include(s.cx + s.r * Math.cos(a), s.cy + s.r * Math.sin(a));
+      }
+    }
+  }
+  if (!Number.isFinite(left)) return { left: 0, top: 0, right: 0, bottom: 0 };
+  return { left, top, right, bottom };
+}
+
+function angleInArc(a: number, start: number, end: number, anticlockwise: boolean): boolean {
+  const TAU = Math.PI * 2;
+  const norm = (x: number): number => ((x % TAU) + TAU) % TAU;
+  return anticlockwise
+    ? norm(start - a) <= norm(start - end)
+    : norm(a - start) <= norm(end - start);
+}
+
+export function signedArea(contour: Contour): number {
+  let area = 0;
+  for (const s of contour.segments) {
+    if (s.type === 'line') {
+      area += cross({ x: s.x0, y: s.y0 }, { x: s.x1, y: s.y1 }) / 2;
+    } else {
+      area += cross({ x: s.x0, y: s.y0 }, { x: s.x1, y: s.y1 }) / 2;
+      const sweep = arcSweep(s.start, s.end, s.anticlockwise);
+      area += (s.r * s.r * (sweep - Math.sin(sweep))) / 2;
+    }
+  }
+  return area;
+}

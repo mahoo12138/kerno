@@ -29,10 +29,10 @@ export const lightTheme: Theme = {
         disabled: 'rgba(0, 0, 0, 0.36)',
       },
       control: {
-        default: 'rgba(255, 255, 255, 0.7)',
-        hover: 'rgba(249, 249, 249, 0.5)',
-        active: 'rgba(249, 249, 249, 0.3)',
-        disabled: 'rgba(249, 249, 249, 0.3)',
+        default: 'rgba(0, 0, 0, 0.2)',
+        hover: 'rgba(0, 0, 0, 0.2)',
+        active: 'rgba(0, 0, 0, 0.4)',
+        disabled: 'rgba(0, 0, 0, 0.1)',
       },
       subtle: {
         default: 'transparent',

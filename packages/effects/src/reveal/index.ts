@@ -290,6 +290,7 @@ export class RevealController implements ReactiveController {
   readonly host: ReactiveControllerHost & HTMLElement;
   readonly #onInvalidate: () => void;
   readonly #isVisible?: () => boolean;
+  readonly #getBoundsTarget?: () => HTMLElement | null;
   #enabled = false;
   #point: PointerPoint | null = null;
   #press: PressTimeline | null = null;
@@ -300,11 +301,17 @@ export class RevealController implements ReactiveController {
     host: ReactiveControllerHost & HTMLElement,
     onInvalidate: () => void,
     isVisible?: () => boolean,
+    getBoundsTarget?: () => HTMLElement | null,
   ) {
     this.host = host;
     this.#onInvalidate = onInvalidate;
     this.#isVisible = isVisible;
+    this.#getBoundsTarget = getBoundsTarget;
     host.addController(this);
+  }
+
+  #boundsEl(): HTMLElement {
+    return this.#getBoundsTarget?.() ?? this.host;
   }
 
   get enabled(): boolean {
@@ -345,7 +352,7 @@ export class RevealController implements ReactiveController {
       }
       return;
     }
-    const rect = this.host.getBoundingClientRect();
+    const rect = this.#boundsEl().getBoundingClientRect();
     const inside = point.x >= 0 && point.y >= 0 && point.x <= rect.width && point.y <= rect.height;
     this.#point = { x: point.x, y: point.y, inside };
     this.#onInvalidate();
@@ -418,7 +425,7 @@ export class RevealController implements ReactiveController {
     }
     const params = this.#getParams();
     const maxDim = Math.max(state.width, state.height);
-    const lightRadius = Math.max(1, params.size ?? maxDim * DEFAULT_RELATIVE_RADIUS_FACTOR);
+    const lightRadius = Math.max(36, params.size ?? maxDim * DEFAULT_RELATIVE_RADIUS_FACTOR);
 
     ctx.save();
 
@@ -500,14 +507,15 @@ export class RevealController implements ReactiveController {
   /** @internal */
   _updateFromClientPoint(clientX: number, clientY: number): void {
     if (this.#isVisible && !this.#isVisible()) return;
-    const rect = this.host.getBoundingClientRect();
+    const rect = this.#boundsEl().getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
     const { size } = this.#getParams();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
 
-    // Matches Axiom `surfaceLayer.ts`: reach is `Math.max(width, height)` in relative mode.
-    const range = size ?? Math.max(rect.width, rect.height);
+    // Matches Axiom `surfaceLayer.ts`: reach is `Math.max(width, height)` in relative mode
+    // (floored at 48px so small controls like checkboxes and switches receive proximity border glow).
+    const range = size ?? Math.max(48, rect.width, rect.height);
     const inRange =
       x >= -range && y >= -range && x <= rect.width + range && y <= rect.height + range;
     if (!inRange) {
@@ -541,7 +549,7 @@ export class RevealController implements ReactiveController {
 
   #onHostPointerDown = (event: PointerEvent): void => {
     if (event.button !== 0) return;
-    const rect = this.host.getBoundingClientRect();
+    const rect = this.#boundsEl().getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     if (event.pointerType !== 'keyboard') {
@@ -556,7 +564,7 @@ export class RevealController implements ReactiveController {
 
   #onHostPointerUp = (event: PointerEvent): void => {
     if (!this.#press || !this.#press.pressed || this.#press.released) return;
-    const rect = this.host.getBoundingClientRect();
+    const rect = this.#boundsEl().getBoundingClientRect();
     this.releasePress(event.clientX - rect.left, event.clientY - rect.top, event.pointerType);
   };
 

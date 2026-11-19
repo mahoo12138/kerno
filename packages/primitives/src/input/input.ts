@@ -172,7 +172,12 @@ export class KInput extends FormAssociatedElement {
     this.#syncActionButtons();
     this.#syncFormAndValidity();
 
-    if (changed.has('shape') || changed.has('size')) {
+    if (
+      changed.has('shape') ||
+      changed.has('size') ||
+      changed.has('disabled') ||
+      changed.has('formDisabled')
+    ) {
       this.#shapeOutline.sync();
     }
   }

@@ -10,12 +10,17 @@ import { token } from '@kerno/tokens';
  * --k-switch-track-bg
  * --k-switch-track-checked-bg
  * --k-switch-thumb-bg
+ *
+ * Styled after authentic Windows 10 (MDL2 / Fluent 1) ToggleSwitch:
+ * - Unchecked: transparent track, crisp 2px high-contrast border, matching solid thumb
+ * - Checked: solid Accent Blue track, transparent border, pure white thumb
  */
 export const switchStyles = css`
   :host {
-    --_width: 40px;
+    --_width: 44px;
     --_height: 20px;
-    --_thumb: 14px;
+    --_thumb: 10px;
+    --_radius: ${token('radius.full')};
     --_font-size: ${token('font.size.sm')};
 
     display: inline-flex;
@@ -27,17 +32,23 @@ export const switchStyles = css`
     display: none;
   }
 
+  :host([shape='chamfer']),
+  :host([shape='scallop']),
+  :host([shape='notch']) {
+    --_radius: 5px;
+  }
+
   :host([size='sm']) {
-    --_width: 32px;
+    --_width: 36px;
     --_height: 16px;
-    --_thumb: 10px;
+    --_thumb: 8px;
     --_font-size: ${token('font.size.xs')};
   }
 
   :host([size='lg']) {
-    --_width: 48px;
+    --_width: 52px;
     --_height: 24px;
-    --_thumb: 18px;
+    --_thumb: 14px;
     --_font-size: ${token('font.size.md')};
   }
 
@@ -66,18 +77,60 @@ export const switchStyles = css`
     align-items: center;
     width: var(--k-switch-width, var(--_width));
     height: var(--k-switch-height, var(--_height));
-    padding: 2px;
-    border-radius: ${token('radius.full')};
-    border: ${token('control.borderWidth')} solid ${token('color.stroke.strong')};
-    background: var(--k-switch-track-bg, ${token('color.control.default')});
+    padding: 3px;
+    border-radius: var(--_radius);
+    border: 2px solid ${token('color.fg.secondary')};
+    background: var(--k-switch-track-bg, transparent);
     flex-shrink: 0;
     transition:
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
       border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
+  :host([shape='chamfer']) .track,
+  :host([shape='scallop']) .track,
+  :host([shape='notch']) .track {
+    border-color: transparent;
+  }
+
+  .shape-stroke {
+    position: absolute;
+    inset: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    pointer-events: none;
+    overflow: visible;
+    fill: none;
+    stroke: ${token('color.fg.secondary')};
+    stroke-width: 2px;
+    transition: stroke ${token('motion.duration.fast')} ${token('motion.easing.standard')};
+  }
+
+  :host([checked]) .shape-stroke {
+    stroke: transparent;
+  }
+
   .base:hover:not(.disabled) .track {
-    background: ${token('color.control.hover')};
+    border-color: ${token('color.fg.default')};
+  }
+
+  :host([shape='chamfer']) .base:hover:not(.disabled) .track,
+  :host([shape='scallop']) .base:hover:not(.disabled) .track,
+  :host([shape='notch']) .base:hover:not(.disabled) .track {
+    border-color: transparent;
+  }
+
+  .base:hover:not(.disabled) .shape-stroke {
+    stroke: ${token('color.fg.default')};
+  }
+
+  .base:active:not(.disabled) .track {
+    background: ${token('color.control.active')};
+    border-color: transparent;
+  }
+
+  .base:active:not(.disabled) .shape-stroke {
+    stroke: transparent;
   }
 
   :host([checked]) .track {
@@ -87,6 +140,15 @@ export const switchStyles = css`
 
   :host([checked]) .base:hover:not(.disabled) .track {
     background: ${token('color.accent.hover')};
+    border-color: transparent;
+  }
+
+  :host([checked]) .base:hover:not(.disabled) .shape-stroke {
+    stroke: transparent;
+  }
+
+  :host([checked]) .base:active:not(.disabled) .track {
+    background: ${token('color.accent.active')};
   }
 
   :host([data-user-invalid]) .track {
@@ -100,8 +162,8 @@ export const switchStyles = css`
   }
 
   .track:disabled {
-    background: ${token('color.control.disabled')};
-    border-color: ${token('color.stroke.default')};
+    background: transparent;
+    border-color: ${token('color.fg.disabled')};
   }
 
   :host([checked]) .track:disabled {
@@ -110,20 +172,27 @@ export const switchStyles = css`
   }
 
   .thumb {
+    position: relative;
+    z-index: 2;
     width: var(--k-switch-thumb-size, var(--_thumb));
     height: var(--k-switch-thumb-size, var(--_thumb));
-    border-radius: ${token('radius.full')};
+    border-radius: var(--_radius);
     background: var(--k-switch-thumb-bg, ${token('color.fg.secondary')});
     transform: translateX(0);
     transition:
-      transform ${token('motion.duration.fast')} ${token('motion.easing.decelerate')},
+      transform 160ms cubic-bezier(0.1, 0.9, 0.2, 1),
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
-  :host([checked]) .thumb {
+  .base:hover:not(.disabled) .thumb {
+    background: var(--k-switch-thumb-bg, ${token('color.fg.default')});
+  }
+
+  :host([checked]) .thumb,
+  :host([checked]) .base:hover:not(.disabled) .thumb {
     background: var(--k-switch-thumb-bg, ${token('color.accent.fg')});
     transform: translateX(
-      calc(var(--k-switch-width, var(--_width)) - var(--k-switch-thumb-size, var(--_thumb)) - 6px)
+      calc(var(--k-switch-width, var(--_width)) - var(--k-switch-thumb-size, var(--_thumb)) - 10px)
     );
   }
 

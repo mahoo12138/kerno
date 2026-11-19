@@ -1,10 +1,22 @@
 /**
  * Shape geometry engine.
  *
- * Generates unified paths for four corner families (`rounded`, `chamfer`,
- * `scallop`, `notch`) across both CSS (`clip-path: path(...)`, SVG `<path>`)
- * and Canvas 2D (`Path2D` / `CanvasRenderingContext2D`).
+ * Unifies the four corner families (`rounded`, `chamfer`, `scallop`, `notch`)
+ * with the full `@ax-design/shape` parametric contour solver (corner shoulder
+ * fillets, corner shifts, side edge features `flat | arc | rect | triangle |
+ * trapezoid | cusp`, geometric `borderInner` rings, and 3D homography).
  */
+import { isServer } from '@kerno/core';
+import { contourToSvgPath, traceContour } from './emit.js';
+import type {
+  EdgeKind,
+  EdgeSpec,
+  ParametricCornerShape,
+  ParametricCornerSpec,
+  ParametricShapeSpec,
+  Quad,
+} from './parametric-types.js';
+import { resolveShape } from './resolve.js';
 
 export type CornerKind = 'rounded' | 'chamfer' | 'scallop' | 'notch';
 
@@ -19,9 +31,25 @@ export function isCornerKind(value: unknown): value is CornerKind {
   return typeof value === 'string' && (CORNER_KINDS as readonly string[]).includes(value);
 }
 
+const EDGE_KINDS: readonly EdgeKind[] = [
+  'flat',
+  'arc',
+  'rect',
+  'triangle',
+  'trapezoid',
+  'cusp',
+] as const;
+
+export function isEdgeKind(value: unknown): value is EdgeKind {
+  return typeof value === 'string' && (EDGE_KINDS as readonly string[]).includes(value);
+}
+
 export interface CornerSpec {
   readonly kind: CornerKind;
   readonly radius: number;
+  readonly shiftX?: number;
+  readonly shiftY?: number;
+  readonly shoulderRadius?: number;
 }
 
 export interface ShapeSpec {
@@ -29,6 +57,7 @@ export interface ShapeSpec {
   readonly topRight: CornerSpec;
   readonly bottomRight: CornerSpec;
   readonly bottomLeft: CornerSpec;
+  readonly edges?: Quad<EdgeSpec>;
 }
 
 export type CornerTuple<T> = readonly [topLeft: T, topRight: T, bottomRight: T, bottomLeft: T];
@@ -41,10 +70,35 @@ export interface ShapeInput {
    * 1–4 numbers (e.g. `"8"` or `"12 4"`), or a 4-tuple.
    */
   radius?: number | string | CornerTuple<number>;
+  shoulderRadius?: number;
   topLeft?: Partial<CornerSpec>;
   topRight?: Partial<CornerSpec>;
   bottomRight?: Partial<CornerSpec>;
   bottomLeft?: Partial<CornerSpec>;
+  edges?: Partial<Record<'top' | 'right' | 'bottom' | 'left', Partial<EdgeSpec>>> | Quad<EdgeSpec>;
+}
+
+const FLAT_EDGE: EdgeSpec = {
+  kind: 'flat',
+  depth: 0,
+  span: 0,
+  at: 0.5,
+  ratio: 0.5,
+  tipRadius: 0,
+  shoulderRadius: 0,
+};
+
+function normalizeEdge(input?: Partial<EdgeSpec>): EdgeSpec {
+  if (!input || !input.kind || input.kind === 'flat') return FLAT_EDGE;
+  return {
+    kind: isEdgeKind(input.kind) ? input.kind : 'flat',
+    depth: Number(input.depth) || 0,
+    span: Math.max(0, Number(input.span) || 0),
+    at: input.at !== undefined ? Math.min(1, Math.max(0, Number(input.at))) : 0.5,
+    ratio: input.ratio !== undefined ? Math.min(1, Math.max(0, Number(input.ratio))) : 0.5,
+    tipRadius: Math.max(0, Number(input.tipRadius) || 0),
+    shoulderRadius: Math.max(0, Number(input.shoulderRadius) || 0),
+  };
 }
 
 /**
@@ -107,33 +161,77 @@ export function normalizeShape(input: ShapeInput | ShapeSpec = {}): ShapeSpec {
       ? [src.kind ?? 'rounded', src.kind ?? 'rounded', src.kind ?? 'rounded', src.kind ?? 'rounded']
       : src.kind;
   const radii = parseRadius(src.radius, 0);
+  const baseShoulder = Math.max(0, src.shoulderRadius ?? 0);
+
+  let edges: Quad<EdgeSpec> | undefined;
+  if (src.edges) {
+    if (Array.isArray(src.edges)) {
+      edges = [
+        normalizeEdge(src.edges[0]),
+        normalizeEdge(src.edges[1]),
+        normalizeEdge(src.edges[2]),
+        normalizeEdge(src.edges[3]),
+      ];
+    } else {
+      const e = src.edges as Partial<
+        Record<'top' | 'right' | 'bottom' | 'left', Partial<EdgeSpec>>
+      >;
+      edges = [
+        normalizeEdge(e.top),
+        normalizeEdge(e.right),
+        normalizeEdge(e.bottom),
+        normalizeEdge(e.left),
+      ];
+    }
+  }
+
+  const makeCorner = (
+    c: Partial<CornerSpec> | undefined,
+    fallbackKind: CornerKind,
+    fallbackRadius: number,
+  ): CornerSpec => {
+    const shiftX = c?.shiftX ?? 0;
+    const shiftY = c?.shiftY ?? 0;
+    const shoulderRadius = c?.shoulderRadius ?? baseShoulder;
+    return {
+      kind: c?.kind ?? fallbackKind,
+      radius: Math.max(0, c?.radius ?? fallbackRadius),
+      ...(shiftX !== 0 ? { shiftX } : {}),
+      ...(shiftY !== 0 ? { shiftY } : {}),
+      ...(shoulderRadius > 0 ? { shoulderRadius } : {}),
+    };
+  };
 
   return {
-    topLeft: {
-      kind: src.topLeft?.kind ?? kinds[0],
-      radius: Math.max(0, src.topLeft?.radius ?? radii[0]),
-    },
-    topRight: {
-      kind: src.topRight?.kind ?? kinds[1],
-      radius: Math.max(0, src.topRight?.radius ?? radii[1]),
-    },
-    bottomRight: {
-      kind: src.bottomRight?.kind ?? kinds[2],
-      radius: Math.max(0, src.bottomRight?.radius ?? radii[2]),
-    },
-    bottomLeft: {
-      kind: src.bottomLeft?.kind ?? kinds[3],
-      radius: Math.max(0, src.bottomLeft?.radius ?? radii[3]),
-    },
+    topLeft: makeCorner(src.topLeft, kinds[0], radii[0]),
+    topRight: makeCorner(src.topRight, kinds[1], radii[1]),
+    bottomRight: makeCorner(src.bottomRight, kinds[2], radii[2]),
+    bottomLeft: makeCorner(src.bottomLeft, kinds[3], radii[3]),
+    ...(edges ? { edges } : {}),
   };
+}
+
+function hasParametricFeatures(s: ShapeSpec): boolean {
+  const corners = [s.topLeft, s.topRight, s.bottomRight, s.bottomLeft];
+  for (const c of corners) {
+    if ((c.shiftX && c.shiftX !== 0) || (c.shiftY && c.shiftY !== 0)) return true;
+    if (c.shoulderRadius && c.shoulderRadius > 0 && c.kind !== 'rounded') return true;
+  }
+  if (s.edges) {
+    for (const e of s.edges) {
+      if (e.kind !== 'flat' && e.depth !== 0 && e.span > 0) return true;
+    }
+  }
+  return false;
 }
 
 /**
  * True when every corner with `radius > 0` uses standard `'rounded'` geometry
- * (meaning native CSS `border-radius` & `box-shadow` suffice).
+ * and no parametric corner shifts or edge features are active.
  */
 export function isRoundedOnly(input: ShapeInput | ShapeSpec): boolean {
   const s = normalizeShape(input);
+  if (hasParametricFeatures(s)) return false;
   return (
     (s.topLeft.radius === 0 || s.topLeft.kind === 'rounded') &&
     (s.topRight.radius === 0 || s.topRight.kind === 'rounded') &&
@@ -186,10 +284,168 @@ export function clampRadii(
   );
 
   return {
-    topLeft: { kind: s.topLeft.kind, radius: tl * scale },
-    topRight: { kind: s.topRight.kind, radius: tr * scale },
-    bottomRight: { kind: s.bottomRight.kind, radius: br * scale },
-    bottomLeft: { kind: s.bottomLeft.kind, radius: bl * scale },
+    topLeft: { ...s.topLeft, radius: tl * scale },
+    topRight: { ...s.topRight, radius: tr * scale },
+    bottomRight: { ...s.bottomRight, radius: br * scale },
+    bottomLeft: { ...s.bottomLeft, radius: bl * scale },
+    ...(s.edges ? { edges: s.edges } : {}),
+  };
+}
+
+function toParametricCornerShape(kind: CornerKind): ParametricCornerShape {
+  switch (kind) {
+    case 'rounded':
+      return 'round';
+    case 'chamfer':
+      return 'bevel';
+    case 'scallop':
+      return 'scoop';
+    case 'notch':
+      return 'notch';
+  }
+}
+
+export function toParametricSpec(
+  width: number,
+  height: number,
+  input: ShapeInput | ShapeSpec,
+  inset = 0,
+): ParametricShapeSpec {
+  const s = clampRadii(width, height, input, inset);
+  const w = Math.max(0, width - inset * 2);
+  const h = Math.max(0, height - inset * 2);
+  const mapCorner = (c: CornerSpec): ParametricCornerSpec => ({
+    radius: c.radius,
+    shape: toParametricCornerShape(c.kind),
+    shiftX: c.shiftX ?? 0,
+    shiftY: c.shiftY ?? 0,
+    shoulderRadius: c.shoulderRadius ?? 0,
+  });
+  return {
+    width: w,
+    height: h,
+    corners: [
+      mapCorner(s.topLeft),
+      mapCorner(s.topRight),
+      mapCorner(s.bottomRight),
+      mapCorner(s.bottomLeft),
+    ],
+    edges: s.edges ?? [FLAT_EDGE, FLAT_EDGE, FLAT_EDGE, FLAT_EDGE],
+  };
+}
+
+function parseLengthOrPct(raw: string, basis: number, fallback = 0): number {
+  const t = raw.trim();
+  if (!t || t === 'auto') return fallback;
+  if (t.endsWith('%')) {
+    const p = Number.parseFloat(t);
+    return Number.isFinite(p) ? (p / 100) * basis : fallback;
+  }
+  const n = Number.parseFloat(t);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+/**
+ * Reads optional `--k-corner-*` and `--k-edge-*` CSS custom properties from
+ * `el` and merges them onto `baseShape` (supporting full `@ax-design/shape`
+ * edge features, corner shoulder radii, and corner shifts).
+ */
+export function readElementShapeCss(
+  el: Element,
+  width: number,
+  height: number,
+  baseShape: ShapeInput | ShapeSpec,
+): ShapeSpec {
+  const base = normalizeShape(baseShape);
+  if (isServer || typeof getComputedStyle === 'undefined') return base;
+  const style = getComputedStyle(el);
+  const get = (name: string): string => style.getPropertyValue(name).trim();
+
+  const genCornerShoulder = parseLengthOrPct(get('--k-corner-shoulder-radius'), 0, 0);
+  const cornerNames = ['top-left', 'top-right', 'bottom-right', 'bottom-left'] as const;
+  const cornerBase = [base.topLeft, base.topRight, base.bottomRight, base.bottomLeft] as const;
+
+  const corners = cornerNames.map((name, i) => {
+    const c = cornerBase[i]!;
+    const shRaw = get(`--k-corner-${name}-shoulder-radius`);
+    const shoulderRadius =
+      shRaw && shRaw !== 'auto'
+        ? parseLengthOrPct(shRaw, 0, c.shoulderRadius ?? genCornerShoulder)
+        : c.shoulderRadius || genCornerShoulder;
+    const shiftX = parseLengthOrPct(get(`--k-corner-${name}-shift-x`), width, c.shiftX ?? 0);
+    const shiftY = parseLengthOrPct(get(`--k-corner-${name}-shift-y`), height, c.shiftY ?? 0);
+    return { ...c, shoulderRadius, shiftX, shiftY };
+  });
+
+  const genKindRaw = get('--k-edge-kind');
+  const genKind: EdgeKind = isEdgeKind(genKindRaw) ? genKindRaw : 'flat';
+  const genDepth = parseLengthOrPct(get('--k-edge-depth'), 0, 0);
+  const genSpanRaw = get('--k-edge-span') || '33%';
+  const genAtRaw = get('--k-edge-at') || '50%';
+  const genRatioRaw = get('--k-edge-ratio');
+  const genRatio = genRatioRaw ? Number.parseFloat(genRatioRaw) : 0.5;
+  const genTip = parseLengthOrPct(get('--k-edge-tip-radius'), 0, 0);
+  const genShoulder = parseLengthOrPct(get('--k-edge-shoulder-radius'), 0, 0);
+
+  const sideNames = ['top', 'right', 'bottom', 'left'] as const;
+  let hasAnyEdge = genKind !== 'flat' || Boolean(base.edges);
+  const edges = sideNames.map((side, i) => {
+    const len = i % 2 === 0 ? width : height;
+    const prevEdge = base.edges?.[i];
+    const kindRaw = get(`--k-edge-${side}-kind`);
+    const kind: EdgeKind =
+      kindRaw && kindRaw !== 'auto' && isEdgeKind(kindRaw)
+        ? kindRaw
+        : prevEdge?.kind && prevEdge.kind !== 'flat'
+          ? prevEdge.kind
+          : genKind;
+    if (kind !== 'flat') hasAnyEdge = true;
+
+    const depthRaw = get(`--k-edge-${side}-depth`);
+    const depth =
+      depthRaw && depthRaw !== 'auto'
+        ? parseLengthOrPct(depthRaw, len, prevEdge?.depth ?? genDepth)
+        : (prevEdge?.depth ?? genDepth);
+
+    const spanRaw = get(`--k-edge-${side}-span`);
+    const span =
+      spanRaw && spanRaw !== 'auto'
+        ? parseLengthOrPct(spanRaw, len, prevEdge?.span ?? parseLengthOrPct(genSpanRaw, len, 0))
+        : prevEdge?.span || parseLengthOrPct(genSpanRaw, len, 0);
+
+    const atRaw = get(`--k-edge-${side}-at`);
+    const atVal =
+      atRaw && atRaw !== 'auto'
+        ? parseLengthOrPct(atRaw, 1, prevEdge?.at ?? parseLengthOrPct(genAtRaw, 1, 0.5))
+        : (prevEdge?.at ?? parseLengthOrPct(genAtRaw, 1, 0.5));
+
+    const ratioRaw = get(`--k-edge-${side}-ratio`);
+    const ratio =
+      ratioRaw && ratioRaw !== 'auto' && Number.isFinite(Number.parseFloat(ratioRaw))
+        ? Number.parseFloat(ratioRaw)
+        : (prevEdge?.ratio ?? (Number.isFinite(genRatio) ? genRatio : 0.5));
+
+    const tipRaw = get(`--k-edge-${side}-tip-radius`);
+    const tipRadius =
+      tipRaw && tipRaw !== 'auto'
+        ? parseLengthOrPct(tipRaw, len, prevEdge?.tipRadius ?? genTip)
+        : (prevEdge?.tipRadius ?? genTip);
+
+    const shRaw = get(`--k-edge-${side}-shoulder-radius`);
+    const shoulderRadius =
+      shRaw && shRaw !== 'auto'
+        ? parseLengthOrPct(shRaw, len, prevEdge?.shoulderRadius ?? genShoulder)
+        : (prevEdge?.shoulderRadius ?? genShoulder);
+
+    return normalizeEdge({ kind, depth, span, at: atVal, ratio, tipRadius, shoulderRadius });
+  }) as Quad<EdgeSpec>;
+
+  return {
+    topLeft: corners[0]!,
+    topRight: corners[1]!,
+    bottomRight: corners[2]!,
+    bottomLeft: corners[3]!,
+    ...(hasAnyEdge ? { edges } : {}),
   };
 }
 
@@ -197,6 +453,27 @@ const fmt = (n: number): string => {
   const rounded = Math.round(n * 100) / 100;
   return Object.is(rounded, -0) ? '0' : String(rounded);
 };
+
+function offsetContour(width: number, height: number, spec: ShapeSpec, inset: number) {
+  const pSpec = toParametricSpec(width, height, spec, inset);
+  const resolved = resolveShape(pSpec);
+  if (inset === 0) return resolved.outline;
+  return {
+    segments: resolved.outline.segments.map((s) =>
+      s.type === 'line'
+        ? { ...s, x0: s.x0 + inset, y0: s.y0 + inset, x1: s.x1 + inset, y1: s.y1 + inset }
+        : {
+            ...s,
+            cx: s.cx + inset,
+            cy: s.cy + inset,
+            x0: s.x0 + inset,
+            y0: s.y0 + inset,
+            x1: s.x1 + inset,
+            y1: s.y1 + inset,
+          },
+    ),
+  };
+}
 
 /**
  * Generates an SVG path data string (`M ... Z`) for a shape of `(width × height)`
@@ -212,7 +489,12 @@ export function toSvgPath(
   const h = Math.max(0, height);
   if (w <= inset * 2 || h <= inset * 2) return '';
 
-  const spec = clampRadii(w, h, input, inset);
+  const normalized = normalizeShape(input);
+  if (hasParametricFeatures(normalized)) {
+    return contourToSvgPath(offsetContour(w, h, normalized, inset), 2);
+  }
+
+  const spec = clampRadii(w, h, normalized, inset);
   const x0 = inset;
   const y0 = inset;
   const x1 = w - inset;
@@ -225,7 +507,6 @@ export function toSvgPath(
 
   const cmds: string[] = [`M ${fmt(x0 + tl.radius)} ${fmt(y0)}`];
 
-  // Top edge -> Top-Right corner
   cmds.push(`L ${fmt(x1 - tr.radius)} ${fmt(y0)}`);
   if (tr.radius > 0) {
     cmds.push(
@@ -233,7 +514,6 @@ export function toSvgPath(
     );
   }
 
-  // Right edge -> Bottom-Right corner
   cmds.push(`L ${fmt(x1)} ${fmt(y1 - br.radius)}`);
   if (br.radius > 0) {
     cmds.push(
@@ -241,7 +521,6 @@ export function toSvgPath(
     );
   }
 
-  // Bottom edge -> Bottom-Left corner
   cmds.push(`L ${fmt(x0 + bl.radius)} ${fmt(y1)}`);
   if (bl.radius > 0) {
     cmds.push(
@@ -249,7 +528,6 @@ export function toSvgPath(
     );
   }
 
-  // Left edge -> Top-Left corner
   cmds.push(`L ${fmt(x0)} ${fmt(y0 + tl.radius)}`);
   if (tl.radius > 0) {
     cmds.push(
@@ -297,8 +575,7 @@ export function toClipPath(
 /**
  * Generates a CSS `mask-image: url("data:image/svg+xml,...")` value for
  * `(width × height)`. Used on Chromium to clip `backdrop-filter` layers to
- * non-rectangular outlines (Chromium ignores `clip-path` for `backdrop-filter`
- * whenever an ancestor clips overflow with `border-radius`).
+ * non-rectangular outlines.
  */
 export function toMaskImage(
   width: number,
@@ -328,7 +605,13 @@ export function traceCanvasPath(
   const h = Math.max(0, height);
   if (w <= inset * 2 || h <= inset * 2) return;
 
-  const spec = clampRadii(w, h, input, inset);
+  const normalized = normalizeShape(input);
+  if (hasParametricFeatures(normalized)) {
+    traceContour(target, offsetContour(w, h, normalized, inset));
+    return;
+  }
+
+  const spec = clampRadii(w, h, normalized, inset);
   const x0 = inset;
   const y0 = inset;
   const x1 = w - inset;
@@ -343,7 +626,6 @@ export function traceCanvasPath(
 
   target.moveTo(x0 + tl.radius, y0);
 
-  // Top-Right corner (box corner at x1, y0)
   target.lineTo(x1 - tr.radius, y0);
   if (tr.radius > 0) {
     traceCorner(
@@ -363,7 +645,6 @@ export function traceCanvasPath(
     );
   }
 
-  // Bottom-Right corner (box corner at x1, y1)
   target.lineTo(x1, y1 - br.radius);
   if (br.radius > 0) {
     traceCorner(
@@ -383,7 +664,6 @@ export function traceCanvasPath(
     );
   }
 
-  // Bottom-Left corner (box corner at x0, y1)
   target.lineTo(x0 + bl.radius, y1);
   if (bl.radius > 0) {
     traceCorner(
@@ -403,7 +683,6 @@ export function traceCanvasPath(
     );
   }
 
-  // Top-Left corner (box corner at x0, y0)
   target.lineTo(x0, y0 + tl.radius);
   if (tl.radius > 0) {
     traceCorner(
@@ -470,4 +749,46 @@ export function createPath2D(
   return path;
 }
 
+export {
+  borderInner,
+  innerToSvgPath,
+  projectContour,
+  traceInner,
+  type BorderOptions,
+  type BorderResult,
+  type RingSink,
+} from './border.js';
+export { contourToSvgPath, formatNumber, traceContour, type PathSink } from './emit.js';
+export {
+  IDENTITY,
+  applyHomography,
+  invertHomography,
+  isIdentity,
+  multiplyMatrix,
+  planeHomography,
+  scaleAt,
+  tiltHomography,
+  tiltMatrix,
+  type Homography,
+  type Matrix4,
+  type TiltParams,
+} from './homography.js';
 export { ShapeOutlineController, type ShapeOutlineConfig } from './outline.js';
+export type {
+  ArcSegment,
+  Clamp,
+  ClampKind,
+  Contour,
+  EdgeKind,
+  EdgeSpec,
+  LineSegment,
+  ParametricCornerShape,
+  ParametricCornerSpec,
+  ParametricShapeSpec,
+  Point,
+  Quad,
+  ResolvedShape,
+  Segment,
+  Vertex,
+} from './parametric-types.js';
+export { resolveShape, signedArea, type ResolveOptions } from './resolve.js';

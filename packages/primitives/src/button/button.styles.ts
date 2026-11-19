@@ -9,21 +9,24 @@ import { token } from '@kerno/tokens';
  * --k-button-bg, --k-button-bg-hover, --k-button-bg-active,
  * --k-button-fg, --k-button-border-color
  *
- * Variants and sizes only assign private `--_*` values; public variables
- * always win.
+ * Styled after authentic Windows 10 (MDL2 / Fluent 1) buttons:
+ * - Solid fill with NO visible border at rest (`2px solid transparent`)
+ * - Crisp `2px` high-contrast border frame on `:hover`
+ * - Decisive fill compression on `:active` with no water ripple
  */
 export const buttonStyles = css`
   :host {
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: ${token('radius.md')};
+    --_radius: 0px;
     --_bg: ${token('color.control.default')};
     --_bg-hover: ${token('color.control.hover')};
     --_bg-active: ${token('color.control.active')};
     --_fg: ${token('color.fg.default')};
-    --_fg-active: ${token('color.fg.secondary')};
-    --_border-color: ${token('color.stroke.control')};
+    --_fg-active: ${token('color.fg.default')};
+    --_border-color: transparent;
+    --_border-hover: ${token('color.stroke.strong')};
 
     display: inline-flex;
     vertical-align: middle;
@@ -59,6 +62,7 @@ export const buttonStyles = css`
     --_fg: ${token('color.accent.fg')};
     --_fg-active: ${token('color.accent.fg')};
     --_border-color: transparent;
+    --_border-hover: color-mix(in srgb, ${token('color.fg.default')} 48%, transparent);
   }
 
   :host([variant='subtle']) {
@@ -66,6 +70,7 @@ export const buttonStyles = css`
     --_bg-hover: ${token('color.subtle.hover')};
     --_bg-active: ${token('color.subtle.active')};
     --_border-color: transparent;
+    --_border-hover: transparent;
   }
 
   .base {
@@ -79,7 +84,7 @@ export const buttonStyles = css`
     gap: var(--k-button-gap, ${token('spacing.sm')});
     min-height: var(--k-button-height, var(--_height));
     padding-inline: var(--k-button-padding-x, var(--_padding-x));
-    border: ${token('control.borderWidth')} solid var(--k-button-border-color, var(--_border-color));
+    border: 2px solid var(--k-button-border-color, var(--_border-color));
     border-radius: var(--k-button-radius, var(--_radius));
     background: var(--k-button-bg, var(--_bg));
     color: var(--k-button-fg, var(--_fg));
@@ -93,6 +98,7 @@ export const buttonStyles = css`
     transition:
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
       border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
+      transform 80ms ${token('motion.easing.standard')},
       color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
@@ -104,32 +110,41 @@ export const buttonStyles = css`
 
   .shape-stroke {
     position: absolute;
-    inset: calc(-1 * ${token('control.borderWidth')});
-    width: calc(100% + 2 * ${token('control.borderWidth')});
-    height: calc(100% + 2 * ${token('control.borderWidth')});
+    inset: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
     pointer-events: none;
     overflow: visible;
     fill: none;
     stroke: var(--k-button-border-color, var(--_border-color));
-    stroke-width: ${token('control.borderWidth')};
+    stroke-width: 2px;
+    transition: stroke ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
-  .base:disabled .shape-stroke {
-    stroke: ${token('color.stroke.default')};
-  }
-
-  :host([variant='accent']) .base:disabled .shape-stroke,
-  :host([variant='subtle']) .base:disabled .shape-stroke {
-    stroke: transparent;
-  }
-
-  .base:hover {
+  .base:hover:not(:disabled) {
     background: var(--k-button-bg-hover, var(--_bg-hover));
+    border-color: var(--k-button-border-color, var(--_border-hover));
   }
 
-  .base:active {
+  :host([shape='chamfer']) .base:hover:not(:disabled),
+  :host([shape='scallop']) .base:hover:not(:disabled),
+  :host([shape='notch']) .base:hover:not(:disabled) {
+    border-color: transparent;
+  }
+
+  .base:hover:not(:disabled) .shape-stroke {
+    stroke: var(--k-button-border-color, var(--_border-hover));
+  }
+
+  .base:active:not(:disabled) {
     background: var(--k-button-bg-active, var(--_bg-active));
+    border-color: transparent;
     color: var(--k-button-fg, var(--_fg-active));
+    transform: scale(0.985);
+  }
+
+  .base:active:not(:disabled) .shape-stroke {
+    stroke: transparent;
   }
 
   .base:focus-visible {
@@ -142,7 +157,11 @@ export const buttonStyles = css`
     cursor: default;
     background: ${token('color.control.disabled')};
     color: ${token('color.fg.disabled')};
-    border-color: ${token('color.stroke.default')};
+    border-color: transparent;
+  }
+
+  .base:disabled .shape-stroke {
+    stroke: transparent;
   }
 
   :host([variant='accent']) .base:disabled {
@@ -156,9 +175,12 @@ export const buttonStyles = css`
     border-color: transparent;
   }
 
+  .label,
   .prefix,
   .suffix,
   .spinner {
+    position: relative;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
   }

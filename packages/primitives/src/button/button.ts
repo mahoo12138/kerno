@@ -85,7 +85,12 @@ export class KButton extends FormAssociatedElement {
     if (changed.has('loading')) {
       this.#syncLoading();
     }
-    if (changed.has('shape') || changed.has('size')) {
+    if (
+      changed.has('shape') ||
+      changed.has('size') ||
+      changed.has('disabled') ||
+      changed.has('formDisabled')
+    ) {
       this.#shapeOutline.sync();
     }
   }
