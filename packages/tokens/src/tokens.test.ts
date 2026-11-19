@@ -15,6 +15,7 @@ import {
 describe('token references', () => {
   it('maps paths to kebab-cased custom properties', () => {
     expect(tokenName('color.accent.default')).toBe('--k-color-accent-default');
+    expect(tokenName('color.accent.borderHover')).toBe('--k-color-accent-border-hover');
     expect(tokenName('font.lineHeight.normal')).toBe('--k-font-line-height-normal');
     expect(tokenName('elevation.2')).toBe('--k-elevation-2');
     expect(token('radius.md')).toBe('var(--k-radius-md)');

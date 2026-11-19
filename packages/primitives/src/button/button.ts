@@ -32,6 +32,7 @@ export type ButtonShape = CornerKind;
  * @cssprop --k-button-bg-active
  * @cssprop --k-button-fg
  * @cssprop --k-button-border-color
+ * @cssprop --k-button-border-hover
  */
 export class KButton extends FormAssociatedElement {
   static override styles = buttonStyles;

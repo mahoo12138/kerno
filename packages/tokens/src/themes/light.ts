@@ -12,9 +12,10 @@ export const lightTheme: Theme = {
         default: p.azure['600'],
         hover: p.azure['500'],
         active: p.azure['700'],
-        disabled: 'rgba(0, 0, 0, 0.14)',
+        borderHover: p.azure['800'],
+        disabled: 'rgba(42, 82, 217, 0.2)',
         fg: p.neutral['0'],
-        fgDisabled: 'rgba(0, 0, 0, 0.44)',
+        fgDisabled: 'rgba(29, 54, 135, 0.56)',
         text: p.azure['700'],
       },
       bg: {

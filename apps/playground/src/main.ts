@@ -37,10 +37,13 @@ const ocean = createTheme({
   tokens: {
     color: {
       accent: {
-        default: '#14b8a6',
-        hover: '#2dd4bf',
-        active: '#0d9488',
-        fg: '#042f2e',
+        default: '#0d9488',
+        hover: '#14b8a6',
+        active: '#0f766e',
+        borderHover: '#5eead4',
+        disabled: 'rgba(13, 148, 136, 0.28)',
+        fg: '#ffffff',
+        fgDisabled: 'rgba(255, 255, 255, 0.48)',
         text: '#5eead4',
       },
       bg: { canvas: '#0b1e24', layer: '#11292f', layerAlt: '#163239' },

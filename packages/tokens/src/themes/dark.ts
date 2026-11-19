@@ -9,12 +9,13 @@ export const darkTheme: Theme = {
     ...baseTokens,
     color: {
       accent: {
-        default: p.azure['400'],
-        hover: p.azure['300'],
-        active: p.azure['500'],
-        disabled: 'rgba(255, 255, 255, 0.16)',
-        fg: p.azure['950'],
-        fgDisabled: 'rgba(255, 255, 255, 0.53)',
+        default: p.azure['500'],
+        hover: p.azure['400'],
+        active: p.azure['600'],
+        borderHover: p.azure['200'],
+        disabled: 'rgba(61, 107, 245, 0.26)',
+        fg: p.neutral['0'],
+        fgDisabled: 'rgba(255, 255, 255, 0.45)',
         text: p.azure['300'],
       },
       bg: {

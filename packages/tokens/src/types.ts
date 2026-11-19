@@ -23,6 +23,8 @@ export interface ColorTokens {
     default: string;
     hover: string;
     active: string;
+    /** Chromatic hover border matching the accent hue (Fluent 1 AccentButton). */
+    borderHover: string;
     disabled: string;
     /** Foreground on top of an accent fill. */
     fg: string;

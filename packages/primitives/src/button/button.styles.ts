@@ -7,7 +7,7 @@ import { token } from '@kerno/tokens';
  * --k-button-height, --k-button-padding-x, --k-button-gap, --k-button-radius,
  * --k-button-font-size, --k-button-font-weight,
  * --k-button-bg, --k-button-bg-hover, --k-button-bg-active,
- * --k-button-fg, --k-button-border-color
+ * --k-button-fg, --k-button-border-color, --k-button-border-hover
  *
  * Styled after authentic Windows 10 (MDL2 / Fluent 1) buttons:
  * - Solid fill with NO visible border at rest (`2px solid transparent`)
@@ -62,7 +62,7 @@ export const buttonStyles = css`
     --_fg: ${token('color.accent.fg')};
     --_fg-active: ${token('color.accent.fg')};
     --_border-color: transparent;
-    --_border-hover: color-mix(in srgb, ${token('color.fg.default')} 48%, transparent);
+    --_border-hover: ${token('color.accent.borderHover')};
   }
 
   :host([variant='subtle']) {
@@ -123,7 +123,7 @@ export const buttonStyles = css`
 
   .base:hover:not(:disabled) {
     background: var(--k-button-bg-hover, var(--_bg-hover));
-    border-color: var(--k-button-border-color, var(--_border-hover));
+    border-color: var(--k-button-border-hover, var(--k-button-border-color, var(--_border-hover)));
   }
 
   :host([shape='chamfer']) .base:hover:not(:disabled),
@@ -133,7 +133,7 @@ export const buttonStyles = css`
   }
 
   .base:hover:not(:disabled) .shape-stroke {
-    stroke: var(--k-button-border-color, var(--_border-hover));
+    stroke: var(--k-button-border-hover, var(--k-button-border-color, var(--_border-hover)));
   }
 
   .base:active:not(:disabled) {

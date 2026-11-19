@@ -48,6 +48,24 @@ describe('<k-button>', () => {
     expect(getComputedStyle(base).borderTopLeftRadius).toBe('7px');
   });
 
+  it('uses chromatic accent hover border and allows --k-button-border-hover override', async () => {
+    document.head.insertAdjacentHTML(
+      'beforeend',
+      '<style id="t-hover">:root { --k-color-accent-default: rgb(13, 148, 136); --k-color-accent-hover: rgb(20, 184, 166); --k-color-accent-border-hover: rgb(94, 234, 212); }</style>',
+    );
+    const el = (await mount('<k-button variant="accent">Accent</k-button>')) as KButton;
+    const base = el.shadowRoot!.querySelector<HTMLButtonElement>('.base')!;
+    expect(getComputedStyle(base).borderTopColor).toBe('rgba(0, 0, 0, 0)');
+
+    await userEvent.hover(base);
+    expect(getComputedStyle(base).borderTopColor).toBe('rgb(94, 234, 212)');
+
+    el.style.setProperty('--k-button-border-hover', 'rgb(12, 34, 56)');
+    expect(getComputedStyle(base).borderTopColor).toBe('rgb(12, 34, 56)');
+    await userEvent.unhover(base);
+    document.getElementById('t-hover')!.remove();
+  });
+
   it('shows prefix/suffix wrappers only when slotted', async () => {
     const el = await mount('<k-button><span slot="prefix">★</span>Star</k-button>');
     const prefix = el.shadowRoot!.querySelector<HTMLElement>('.prefix')!;
