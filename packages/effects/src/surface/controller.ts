@@ -193,12 +193,59 @@ export class SurfaceController implements ReactiveController {
     const clipEl = cfg.clipTarget ?? this.host;
     const backdropEl = cfg.backdropTarget;
 
+    const rawWidths = cfg.getBorderWidths?.();
+    const baseStroke = Math.max(0, cfg.getStrokeWidth());
+    const borderWidths: Quad<number> = rawWidths
+      ? [
+          Math.max(0, rawWidths[0]),
+          Math.max(0, rawWidths[1]),
+          Math.max(0, rawWidths[2]),
+          Math.max(0, rawWidths[3]),
+        ]
+      : [baseStroke, baseStroke, baseStroke, baseStroke];
+    const strokeWidth = Math.max(...borderWidths);
+
+    // Resolve parametric shape bounds first so outward edge features (callout tails,
+    // folder tabs, outward arcs) expand the paint box of `.canvas` & `.backdrop`
+    // instead of being clipped at `(0..w, 0..h)`.
+    const resolved =
+      !roundedOnly || strokeWidth > 0
+        ? resolveShape(toParametricSpec(w, h, shape, 0), { borderWidths })
+        : null;
+    const paintLeft = resolved ? Math.floor(Math.min(0, resolved.bounds.left)) : 0;
+    const paintTop = resolved ? Math.floor(Math.min(0, resolved.bounds.top)) : 0;
+    const paintRight = resolved ? Math.ceil(Math.max(w, resolved.bounds.right)) : w;
+    const paintBottom = resolved ? Math.ceil(Math.max(h, resolved.bounds.bottom)) : h;
+    const paintW = Math.max(1, paintRight - paintLeft);
+    const paintH = Math.max(1, paintBottom - paintTop);
+    const hasOutward = paintLeft < 0 || paintTop < 0 || paintRight > w || paintBottom > h;
+
     // 1. Geometry clip, backdrop mask & border-radius sync (cached to avoid
     //    re-decoding SVG data URLs during 60fps Reveal hover repaints).
     const clipCss = roundedOnly ? '' : toClipPath(w, h, shape);
-    const geometryKey = `${w}|${h}|${acrylic ? 1 : 0}|${roundedOnly ? `${shape.topLeft.radius},${shape.topRight.radius},${shape.bottomRight.radius},${shape.bottomLeft.radius}` : clipCss}`;
+    const geometryKey = `${w}|${h}|${paintLeft},${paintTop},${paintW},${paintH}|${acrylic ? 1 : 0}|${roundedOnly ? `${shape.topLeft.radius},${shape.topRight.radius},${shape.bottomRight.radius},${shape.bottomLeft.radius}` : clipCss}`;
     if (geometryKey !== this.#lastGeometryKey) {
       this.#lastGeometryKey = geometryKey;
+      const syncBox = (el: HTMLElement): void => {
+        if (hasOutward) {
+          el.style.left = `${paintLeft}px`;
+          el.style.top = `${paintTop}px`;
+          el.style.right = 'auto';
+          el.style.bottom = 'auto';
+          el.style.width = `${paintW}px`;
+          el.style.height = `${paintH}px`;
+        } else {
+          el.style.left = '';
+          el.style.top = '';
+          el.style.right = '';
+          el.style.bottom = '';
+          el.style.width = '';
+          el.style.height = '';
+        }
+      };
+      syncBox(cfg.canvas);
+      if (backdropEl) syncBox(backdropEl);
+
       if (roundedOnly) {
         const radiusCss = `${shape.topLeft.radius}px ${shape.topRight.radius}px ${shape.bottomRight.radius}px ${shape.bottomLeft.radius}px`;
         clipEl.style.clipPath = '';
@@ -217,12 +264,20 @@ export class SurfaceController implements ReactiveController {
         if (backdropEl) {
           backdropEl.style.borderRadius = '0px';
           if (acrylic) {
-            if (shouldCutBackdropWithClipPath()) {
+            if (shouldCutBackdropWithClipPath() && !hasOutward) {
               backdropEl.style.maskImage = '';
               backdropEl.style.webkitMaskImage = '';
               backdropEl.style.clipPath = clipCss;
             } else {
-              const mask = toMaskImage(w, h, shape);
+              const mask = toMaskImage(
+                w,
+                h,
+                shape,
+                0,
+                hasOutward
+                  ? { left: paintLeft, top: paintTop, width: paintW, height: paintH }
+                  : undefined,
+              );
               backdropEl.style.clipPath = '';
               backdropEl.style.maskImage = mask;
               backdropEl.style.webkitMaskImage = mask;
@@ -248,34 +303,22 @@ export class SurfaceController implements ReactiveController {
     // 3. HiDPI Canvas draw
     const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
     const canvas = cfg.canvas;
-    const targetW = Math.max(1, Math.round(w * dpr));
-    const targetH = Math.max(1, Math.round(h * dpr));
+    const targetW = Math.max(1, Math.round(paintW * dpr));
+    const targetH = Math.max(1, Math.round(paintH * dpr));
     if (canvas.width !== targetW) canvas.width = targetW;
     if (canvas.height !== targetH) canvas.height = targetH;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
+    ctx.setTransform(dpr, 0, 0, dpr, -paintLeft * dpr, -paintTop * dpr);
+    ctx.clearRect(paintLeft, paintTop, paintW, paintH);
 
-    const rawWidths = cfg.getBorderWidths?.();
-    const baseStroke = Math.max(0, cfg.getStrokeWidth());
-    const borderWidths: Quad<number> = rawWidths
-      ? [
-          Math.max(0, rawWidths[0]),
-          Math.max(0, rawWidths[1]),
-          Math.max(0, rawWidths[2]),
-          Math.max(0, rawWidths[3]),
-        ]
-      : [baseStroke, baseStroke, baseStroke, baseStroke];
-    const strokeWidth = Math.max(...borderWidths);
     const fillPath = createPath2D(w, h, shape, 0);
     const strokePath = strokeWidth > 0 ? createPath2D(w, h, shape, strokeWidth / 2) : fillPath;
 
     let borderRingPath: Path2D | undefined;
-    if (strokeWidth > 0 && typeof Path2D !== 'undefined') {
-      const resolved = resolveShape(toParametricSpec(w, h, shape, 0), { borderWidths });
+    if (strokeWidth > 0 && resolved && typeof Path2D !== 'undefined') {
       const { inner } = borderInner(resolved.outline, { widths: borderWidths });
       const ring = new Path2D();
       traceContour(ring, resolved.outline);

@@ -582,12 +582,15 @@ export function toMaskImage(
   height: number,
   input: ShapeInput | ShapeSpec,
   inset = 0,
+  paintBox?: { left: number; top: number; width: number; height: number },
 ): string {
   const d = toSvgPath(width, height, input, inset);
   if (!d) return '';
-  const w = fmt(Math.max(0, width));
-  const h = fmt(Math.max(0, height));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}"/></svg>`;
+  const bx = fmt(paintBox ? paintBox.left : 0);
+  const by = fmt(paintBox ? paintBox.top : 0);
+  const bw = fmt(Math.max(0, paintBox ? paintBox.width : width));
+  const bh = fmt(Math.max(0, paintBox ? paintBox.height : height));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${bw}" height="${bh}" viewBox="${bx} ${by} ${bw} ${bh}"><path d="${d}"/></svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 

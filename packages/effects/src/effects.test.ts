@@ -337,6 +337,46 @@ describe('<k-surface> & FrameScheduler', () => {
     const bottomBorder = ctx.getImageData(Math.round(60 * dpr), Math.round(74 * dpr), 1, 1).data;
     expect([bottomBorder[0], bottomBorder[1], bottomBorder[2]]).toEqual([255, 255, 255]);
   });
+
+  it('expands canvas paint box for outward parametric edge features (folder tab & callout tail)', async () => {
+    document.body.innerHTML = `
+      <k-surface
+        shape="rounded"
+        radius="10"
+        style="
+          width: 140px;
+          height: 80px;
+          --k-surface-bg: rgb(30, 40, 50);
+          --k-surface-border-color: rgb(255, 255, 255);
+          --k-surface-border-width: 2px;
+          --k-edge-top-kind: rect;
+          --k-edge-top-depth: 10px;
+          --k-edge-top-span: 50%;
+          --k-edge-bottom-kind: triangle;
+          --k-edge-bottom-depth: 10px;
+          --k-edge-bottom-span: 20px;
+        "
+      >Outward</k-surface>
+    `;
+    const el = document.querySelector('k-surface') as KSurface;
+    await el.updateComplete;
+    flushFrames();
+
+    const canvas = el.shadowRoot!.querySelector<HTMLCanvasElement>('.canvas')!;
+    const ctx = canvas.getContext('2d')!;
+    const dpr = window.devicePixelRatio || 1;
+    // Top folder tab protrudes to y = -10 and bottom triangle tip to y = 90 (total height = 100px)
+    expect(canvas.style.top).toBe('-10px');
+    expect(canvas.style.height).toBe('100px');
+    // Pixel at center of top tab border (canvas y = 1, i.e., host y = -9) must be opaque white border
+    const tabTopBorder = ctx.getImageData(Math.round(70 * dpr), Math.round(1 * dpr), 1, 1).data;
+    expect([tabTopBorder[0], tabTopBorder[1], tabTopBorder[2], tabTopBorder[3]]).toEqual([
+      255, 255, 255, 255,
+    ]);
+    // Pixel inside bottom triangle protrusion (canvas y = 94, i.e., host y = 84) must be painted (not clipped!)
+    const tailPixel = ctx.getImageData(Math.round(70 * dpr), Math.round(94 * dpr), 1, 1).data;
+    expect(tailPixel[3]).toBeGreaterThan(200);
+  });
 });
 
 describe('Motion system', () => {
