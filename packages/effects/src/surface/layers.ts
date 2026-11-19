@@ -3,7 +3,7 @@ import {
   resolveAcrylicParams,
   type AcrylicMaterialParams,
 } from '../acrylic/index.js';
-import type { ShapeSpec } from '../shape/index.js';
+import type { Quad, ShapeSpec } from '../shape/index.js';
 
 export interface SurfaceRenderState {
   readonly host: HTMLElement;
@@ -14,6 +14,8 @@ export interface SurfaceRenderState {
   readonly fillPath: Path2D;
   readonly strokePath: Path2D;
   readonly strokeWidth: number;
+  readonly borderWidths?: Quad<number>;
+  readonly borderRingPath?: Path2D;
   readonly fillColor: string;
   readonly strokeColor: string;
   readonly acrylic: boolean;
@@ -53,12 +55,19 @@ export const backgroundLayer: SurfaceLayer = {
   },
 };
 
-/** Paints the crisp shape-conforming border along the inset path. */
+/**
+ * Paints the crisp shape-conforming border ring using the even-odd rule
+ * (supporting independent per-side border widths around any parametric shape),
+ * falling back to uniform path stroking when no ring path is supplied.
+ */
 export const borderLayer: SurfaceLayer = {
   id: 'border',
   draw(ctx, state) {
+    const hasBorder = state.borderWidths
+      ? state.borderWidths.some((w) => w > 0)
+      : state.strokeWidth > 0;
     if (
-      state.strokeWidth <= 0 ||
+      !hasBorder ||
       !state.strokeColor ||
       state.strokeColor === 'transparent' ||
       state.strokeColor === 'rgba(0, 0, 0, 0)'
@@ -66,10 +75,15 @@ export const borderLayer: SurfaceLayer = {
       return;
     }
     ctx.save();
-    ctx.lineWidth = state.strokeWidth;
-    ctx.strokeStyle = state.strokeColor;
-    ctx.lineJoin = 'round';
-    ctx.stroke(state.strokePath);
+    if (state.borderRingPath) {
+      ctx.fillStyle = state.strokeColor;
+      ctx.fill(state.borderRingPath, 'evenodd');
+    } else {
+      ctx.lineWidth = state.strokeWidth;
+      ctx.strokeStyle = state.strokeColor;
+      ctx.lineJoin = 'round';
+      ctx.stroke(state.strokePath);
+    }
     ctx.restore();
   },
 };

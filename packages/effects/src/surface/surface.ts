@@ -3,7 +3,13 @@ import type { AcrylicMaterialParams } from '../acrylic/index.js';
 import type { ElevationLevel } from '../elevation/index.js';
 import { PressureController } from '../pressure/index.js';
 import { RevealController } from '../reveal/index.js';
-import { isCornerKind, parseRadius, type CornerKind, type ShapeInput } from '../shape/index.js';
+import {
+  isCornerKind,
+  parseRadius,
+  type CornerKind,
+  type Quad,
+  type ShapeInput,
+} from '../shape/index.js';
 import { SurfaceController } from './controller.js';
 import { defaultSurfaceLayers, type SurfaceLayer } from './layers.js';
 import { surfaceStyles } from './surface.styles.js';
@@ -112,7 +118,8 @@ export class KSurface extends KernoElement {
       getAcrylicOverrides: () => this.#resolveAcrylicOverrides(),
       getFillColor: () => this.#readCssVar('--_bg', '#ffffff'),
       getStrokeColor: () => this.#readCssVar('--_border-color', 'transparent'),
-      getStrokeWidth: () => Number.parseFloat(this.#readCssVar('--_border-width', '1')) || 0,
+      getStrokeWidth: () => Math.max(...this.#resolveBorderWidths()),
+      getBorderWidths: () => this.#resolveBorderWidths(),
       getLayers: () => (this.reveal ? [...this.layers, this.#revealLayer] : this.layers),
       onEnvironmentChange: () => this.revealController.invalidateCache(),
     });
@@ -244,6 +251,25 @@ export class KSurface extends KernoElement {
     if (this.tint) overrides.tint = this.tint;
     if (this.reducedTransparency) overrides.reducedTransparency = true;
     return overrides;
+  }
+
+  #resolveBorderWidths(): Quad<number> {
+    if (typeof getComputedStyle === 'undefined') return [1, 1, 1, 1];
+    const cs = getComputedStyle(this);
+    const shorthand = cs.getPropertyValue('--_border-width').trim();
+    const base = shorthand ? parseRadius(shorthand, 0) : ([1, 1, 1, 1] as const);
+    const side = (kName: string, axName: string, fallback: number): number => {
+      const raw = cs.getPropertyValue(kName).trim() || cs.getPropertyValue(axName).trim();
+      if (!raw) return fallback;
+      const n = Number.parseFloat(raw);
+      return Number.isFinite(n) && n >= 0 ? n : fallback;
+    };
+    return [
+      side('--k-surface-border-top-width', '--ax-border-top-width', base[0]),
+      side('--k-surface-border-right-width', '--ax-border-right-width', base[1]),
+      side('--k-surface-border-bottom-width', '--ax-border-bottom-width', base[2]),
+      side('--k-surface-border-left-width', '--ax-border-left-width', base[3]),
+    ];
   }
 
   #readCssVar(name: string, fallback: string): string {

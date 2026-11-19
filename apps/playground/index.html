@@ -884,6 +884,149 @@
             </p>
           </div>
 
+          <!-- Fill & Per-Side Border Ring Lab (Axiom Surface Parity) -->
+          <div class="acrylic-lab-grid" id="surface-border-lab">
+            <div style="display: grid; gap: 14px">
+              <div
+                style="
+                  min-height: 290px;
+                  border-radius: var(--k-radius-xl);
+                  background: #26539c;
+                  display: grid;
+                  place-items: center;
+                  padding: 28px;
+                  border: 1px solid var(--k-color-stroke-default);
+                "
+              >
+                <k-surface
+                  id="surface-border-card"
+                  shape="rounded"
+                  radius="16"
+                  reveal
+                  pressure
+                  style="
+                    width: 240px;
+                    height: 156px;
+                    color: #ffffff;
+                    --k-surface-bg: rgba(255, 255, 255, 0.14);
+                    --k-surface-border-color: #ffffff;
+                    --k-surface-border-width: 5px;
+                    --k-surface-border-bottom-width: 7px;
+                    --k-surface-reveal-color: rgba(255, 255, 255, 0.18);
+                    --k-surface-reveal-border-color: rgba(255, 255, 255, 0.9);
+                    --k-surface-reveal-press-color: rgba(255, 255, 255, 0.45);
+                  "
+                >
+                  <div
+                    style="
+                      height: 100%;
+                      display: grid;
+                      place-items: center;
+                      font-weight: 600;
+                      font-size: 16px;
+                    "
+                  >
+                    Card
+                  </div>
+                </k-surface>
+              </div>
+              <div class="code-card">
+                <div class="code-card-header">
+                  <span>Surface Fill &amp; Per-Side Border CSS</span>
+                </div>
+                <div id="surface-border-code"></div>
+              </div>
+            </div>
+
+            <div class="acrylic-controls">
+              <div class="control-group">
+                <span class="control-group-title">Fill &amp; Per-Side Border Widths</span>
+                <k-slider
+                  id="sb-fill-opacity"
+                  label="Fill opacity"
+                  unit="%"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="14"
+                  show-value
+                ></k-slider>
+                <k-slider
+                  id="sb-border-all"
+                  label="Border width (all)"
+                  unit="px"
+                  min="0"
+                  max="14"
+                  step="1"
+                  value="5"
+                  show-value
+                ></k-slider>
+                <k-slider
+                  id="sb-border-top"
+                  label="Top width"
+                  unit="px"
+                  min="0"
+                  max="16"
+                  step="1"
+                  value="5"
+                  show-value
+                ></k-slider>
+                <k-slider
+                  id="sb-border-right"
+                  label="Right width"
+                  unit="px"
+                  min="0"
+                  max="16"
+                  step="1"
+                  value="5"
+                  show-value
+                ></k-slider>
+                <k-slider
+                  id="sb-border-bottom"
+                  label="Bottom width"
+                  unit="px"
+                  min="0"
+                  max="16"
+                  step="1"
+                  value="7"
+                  show-value
+                ></k-slider>
+                <k-slider
+                  id="sb-border-left"
+                  label="Left width"
+                  unit="px"
+                  min="0"
+                  max="16"
+                  step="1"
+                  value="5"
+                  show-value
+                ></k-slider>
+              </div>
+              <k-separator></k-separator>
+              <div class="control-group">
+                <span class="control-group-title">Border Ring Shape</span>
+                <div class="row" id="sb-border-shapes">
+                  <k-button size="sm" variant="accent" data-border-shape="rounded"
+                    >Rounded</k-button
+                  >
+                  <k-button size="sm" data-border-shape="chamfer">Chamfer</k-button>
+                  <k-button size="sm" data-border-shape="scallop">Scallop</k-button>
+                  <k-button size="sm" data-border-shape="notch">Notch</k-button>
+                </div>
+                <k-slider
+                  id="sb-border-radius"
+                  label="Corner radius"
+                  unit="px"
+                  min="0"
+                  max="28"
+                  step="1"
+                  value="16"
+                  show-value
+                ></k-slider>
+              </div>
+            </div>
+          </div>
+
           <div class="panel-box">
             <div class="grid-4">
               <k-surface

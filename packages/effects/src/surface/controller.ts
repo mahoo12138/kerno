@@ -7,11 +7,17 @@ import {
   type ElevationInput,
 } from '../elevation/index.js';
 import {
+  borderInner,
   createPath2D,
   isRoundedOnly,
   readElementShapeCss,
+  resolveShape,
   toClipPath,
   toMaskImage,
+  toParametricSpec,
+  traceContour,
+  traceInner,
+  type Quad,
   type ShapeInput,
   type ShapeSpec,
 } from '../shape/index.js';
@@ -31,6 +37,7 @@ export interface SurfaceControllerConfig {
   getFillColor(): string;
   getStrokeColor(): string;
   getStrokeWidth(): number;
+  getBorderWidths?(): Quad<number>;
   getLayers?(): readonly SurfaceLayer[];
   onEnvironmentChange?(): void;
 }
@@ -252,9 +259,29 @@ export class SurfaceController implements ReactiveController {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
-    const strokeWidth = Math.max(0, cfg.getStrokeWidth());
+    const rawWidths = cfg.getBorderWidths?.();
+    const baseStroke = Math.max(0, cfg.getStrokeWidth());
+    const borderWidths: Quad<number> = rawWidths
+      ? [
+          Math.max(0, rawWidths[0]),
+          Math.max(0, rawWidths[1]),
+          Math.max(0, rawWidths[2]),
+          Math.max(0, rawWidths[3]),
+        ]
+      : [baseStroke, baseStroke, baseStroke, baseStroke];
+    const strokeWidth = Math.max(...borderWidths);
     const fillPath = createPath2D(w, h, shape, 0);
     const strokePath = strokeWidth > 0 ? createPath2D(w, h, shape, strokeWidth / 2) : fillPath;
+
+    let borderRingPath: Path2D | undefined;
+    if (strokeWidth > 0 && typeof Path2D !== 'undefined') {
+      const resolved = resolveShape(toParametricSpec(w, h, shape, 0), { borderWidths });
+      const { inner } = borderInner(resolved.outline, { widths: borderWidths });
+      const ring = new Path2D();
+      traceContour(ring, resolved.outline);
+      traceInner(ring, inner);
+      borderRingPath = ring;
+    }
 
     if (cfg.shadowCanvas) {
       this.#paintShadowCanvas(cfg.shadowCanvas, w, h, dpr, fillPath, roundedOnly ? 0 : elevation);
@@ -269,6 +296,8 @@ export class SurfaceController implements ReactiveController {
       fillPath,
       strokePath,
       strokeWidth,
+      borderWidths,
+      ...(borderRingPath ? { borderRingPath } : {}),
       fillColor: cfg.getFillColor(),
       strokeColor: cfg.getStrokeColor(),
       acrylic,

@@ -307,6 +307,36 @@ describe('<k-surface> & FrameScheduler', () => {
     flushFrames();
     expect(el.surface.paintCount).toBe(countBefore + 1);
   });
+
+  it('paints uneven per-side border widths using the even-odd border ring on <k-surface>', async () => {
+    document.body.innerHTML = `
+      <k-surface
+        shape="rounded"
+        radius="8"
+        style="
+          width: 120px;
+          height: 80px;
+          --k-surface-bg: rgb(0, 0, 0);
+          --k-surface-border-color: rgb(255, 255, 255);
+          --k-surface-border-width: 2px;
+          --k-surface-border-bottom-width: 12px;
+        "
+      >Border</k-surface>
+    `;
+    const el = document.querySelector('k-surface') as KSurface;
+    await el.updateComplete;
+    flushFrames();
+
+    const canvas = el.shadowRoot!.querySelector<HTMLCanvasElement>('.canvas')!;
+    const ctx = canvas.getContext('2d')!;
+    const dpr = window.devicePixelRatio || 1;
+    // 6px from top edge is inside the black fill (top border is only 2px)
+    const topInner = ctx.getImageData(Math.round(60 * dpr), Math.round(6 * dpr), 1, 1).data;
+    expect([topInner[0], topInner[1], topInner[2]]).toEqual([0, 0, 0]);
+    // 6px from bottom edge (y = 74) is inside the 12px white bottom border
+    const bottomBorder = ctx.getImageData(Math.round(60 * dpr), Math.round(74 * dpr), 1, 1).data;
+    expect([bottomBorder[0], bottomBorder[1], bottomBorder[2]]).toEqual([255, 255, 255]);
+  });
 });
 
 describe('Motion system', () => {

@@ -376,6 +376,88 @@ demoScrollView?.addEventListener('scroll', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Surface Fill & Per-Side Border Width Lab
+// ---------------------------------------------------------------------------
+const borderCard = document.querySelector<KSurface>('#surface-border-card');
+const borderCode = document.querySelector<HTMLElement>('#surface-border-code');
+const sbFillOpacity = document.querySelector<KSlider>('#sb-fill-opacity');
+const sbBorderAll = document.querySelector<KSlider>('#sb-border-all');
+const sbBorderTop = document.querySelector<KSlider>('#sb-border-top');
+const sbBorderRight = document.querySelector<KSlider>('#sb-border-right');
+const sbBorderBottom = document.querySelector<KSlider>('#sb-border-bottom');
+const sbBorderLeft = document.querySelector<KSlider>('#sb-border-left');
+const sbBorderRadius = document.querySelector<KSlider>('#sb-border-radius');
+const sbBorderShapeBtns = document.querySelectorAll<HTMLElement>('#sb-border-shapes k-button');
+
+function syncSurfaceBorderLab(): void {
+  if (!borderCard) return;
+  const fillPct = Number(sbFillOpacity?.value ?? 14);
+  const all = Number(sbBorderAll?.value ?? 5);
+  const top = Number(sbBorderTop?.value ?? all);
+  const right = Number(sbBorderRight?.value ?? all);
+  const bottom = Number(sbBorderBottom?.value ?? 7);
+  const left = Number(sbBorderLeft?.value ?? all);
+  const radius = Number(sbBorderRadius?.value ?? 16);
+
+  const bg = `rgba(255, 255, 255, ${(fillPct / 100).toFixed(2)})`;
+  borderCard.radius = String(radius);
+  borderCard.style.setProperty('--k-surface-bg', bg);
+  borderCard.style.setProperty('--k-surface-border-color', '#ffffff');
+  borderCard.style.setProperty('--k-surface-border-width', `${all}px`);
+  borderCard.style.setProperty('--k-surface-border-top-width', `${top}px`);
+  borderCard.style.setProperty('--k-surface-border-right-width', `${right}px`);
+  borderCard.style.setProperty('--k-surface-border-bottom-width', `${bottom}px`);
+  borderCard.style.setProperty('--k-surface-border-left-width', `${left}px`);
+  borderCard.surface.invalidate();
+
+  if (borderCode) {
+    const lines = [
+      `.card {`,
+      `  --k-surface-bg: ${bg};`,
+      `  --k-surface-border-color: #ffffff;`,
+      `  --k-surface-border-width: ${all}px;`,
+    ];
+    if (top !== all) lines.push(`  --k-surface-border-top-width: ${top}px;`);
+    if (right !== all) lines.push(`  --k-surface-border-right-width: ${right}px;`);
+    if (bottom !== all) lines.push(`  --k-surface-border-bottom-width: ${bottom}px;`);
+    if (left !== all) lines.push(`  --k-surface-border-left-width: ${left}px;`);
+    lines.push(`}`);
+    borderCode.textContent = lines.join('\n');
+  }
+}
+
+sbBorderAll?.addEventListener('input', () => {
+  const v = sbBorderAll.value;
+  if (sbBorderTop) sbBorderTop.value = v;
+  if (sbBorderRight) sbBorderRight.value = v;
+  if (sbBorderBottom) sbBorderBottom.value = v;
+  if (sbBorderLeft) sbBorderLeft.value = v;
+  syncSurfaceBorderLab();
+});
+
+for (const ctrl of [
+  sbFillOpacity,
+  sbBorderTop,
+  sbBorderRight,
+  sbBorderBottom,
+  sbBorderLeft,
+  sbBorderRadius,
+]) {
+  ctrl?.addEventListener('input', syncSurfaceBorderLab);
+}
+
+sbBorderShapeBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const shape = (btn.dataset.borderShape as CornerKind) ?? 'rounded';
+    sbBorderShapeBtns.forEach((b) => b.setAttribute('variant', b === btn ? 'accent' : 'standard'));
+    if (borderCard) borderCard.shape = shape;
+    syncSurfaceBorderLab();
+  });
+});
+
+syncSurfaceBorderLab();
+
+// ---------------------------------------------------------------------------
 // Overlays & Modal Dialog
 // ---------------------------------------------------------------------------
 const dialog = document.querySelector<KDialog>('#demo-dialog')!;

@@ -20,9 +20,15 @@ import { token } from '@kerno/tokens';
  */
 export const surfaceStyles = css`
   :host {
-    --_bg: var(--k-surface-bg, ${token('color.bg.layer')});
-    --_border-color: var(--k-surface-border-color, ${token('color.stroke.default')});
-    --_border-width: var(--k-surface-border-width, ${token('control.borderWidth')});
+    --_bg: var(--k-surface-bg, var(--ax-fill-color, ${token('color.bg.layer')}));
+    --_border-color: var(
+      --k-surface-border-color,
+      var(--ax-border-color, ${token('color.stroke.default')})
+    );
+    --_border-width: var(
+      --k-surface-border-width,
+      var(--ax-border-width, ${token('control.borderWidth')})
+    );
     --_radius: var(--k-surface-radius, ${token('radius.lg')});
 
     position: relative;

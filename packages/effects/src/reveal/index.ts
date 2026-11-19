@@ -442,14 +442,19 @@ export class RevealController implements ReactiveController {
       }
 
       // 2. Proximity border highlight (illuminates edges as pointer approaches)
-      const strokeWidth = Math.max(1.25, state.strokeWidth);
       const borderGrad = ctx.createRadialGradient(x, y, 0, x, y, lightRadius);
       borderGrad.addColorStop(0, params.borderColor);
       borderGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.lineWidth = strokeWidth;
-      ctx.strokeStyle = borderGrad;
-      ctx.lineJoin = 'round';
-      ctx.stroke(state.strokePath);
+      if (state.borderRingPath) {
+        ctx.fillStyle = borderGrad;
+        ctx.fill(state.borderRingPath, 'evenodd');
+      } else {
+        const strokeWidth = Math.max(1.25, state.strokeWidth);
+        ctx.lineWidth = strokeWidth;
+        ctx.strokeStyle = borderGrad;
+        ctx.lineJoin = 'round';
+        ctx.stroke(state.strokePath);
+      }
     }
 
     // 3. Fluent Press Ripple (verbatim Axiom 2000ms linear + 7× release acceleration)
