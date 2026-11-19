@@ -4,7 +4,16 @@ import './studio.css';
 import '@kerno/effects/define';
 import '@kerno/primitives/define';
 import '@kerno/components/define';
-import type { KDialog, KNav, KTable } from '@kerno/components';
+import type {
+  KDialog,
+  KNav,
+  KScrollbar,
+  KScrollView,
+  KTable,
+  MarkerEventDetail,
+  ScrollbarVariant,
+  TrackClickMode,
+} from '@kerno/components';
 import {
   fadeIn,
   scaleIn,
@@ -268,12 +277,91 @@ document.querySelector('#motion-slide')?.addEventListener('click', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Fluent Scrollbar & Scroll View Studio
+// ---------------------------------------------------------------------------
+const pageScrollbar = document.querySelector<KScrollbar>('#page-scrollbar');
+const demoScrollView = document.querySelector<KScrollView>('#demo-scroll-view');
+const sbOutput = document.querySelector<HTMLOutputElement>('#scrollbar-output');
+
+const sbVariantBtns = document.querySelectorAll<HTMLElement>('#sb-variant-buttons k-button');
+const sbTrackBtns = document.querySelectorAll<HTMLElement>('#sb-track-buttons k-button');
+const sbPinned = document.querySelector<KSwitch>('#sb-ctrl-pinned');
+const sbButtons = document.querySelector<KSwitch>('#sb-ctrl-buttons');
+const sbMarkers = document.querySelector<KSwitch>('#sb-ctrl-markers');
+const sbSnap = document.querySelector<KSwitch>('#sb-ctrl-snap');
+const sbSuspend = document.querySelector<KSwitch>('#sb-ctrl-suspend');
+
+function syncScrollbarHide(): void {
+  if (!demoScrollView) return;
+  const hidden: string[] = [];
+  if (sbButtons && !sbButtons.checked) hidden.push('button');
+  if (sbMarkers && !sbMarkers.checked) hidden.push('marker', 'card');
+  if (demoScrollView.variant === 'minimal') {
+    if (!hidden.includes('button')) hidden.push('button');
+    hidden.push('track', 'corner');
+  }
+  demoScrollView.hide = hidden.join(' ');
+}
+
+sbVariantBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const variant = (btn.dataset.sbVariant as ScrollbarVariant) ?? 'fluent';
+    sbVariantBtns.forEach((b) => b.setAttribute('variant', b === btn ? 'accent' : 'standard'));
+    if (demoScrollView) demoScrollView.variant = variant;
+    if (pageScrollbar) pageScrollbar.variant = variant;
+    syncScrollbarHide();
+  });
+});
+
+sbTrackBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const mode = (btn.dataset.sbTrack as TrackClickMode) ?? 'page';
+    sbTrackBtns.forEach((b) => b.setAttribute('variant', b === btn ? 'accent' : 'standard'));
+    if (demoScrollView) demoScrollView.trackClick = mode;
+    if (pageScrollbar) pageScrollbar.trackClick = mode;
+  });
+});
+
+sbPinned?.addEventListener('change', () => {
+  if (demoScrollView) demoScrollView.indicator = sbPinned.checked ? 'pinned' : 'auto';
+});
+sbButtons?.addEventListener('change', syncScrollbarHide);
+sbMarkers?.addEventListener('change', syncScrollbarHide);
+sbSnap?.addEventListener('change', () => {
+  if (demoScrollView) demoScrollView.snap = sbSnap.checked;
+  if (pageScrollbar) pageScrollbar.snap = sbSnap.checked;
+});
+sbSuspend?.addEventListener('change', () => {
+  if (pageScrollbar) pageScrollbar.suspended = sbSuspend.checked;
+});
+
+demoScrollView?.addEventListener('k-marker-enter', (e) => {
+  const { marker } = (e as CustomEvent<MarkerEventDetail>).detail;
+  if (sbOutput) sbOutput.textContent = `Marker hover: ${marker.label}`;
+});
+demoScrollView?.addEventListener('k-marker-activate', (e) => {
+  const { marker } = (e as CustomEvent<MarkerEventDetail>).detail;
+  if (sbOutput) sbOutput.textContent = `Jumped to marker: ${marker.label}`;
+});
+demoScrollView?.addEventListener('scroll', () => {
+  if (sbOutput) {
+    sbOutput.textContent = `scrollTop: ${Math.round(demoScrollView.scrollTop)}px · scrollLeft: ${Math.round(demoScrollView.scrollLeft)}px`;
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Overlays & Modal Dialog
 // ---------------------------------------------------------------------------
 const dialog = document.querySelector<KDialog>('#demo-dialog')!;
 const overlayOutput = document.querySelector<HTMLOutputElement>('#overlay-output')!;
 document.querySelector('#open-dialog-btn')?.addEventListener('click', () => dialog.show());
 document.querySelector('#hero-open-dialog')?.addEventListener('click', () => dialog.show());
+dialog.addEventListener('k-open', () => {
+  if (pageScrollbar) pageScrollbar.suspended = true;
+});
+dialog.addEventListener('k-close', () => {
+  if (pageScrollbar && !sbSuspend?.checked) pageScrollbar.suspended = false;
+});
 document.querySelector('#dialog-cancel')?.addEventListener('click', () => dialog.close());
 document.querySelector('#dialog-confirm')?.addEventListener('click', () => {
   overlayOutput.textContent = 'Dialog confirmed.';

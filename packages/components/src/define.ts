@@ -10,3 +10,4 @@ import './skeleton/define.js';
 import './empty-state/define.js';
 import './table/define.js';
 import './form-field/define.js';
+import './scrollbar/define.js';

@@ -6,6 +6,11 @@
     <title>Kerno — Interactive Fluent &amp; Web Component Studio</title>
   </head>
   <body>
+    <k-scrollbar
+      id="page-scrollbar"
+      marker-selector=".studio-section[id]"
+      indicator="near"
+    ></k-scrollbar>
     <div class="app-shell">
       <!-- Left Fluent Navigation Sidebar -->
       <aside class="sidebar">
@@ -44,6 +49,10 @@
               <k-icon slot="prefix" name="search"></k-icon>
               Reveal &amp; Pressure
             </k-nav-item>
+            <k-nav-item value="scrollbar">
+              <k-icon slot="prefix" name="chevron-down"></k-icon>
+              Scrollbar &amp; View
+            </k-nav-item>
             <k-nav-item value="shape">
               <k-icon slot="prefix" name="info"></k-icon>
               Shape &amp; Elevation
@@ -69,7 +78,7 @@
       <!-- Main Stage -->
       <main class="main-stage">
         <!-- 1. Start & Metro/Fluent Tile Wall -->
-        <section class="studio-section" id="sec-start">
+        <section class="studio-section" id="sec-start" data-marker-label="Start & Tiles">
           <div class="hero-banner">
             <div class="hero-copy">
               <span class="hero-eyebrow">A Modular Web Component System</span>
@@ -192,7 +201,7 @@
         </section>
 
         <!-- 2. Acrylic Material Lab -->
-        <section class="studio-section" id="sec-acrylic">
+        <section class="studio-section" id="sec-acrylic" data-marker-label="Acrylic Material Lab">
           <div class="section-head">
             <h2>Acrylic Material Lab</h2>
             <p>
@@ -576,7 +585,7 @@
         </section>
 
         <!-- 3. Reveal Highlight & Pressure Matrix -->
-        <section class="studio-section" id="sec-reveal">
+        <section class="studio-section" id="sec-reveal" data-marker-label="Reveal & Pressure">
           <div class="section-head">
             <h2>Reveal Highlight &amp; Pressure Matrix</h2>
             <p>
@@ -631,8 +640,140 @@
           </div>
         </section>
 
-        <!-- 4. Shape, Elevation & Motion -->
-        <section class="studio-section" id="sec-shape">
+        <!-- 4. Fluent Scrollbar & Scroll View Studio -->
+        <section class="studio-section" id="sec-scrollbar" data-marker-label="Scrollbar & View">
+          <div class="section-head">
+            <h2>Fluent Scrollbar &amp; Scroll View</h2>
+            <p>
+              Native scrolling with geometry-driven overlay scrollbars, additive smooth glide,
+              merged heading markers, and Top-Layer hover cards (also powering this page's
+              <code>&lt;k-scrollbar&gt;</code>).
+            </p>
+          </div>
+
+          <div class="scrollbar-lab-grid">
+            <k-scroll-view
+              id="demo-scroll-view"
+              variant="fluent"
+              indicator="pinned"
+              marker-selector="h4"
+              role="region"
+              aria-label="Kerno Scroll View specification"
+            >
+              <article class="scroll-doc">
+                <h4 id="sb-architecture">1. Native Scrolling, Overlay Bars</h4>
+                <p>
+                  <code>&lt;k-scroll-view&gt;</code> keeps native browser wheel, touchpad inertia,
+                  keyboard navigation, find-in-page, and <code>scrollIntoView()</code> intact while
+                  drawing crisp overlay bars directly over the content box.
+                </p>
+                <p>
+                  Because every bar and hover card carries <code>pointer-events: none</code>, hidden
+                  scrollbars never block hover states or clicks on underlying elements. Input is
+                  routed strictly by pointer geometry within each bar and its hot zone.
+                </p>
+
+                <h4 id="sb-physics">2. Additive Glide &amp; Exponential Chase</h4>
+                <p>
+                  Clicks on arrow buttons, track paging, track jumps, and markers drive a
+                  frame-rate-independent exponential glide (<code>τ = 50ms</code>). Rapid steps add
+                  directly onto the active goal rather than restarting, and any external wheel or
+                  touch scroll yields the glide immediately.
+                </p>
+                <p>
+                  Meanwhile, the drawn thumb and markers smoothly chase layout changes (<code
+                    >τ = 100ms</code
+                  >) while collapsing to instant updates during direct thumb drags or under
+                  <code>prefers-reduced-motion</code>.
+                </p>
+
+                <h4 id="sb-markers">3. Section Markers &amp; Top-Layer Cards</h4>
+                <p>
+                  Pass <code>marker-selector="h4"</code> or assign the <code>markers</code> property
+                  to plot jump ticks along the track. Nearby ticks within
+                  <code>--k-scrollbar-marker-spacing</code> automatically merge into a single mark
+                  whose Top-Layer Popover card lists every grouped destination.
+                </p>
+                <div class="scroll-wide-strip">
+                  <span
+                    >Wide horizontal blueprint · Scroll horizontally to test dual axes + corner
+                    cell</span
+                  >
+                  <span>Column A · 0px</span>
+                  <span>Column B · 320px</span>
+                  <span>Column C · 640px</span>
+                  <span>Column D · 960px</span>
+                </div>
+
+                <h4 id="sb-a11y">4. Accessibility &amp; System Preferences</h4>
+                <p>
+                  An internal <code>MutationObserver</code> adds <code>tabindex="0"</code> to the
+                  viewport only when no focusable descendant exists (WCAG 2.1.1), keeping text-only
+                  regions keyboard scrollable without inserting redundant Tab stops.
+                </p>
+                <p>
+                  Under <code>forced-colors: active</code> or <code>@media print</code>, the custom
+                  overlay hides automatically and native system scrollbars take over cleanly.
+                </p>
+
+                <h4 id="sb-variants">5. Fluent, Classic &amp; Minimal Variants</h4>
+                <p>
+                  Switch between <strong>Fluent</strong> (WinUI expanding pill + frosted track +
+                  caret arrows), <strong>Classic</strong> (Windows 8/10 17px square bar + 33px
+                  chevron buttons), and <strong>Minimal</strong> (slim floating pill) — all themed
+                  automatically via <code>@kerno/tokens</code>.
+                </p>
+              </article>
+            </k-scroll-view>
+
+            <div class="acrylic-controls">
+              <div class="control-group">
+                <span class="control-group-title">Scrollbar Variant (View + Page)</span>
+                <div class="row" id="sb-variant-buttons">
+                  <k-button size="sm" variant="accent" data-sb-variant="fluent">Fluent</k-button>
+                  <k-button size="sm" data-sb-variant="classic">Classic (Win 8/10)</k-button>
+                  <k-button size="sm" data-sb-variant="minimal">Minimal</k-button>
+                </div>
+              </div>
+
+              <k-separator></k-separator>
+
+              <div class="control-group">
+                <span class="control-group-title">Track Click Mode</span>
+                <div class="row" id="sb-track-buttons">
+                  <k-button size="sm" variant="accent" data-sb-track="page"
+                    >Page (Windows)</k-button
+                  >
+                  <k-button size="sm" data-sb-track="jump">Jump to Pointer</k-button>
+                </div>
+              </div>
+
+              <k-separator></k-separator>
+
+              <div class="control-group">
+                <span class="control-group-title">Behavior &amp; Parts</span>
+                <k-switch id="sb-ctrl-pinned" checked size="sm"
+                  >Pin indicator always visible</k-switch
+                >
+                <k-switch id="sb-ctrl-buttons" checked size="sm">Show arrow buttons</k-switch>
+                <k-switch id="sb-ctrl-markers" checked size="sm"
+                  >Show heading markers + hover card</k-switch
+                >
+                <k-switch id="sb-ctrl-snap" size="sm">Device-pixel snap</k-switch>
+                <k-switch id="sb-ctrl-suspend" size="sm">Suspend page &lt;k-scrollbar&gt;</k-switch>
+              </div>
+
+              <k-separator></k-separator>
+
+              <output id="scrollbar-output">
+                Hover or click track markers to jump smoothly.
+              </output>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. Shape, Elevation & Motion -->
+        <section class="studio-section" id="sec-shape" data-marker-label="Shape & Elevation">
           <div class="section-head">
             <h2>Shape System, Elevation &amp; Motion</h2>
             <p>Unified Path2D + SVG clip-path geometry shared across Surfaces and Primitives.</p>
@@ -700,8 +841,8 @@
           </div>
         </section>
 
-        <!-- 5. Overlays, Tabs & Data Display -->
-        <section class="studio-section" id="sec-overlays">
+        <!-- 6. Overlays, Tabs & Data Display -->
+        <section class="studio-section" id="sec-overlays" data-marker-label="Overlays & Tabs">
           <div class="section-head">
             <h2>Top-Layer Overlays, Tabs &amp; Data Display</h2>
             <p>Native Popover API Top Layer escapes ancestor transforms and overflow clipping.</p>
@@ -802,8 +943,8 @@
           <k-table id="demo-table" striped></k-table>
         </section>
 
-        <!-- 6. Primitive Controls & Form Association -->
-        <section class="studio-section" id="sec-controls">
+        <!-- 7. Primitive Controls & Form Association -->
+        <section class="studio-section" id="sec-controls" data-marker-label="Controls & Forms">
           <div class="section-head">
             <h2>Primitive Controls &amp; Native Form Association</h2>
             <p>

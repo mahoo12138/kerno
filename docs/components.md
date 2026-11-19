@@ -68,17 +68,18 @@ import '@kerno/components/define';
 
 ## 4. `@kerno/components` — 复合与业务组件
 
-| 标签名                                        | 类名                                | 核心能力与事件                                                                                                                               |
-| --------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `<k-dialog>`                                  | `KDialog`                           | `open`、`label`、`modal`、`acrylic`、`close-on-escape`、`close-on-backdrop`；焦点陷阱、滚动锁定；事件 `k-open`、`k-close`、`k-request-close` |
-| `<k-popover>`                                 | `KPopover`                          | `open`、`placement`、`offset`、`trigger="click\|manual"`、`acrylic`；锚点自动翻转定位                                                        |
-| `<k-tooltip>`                                 | `KTooltip`                          | `content`、`placement`、`offset`、`delay`、`disabled`；悬停/聚焦触发与 `aria-describedby`                                                    |
-| `<k-dropdown>` / `<k-menu>` / `<k-menu-item>` | `KDropdown` / `KMenu` / `KMenuItem` | 浮层菜单、方向键循环导航、选中触发 `k-select` 并自动收起还原焦点                                                                             |
-| `<k-tabs>` / `<k-tab>` / `<k-tab-panel>`      | `KTabs` / `KTab` / `KTabPanel`      | `value`、`orientation`、`activation="auto\|manual"`；自动 ARIA 关联与方向键切换（`k-tab-change`）                                            |
-| `<k-nav>` / `<k-nav-item>`                    | `KNav` / `KNavItem`                 | `value`、`orientation`、`label`；自动设置激活项 `aria-current="page"`（`k-nav-select`）                                                      |
-| `<k-card>`                                    | `KCard`                             | 基于 `<k-surface>` 的卡片容器，支持 `title`、`shape`、`elevation`、`acrylic`、`reveal`、`pressure`、`interactive`                            |
-| `<k-table>`                                   | `KTable`                            | 属性 `columns`、`data`、`sort-key`、`sort-direction`、`striped`；支持列排序（`k-sort-change`）与自定义单元格渲染函数                         |
-| `<k-form-field>`                              | `KFormField`                        | `label`、`help`、`error`、`required`；点击标签自动聚焦控件，实时监听并展示子控件的 `validationMessage`                                       |
-| `<k-progress>`                                | `KProgress`                         | `value`、`max`、`indeterminate`、`variant`、`size`（`role="progressbar"`）                                                                   |
-| `<k-skeleton>`                                | `KSkeleton`                         | `variant="text\|circular\|rectangular"`、`effect="pulse\|none"`、`width`、`height`                                                           |
-| `<k-empty-state>`                             | `KEmptyState`                       | `icon`、`title`、`description` 与默认操作按钮插槽                                                                                            |
+| 标签名                                        | 类名                                | 核心能力与事件                                                                                                                                  |
+| --------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<k-dialog>`                                  | `KDialog`                           | `open`、`label`、`modal`、`acrylic`、`close-on-escape`、`close-on-backdrop`；焦点陷阱、滚动锁定；事件 `k-open`、`k-close`、`k-request-close`    |
+| `<k-popover>`                                 | `KPopover`                          | `open`、`placement`、`offset`、`trigger="click\|manual"`、`acrylic`；锚点自动翻转定位                                                           |
+| `<k-tooltip>`                                 | `KTooltip`                          | `content`、`placement`、`offset`、`delay`、`disabled`；悬停/聚焦触发与 `aria-describedby`                                                       |
+| `<k-dropdown>` / `<k-menu>` / `<k-menu-item>` | `KDropdown` / `KMenu` / `KMenuItem` | 浮层菜单、方向键循环导航、选中触发 `k-select` 并自动收起还原焦点                                                                                |
+| `<k-tabs>` / `<k-tab>` / `<k-tab-panel>`      | `KTabs` / `KTab` / `KTabPanel`      | `value`、`orientation`、`activation="auto\|manual"`；自动 ARIA 关联与方向键切换（`k-tab-change`）                                               |
+| `<k-nav>` / `<k-nav-item>`                    | `KNav` / `KNavItem`                 | `value`、`orientation`、`label`；自动设置激活项 `aria-current="page"`（`k-nav-select`）                                                         |
+| `<k-card>`                                    | `KCard`                             | 基于 `<k-surface>` 的卡片容器，支持 `title`、`shape`、`elevation`、`acrylic`、`reveal`、`pressure`、`interactive`                               |
+| `<k-table>`                                   | `KTable`                            | 属性 `columns`、`data`、`sort-key`、`sort-direction`、`striped`；支持列排序（`k-sort-change`）与自定义单元格渲染函数                            |
+| `<k-form-field>`                              | `KFormField`                        | `label`、`help`、`error`、`required`；点击标签自动聚焦控件，实时监听并展示子控件的 `validationMessage`                                          |
+| `<k-progress>`                                | `KProgress`                         | `value`、`max`、`indeterminate`、`variant`、`size`（`role="progressbar"`）                                                                      |
+| `<k-skeleton>`                                | `KSkeleton`                         | `variant="text\|circular\|rectangular"`、`effect="pulse\|none"`、`width`、`height`                                                              |
+| `<k-empty-state>`                             | `KEmptyState`                       | `icon`、`title`、`description` 与默认操作按钮插槽                                                                                               |
+| `<k-scroll-view>` / `<k-scrollbar>`           | `KScrollView` / `KScrollbar`        | 原生滚动 + 覆盖式 Fluent / Windows Classic / Minimal 滚动条，支持几何输入路由、平滑滑行、标记点合并与 Top Layer 悬停卡片（`k-marker-activate`） |

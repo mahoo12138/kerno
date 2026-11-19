@@ -140,6 +140,16 @@
       "source": "./src/form-field/define.ts",
       "default": "./dist/form-field/define.js"
     },
+    "./scrollbar": {
+      "types": "./dist/scrollbar/index.d.ts",
+      "source": "./src/scrollbar/index.ts",
+      "default": "./dist/scrollbar/index.js"
+    },
+    "./scrollbar/define": {
+      "types": "./dist/scrollbar/define.d.ts",
+      "source": "./src/scrollbar/define.ts",
+      "default": "./dist/scrollbar/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
