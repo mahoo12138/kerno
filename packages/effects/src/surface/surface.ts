@@ -1,6 +1,8 @@
-import { KernoElement, prop } from '@kerno/core';
+import { KernoElement, prop, type PropertyValues } from '@kerno/core';
 import type { AcrylicMaterialParams } from '../acrylic/index.js';
 import type { ElevationLevel } from '../elevation/index.js';
+import { PressureController } from '../pressure/index.js';
+import { RevealController } from '../reveal/index.js';
 import { isCornerKind, parseRadius, type CornerKind, type ShapeInput } from '../shape/index.js';
 import { SurfaceController } from './controller.js';
 import { defaultSurfaceLayers, type SurfaceLayer } from './layers.js';
@@ -51,10 +53,19 @@ export class KSurface extends KernoElement {
   /** Optional Acrylic tint color override. */
   @prop() accessor tint = '';
 
+  /** Enables pointer-tracked Reveal Highlight illumination on fill and border. */
+  @prop({ type: Boolean, reflect: true }) accessor reveal = false;
+
+  /** Enables tactile 3D tilt/depression feedback on pointer press. */
+  @prop({ type: Boolean, reflect: true }) accessor pressure = false;
+
   /** Custom render layers; defaults to `[backgroundLayer, borderLayer]`. */
   @prop({ attribute: false }) accessor layers: readonly SurfaceLayer[] = defaultSurfaceLayers;
 
   readonly surface = new SurfaceController(this);
+  readonly revealController = new RevealController(this, () => this.surface.invalidate());
+  readonly pressureController = new PressureController(this);
+  readonly #revealLayer = this.revealController.createLayer();
 
   #clip!: HTMLDivElement;
   #canvas!: HTMLCanvasElement;
@@ -73,8 +84,13 @@ export class KSurface extends KernoElement {
       getFillColor: () => this.#readCssVar('--_bg', '#ffffff'),
       getStrokeColor: () => this.#readCssVar('--_border-color', 'transparent'),
       getStrokeWidth: () => Number.parseFloat(this.#readCssVar('--_border-width', '1')) || 0,
-      getLayers: () => this.layers,
+      getLayers: () => (this.reveal ? [...this.layers, this.#revealLayer] : this.layers),
     });
+  }
+
+  protected override update(_changed: PropertyValues): void {
+    this.revealController.enabled = this.reveal;
+    this.pressureController.enabled = this.pressure;
   }
 
   /** Forces an immediate synchronous canvas paint. */

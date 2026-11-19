@@ -5,3 +5,6 @@ import './input/define.js';
 import './checkbox/define.js';
 import './radio/define.js';
 import './switch/define.js';
+import './badge/define.js';
+import './separator/define.js';
+import './select/define.js';

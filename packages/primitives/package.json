@@ -80,6 +80,36 @@
       "source": "./src/switch/define.ts",
       "default": "./dist/switch/define.js"
     },
+    "./badge": {
+      "types": "./dist/badge/index.d.ts",
+      "source": "./src/badge/index.ts",
+      "default": "./dist/badge/index.js"
+    },
+    "./badge/define": {
+      "types": "./dist/badge/define.d.ts",
+      "source": "./src/badge/define.ts",
+      "default": "./dist/badge/define.js"
+    },
+    "./separator": {
+      "types": "./dist/separator/index.d.ts",
+      "source": "./src/separator/index.ts",
+      "default": "./dist/separator/index.js"
+    },
+    "./separator/define": {
+      "types": "./dist/separator/define.d.ts",
+      "source": "./src/separator/define.ts",
+      "default": "./dist/separator/define.js"
+    },
+    "./select": {
+      "types": "./dist/select/index.d.ts",
+      "source": "./src/select/index.ts",
+      "default": "./dist/select/index.js"
+    },
+    "./select/define": {
+      "types": "./dist/select/define.d.ts",
+      "source": "./src/select/define.ts",
+      "default": "./dist/select/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

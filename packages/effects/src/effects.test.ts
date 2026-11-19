@@ -4,6 +4,7 @@ import './define.js';
 import {
   boxShadowToDropShadow,
   clampRadii,
+  computePressureTransform,
   createPath2D,
   fadeIn,
   flushFrames,
@@ -217,5 +218,41 @@ describe('Motion system', () => {
     const slid = slideIn(el, { y: 6 }, { reducedMotion: true });
     expect(slid.duration).toBe(0);
     await slid.finished;
+  });
+});
+
+describe('Reveal Highlight & Pressure', () => {
+  it('paints Reveal Highlight layer when pointer is positioned on <k-surface reveal>', async () => {
+    document.body.innerHTML = `<k-surface reveal style="width: 120px; height: 60px">Reveal</k-surface>`;
+    const el = document.querySelector('k-surface') as KSurface;
+    await el.updateComplete;
+    flushFrames();
+    const initialPaints = el.surface.paintCount;
+
+    el.revealController.setPointerPosition({ x: 40, y: 30 });
+    flushFrames();
+    expect(el.revealController.point).toEqual({ x: 40, y: 30, inside: true });
+    expect(el.surface.paintCount).toBe(initialPaints + 1);
+
+    el.revealController.setPointerPosition(null);
+    flushFrames();
+    expect(el.revealController.point).toBeNull();
+  });
+
+  it('computes 3D perspective tilt transform and applies pressure on <k-surface pressure>', async () => {
+    const topRight = computePressureTransform(100, 0, 100, 50, { maxTilt: 4 });
+    expect(topRight.rotateX).toBe(4);
+    expect(topRight.rotateY).toBe(4);
+    expect(topRight.cssTransform).toContain('perspective(600px)');
+
+    document.body.innerHTML = `<k-surface pressure style="width: 100px; height: 50px">Press</k-surface>`;
+    const el = document.querySelector('k-surface') as KSurface;
+    await el.updateComplete;
+    el.pressureController.pressAt(100, 0);
+    expect(el.pressureController.isPressed).toBe(true);
+    expect(el.style.transform).toContain('rotateX(4deg)');
+    el.pressureController.reset();
+    expect(el.pressureController.isPressed).toBe(false);
+    expect(el.style.transform).toBe('');
   });
 });

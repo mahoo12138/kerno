@@ -3,7 +3,20 @@ import '@kerno/primitives/define';
 import { userEvent } from 'vitest/browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './define.js';
-import type { KDialog, KDropdown, KNav, KPopover, KTabs, KTooltip } from './index.js';
+import type {
+  KCard,
+  KDialog,
+  KDropdown,
+  KEmptyState,
+  KFormField,
+  KNav,
+  KPopover,
+  KProgress,
+  KSkeleton,
+  KTable,
+  KTabs,
+  KTooltip,
+} from './index.js';
 
 let tokenStyle: HTMLStyleElement;
 
@@ -203,5 +216,80 @@ describe('<k-nav> & <k-nav-item>', () => {
     expect(items[1]!.active).toBe(true);
     expect(items[0]!.active).toBe(false);
     expect(onSelect).toHaveBeenCalledOnce();
+  });
+});
+
+describe('Phase 5 Data Display & Form Field (<k-card>, <k-progress>, <k-skeleton>, <k-empty-state>, <k-table>, <k-form-field>)', () => {
+  it('renders <k-card>, <k-progress>, <k-skeleton> and <k-empty-state>', async () => {
+    document.body.innerHTML = `
+      <div>
+        <k-card title="System Status" shape="chamfer" elevation="2" interactive>Online</k-card>
+        <k-progress value="40" max="80" variant="success"></k-progress>
+        <k-skeleton width="120px" height="16px"></k-skeleton>
+        <k-empty-state title="No deployments" description="Create your first release."></k-empty-state>
+      </div>
+    `;
+    const card = document.querySelector('k-card') as KCard;
+    const progress = document.querySelector('k-progress') as KProgress;
+    const skeleton = document.querySelector('k-skeleton') as KSkeleton;
+    const empty = document.querySelector('k-empty-state') as KEmptyState;
+    await Promise.all([
+      card.updateComplete,
+      progress.updateComplete,
+      skeleton.updateComplete,
+      empty.updateComplete,
+    ]);
+
+    expect(progress.percentage).toBe(50);
+    expect(
+      progress.shadowRoot!.querySelector('[role="progressbar"]')!.getAttribute('aria-valuenow'),
+    ).toBe('40');
+    expect(skeleton.getAttribute('aria-busy')).toBe('true');
+    expect(empty.shadowRoot!.querySelector('.title')!.textContent).toBe('No deployments');
+  });
+
+  it('sorts <k-table> columns and emits k-sort-change', async () => {
+    document.body.innerHTML = `<k-table></k-table>`;
+    const table = document.querySelector('k-table') as KTable<{ name: string; score: number }>;
+    table.columns = [
+      { key: 'name', title: 'Name', sortable: true },
+      { key: 'score', title: 'Score', sortable: true },
+    ];
+    table.data = [
+      { name: 'Beta', score: 20 },
+      { name: 'Alpha', score: 90 },
+    ];
+    await table.updateComplete;
+
+    const onSort = vi.fn();
+    table.addEventListener('k-sort-change', onSort);
+
+    const firstHeader = table.shadowRoot!.querySelector('th') as HTMLTableCellElement;
+    firstHeader.click();
+    await table.updateComplete;
+
+    expect(table.sortKey).toBe('name');
+    expect(table.sortDirection).toBe('asc');
+    expect(onSort).toHaveBeenCalledOnce();
+    const firstCell = table.shadowRoot!.querySelector('tbody td')!;
+    expect(firstCell.textContent).toBe('Alpha');
+  });
+
+  it('connects <k-form-field> label and displays validation errors from child controls', async () => {
+    document.body.innerHTML = `
+      <k-form-field label="Email" help="Work address" required>
+        <k-input name="email" type="email"></k-input>
+      </k-form-field>
+    `;
+    const field = document.querySelector('k-form-field') as KFormField;
+    const input = field.querySelector('k-input')!;
+    await field.updateComplete;
+    await input.updateComplete;
+
+    expect(input.required).toBe(true);
+    expect(input.reportValidity()).toBe(false);
+    await field.updateComplete;
+    const errorText = field.shadowRoot!.querySelector('[part="error"]')!.textContent ?? '';
+    expect(errorText.length).toBeGreaterThan(0);
   });
 });

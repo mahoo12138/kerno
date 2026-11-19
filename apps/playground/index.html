@@ -191,6 +191,40 @@
     </section>
 
     <section>
+      <h2>Data Display, Reveal Highlight &amp; Pressure (Phase 5)</h2>
+      <div class="grid-4">
+        <k-card
+          title="Interactive Reveal + Pressure"
+          shape="chamfer"
+          radius="12"
+          elevation="2"
+          interactive
+        >
+          Move pointer across or press down on this chamfered card.
+          <div slot="footer">
+            <k-badge variant="accent" pill>Reveal + Tilt</k-badge>
+          </div>
+        </k-card>
+        <k-card title="Build Pipeline" shape="rounded" radius="12" elevation="2" interactive>
+          <div style="display: grid; gap: 8px">
+            <div class="row" style="justify-content: space-between">
+              <span>Packages compiled</span>
+              <k-badge variant="success">100%</k-badge>
+            </div>
+            <k-progress value="75" max="100" variant="accent"></k-progress>
+            <k-skeleton width="70%" height="10px"></k-skeleton>
+          </div>
+        </k-card>
+        <k-empty-state
+          icon="info"
+          title="No alerts"
+          description="All services are operating within budget."
+        ></k-empty-state>
+      </div>
+      <k-table id="demo-table" striped></k-table>
+    </section>
+
+    <section>
       <h2>Shape System — Rounded · Chamfer · Scallop · Notch</h2>
       <div class="grid-4">
         <k-surface shape="rounded" radius="12" elevation="2" class="surface-demo">
@@ -312,25 +346,29 @@
       <h2>Primitive Controls &amp; Native Form Association</h2>
       <form id="demo-form" style="display: grid; gap: 14px">
         <div class="row">
-          <k-input
-            name="username"
-            placeholder="Username (required)"
-            value="kerno"
-            clearable
-            required
-          >
-            <k-icon slot="prefix" name="search"></k-icon>
-          </k-input>
-          <k-input
-            name="password"
-            type="password"
-            placeholder="Password (min 4)"
-            value="secret"
-            minlength="4"
-            password-toggle
-            required
-          ></k-input>
-          <k-input name="tag" shape="chamfer" placeholder="Chamfer input" clearable></k-input>
+          <k-form-field label="Username" help="Required account handle" required>
+            <k-input name="username" placeholder="Username" value="kerno" clearable required>
+              <k-icon slot="prefix" name="search"></k-icon>
+            </k-input>
+          </k-form-field>
+          <k-form-field label="Password" help="Minimum 4 characters" required>
+            <k-input
+              name="password"
+              type="password"
+              placeholder="Password"
+              value="secret"
+              minlength="4"
+              password-toggle
+              required
+            ></k-input>
+          </k-form-field>
+          <k-form-field label="Role" help="Select team role" required>
+            <k-select name="role" value="architect" required>
+              <k-option value="architect">UI Architect</k-option>
+              <k-option value="graphics">Graphics Engineer</k-option>
+              <k-option value="frontend">Frontend Developer</k-option>
+            </k-select>
+          </k-form-field>
         </div>
 
         <div class="row">

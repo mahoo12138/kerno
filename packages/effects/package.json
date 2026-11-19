@@ -50,6 +50,16 @@
       "source": "./src/motion/index.ts",
       "default": "./dist/motion/index.js"
     },
+    "./reveal": {
+      "types": "./dist/reveal/index.d.ts",
+      "source": "./src/reveal/index.ts",
+      "default": "./dist/reveal/index.js"
+    },
+    "./pressure": {
+      "types": "./dist/pressure/index.d.ts",
+      "source": "./src/pressure/index.ts",
+      "default": "./dist/pressure/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

@@ -22,7 +22,9 @@ export const surfaceStyles = css`
     box-sizing: border-box;
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
-    transition: filter ${token('motion.duration.normal')} ${token('motion.easing.standard')};
+    transition:
+      filter ${token('motion.duration.normal')} ${token('motion.easing.standard')},
+      transform ${token('motion.duration.fast')} ${token('motion.easing.decelerate')};
   }
 
   :host([hidden]) {
