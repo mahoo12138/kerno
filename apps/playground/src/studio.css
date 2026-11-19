@@ -258,10 +258,13 @@ code {
 
 .metro-tile-inner {
   height: 100%;
+  box-sizing: border-box;
+  padding: 10px 10px 26px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
+  pointer-events: none;
 }
 
 .metro-tile-title {

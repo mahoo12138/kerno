@@ -10,8 +10,11 @@ import type {
   KScrollbar,
   KScrollView,
   KTable,
+  KTile,
+  KTileGroup,
   MarkerEventDetail,
   ScrollbarVariant,
+  TileReorderDetail,
   TrackClickMode,
 } from '@kerno/components';
 import {
@@ -108,6 +111,29 @@ document.querySelectorAll<HTMLElement>('[data-jump]').forEach((tile) => {
 
 document.querySelector('#hero-jump-acrylic')?.addEventListener('click', () => {
   document.getElementById('sec-acrylic')?.scrollIntoView({ behavior: 'smooth' });
+});
+
+const heroTileGroup = document.querySelector<KTileGroup>('#hero-tile-group');
+const heroLaunchTile = document.querySelector<KTile>('#hero-launch-tile');
+const heroTileStatus = document.querySelector<HTMLOutputElement>('#hero-tile-status');
+
+document.querySelector('#hero-enter-desktop')?.addEventListener('click', () => {
+  void heroTileGroup?.enter({ variant: 'desktop' });
+});
+
+document.querySelector('#hero-enter-mobile')?.addEventListener('click', () => {
+  void heroTileGroup?.enter({ variant: 'mobile' });
+});
+
+document.querySelector('#hero-flip-launch')?.addEventListener('click', () => {
+  void heroLaunchTile?.launch();
+});
+
+heroTileGroup?.addEventListener('tilereorder', (event) => {
+  const { from, to, reason } = (event as CustomEvent<TileReorderDetail>).detail;
+  if (heroTileStatus) {
+    heroTileStatus.textContent = `Tile moved from #${from + 1} to #${to + 1} (${reason}).`;
+  }
 });
 
 // ---------------------------------------------------------------------------

@@ -150,6 +150,16 @@
       "source": "./src/scrollbar/define.ts",
       "default": "./dist/scrollbar/define.js"
     },
+    "./tile": {
+      "types": "./dist/tile/index.d.ts",
+      "source": "./src/tile/index.ts",
+      "default": "./dist/tile/index.js"
+    },
+    "./tile/define": {
+      "types": "./dist/tile/define.d.ts",
+      "source": "./src/tile/define.ts",
+      "default": "./dist/tile/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

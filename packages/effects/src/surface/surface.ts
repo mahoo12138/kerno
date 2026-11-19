@@ -8,6 +8,18 @@ import { SurfaceController } from './controller.js';
 import { defaultSurfaceLayers, type SurfaceLayer } from './layers.js';
 import { surfaceStyles } from './surface.styles.js';
 
+export interface SurfaceMotionState {
+  rotateX?: number;
+  rotateY?: number;
+  perspective?: number;
+  originX?: number;
+  originY?: number;
+  scale?: number;
+  x?: number;
+  y?: number;
+  opacity?: number;
+}
+
 /**
  * Unified visual surface container supporting parametric shapes (`rounded`,
  * `chamfer`, `scallop`, `notch`), Acrylic translucent material, shape-aware
@@ -64,6 +76,9 @@ export class KSurface extends KernoElement {
   /** Custom render layers; defaults to `[backgroundLayer, borderLayer]`. */
   @prop({ attribute: false }) accessor layers: readonly SurfaceLayer[] = defaultSurfaceLayers;
 
+  /** Set to `true` when an ancestor (such as `<k-tile-group>`) takes over an active press gesture. */
+  pressTakenOver = false;
+
   readonly surface = new SurfaceController(this);
   readonly revealController = new RevealController(
     this,
@@ -109,6 +124,81 @@ export class KSurface extends KernoElement {
   /** Forces an immediate synchronous canvas paint. */
   paintNow(): void {
     this.surface.paintNow();
+  }
+
+  /**
+   * Programmatically presses the surface at `at` (or `'center'`) to trigger
+   * Reveal ripple and 3D Pressure tilt feedback.
+   */
+  press(at: { x: number; y: number } | 'center' = 'center'): void {
+    this.pressTakenOver = false;
+    const rect = this.getBoundingClientRect();
+    const x = at === 'center' ? rect.width / 2 : at.x;
+    const y = at === 'center' ? rect.height / 2 : at.y;
+    if (this.reveal) this.revealController.triggerPress(x, y);
+    if (this.pressure) this.pressureController.pressAt(x, y);
+  }
+
+  /**
+   * Releases an active press (called on keyboard keyup or when `<k-tile-group>`
+   * lifts a tile into a drag gesture).
+   */
+  release(takenOver = false): void {
+    if (takenOver) this.pressTakenOver = true;
+    this.revealController.releasePress(undefined, undefined, 'keyboard');
+    this.pressureController.reset();
+  }
+
+  /** Milliseconds remaining in the current press ripple / tilt feedback. */
+  pressRemaining(): number {
+    const revealMs = this.reveal ? this.revealController.pressRemaining() : 0;
+    const tiltMs = this.pressure && this.pressureController.isPressed ? 50 : 0;
+    return Math.max(revealMs, tiltMs);
+  }
+
+  /**
+   * Applies external 3D motion (used by `<k-tile>` flip launch and
+   * `<k-tile-group>` turnstile/entrance animations) to internal surface planes
+   * without making `:host` an opacity backdrop root.
+   */
+  motion(state: SurfaceMotionState | null): void {
+    const planes: HTMLElement[] = [
+      this.#shadowCanvas,
+      this.#backdrop,
+      this.#canvas,
+      this.#clip,
+    ].filter(Boolean);
+    if (!state) {
+      for (const el of planes) {
+        el.style.transform = '';
+        el.style.transformOrigin = '';
+        el.style.opacity = '';
+      }
+      return;
+    }
+    const parts: string[] = [];
+    if (state.x || state.y) {
+      parts.push(`translate(${state.x ?? 0}px, ${state.y ?? 0}px)`);
+    }
+    if (state.scale !== undefined && state.scale !== 1) {
+      parts.push(`scale(${state.scale})`);
+    }
+    if (state.perspective && (state.rotateX || state.rotateY)) {
+      parts.push(`perspective(${state.perspective}px)`);
+    }
+    if (state.rotateX) parts.push(`rotateX(${state.rotateX}deg)`);
+    if (state.rotateY) parts.push(`rotateY(${state.rotateY}deg)`);
+    const transform = parts.join(' ');
+    const origin =
+      state.originX !== undefined || state.originY !== undefined
+        ? `${state.originX ?? 0}px ${state.originY ?? 0}px`
+        : '';
+    const opacity = state.opacity !== undefined && state.opacity < 1 ? String(state.opacity) : '';
+    for (const el of planes) {
+      el.style.transform = transform;
+      el.style.transformOrigin = origin;
+      el.style.opacity = opacity;
+    }
   }
 
   #resolveShape(): ShapeInput {

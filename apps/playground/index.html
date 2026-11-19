@@ -92,111 +92,210 @@
                   Explore Acrylic Lab
                 </k-button>
                 <k-button
-                  id="hero-open-dialog"
+                  id="hero-enter-desktop"
                   style="
                     --k-button-bg: rgba(255, 255, 255, 0.14);
                     --k-button-bg-hover: rgba(255, 255, 255, 0.22);
                     --k-button-bg-active: rgba(255, 255, 255, 0.1);
                     --k-button-fg: #ffffff;
-                    --k-button-border-color: rgba(255, 255, 255, 0.28);
+                    --k-button-border-color: rgba(255, 255, 255, 0.45);
                   "
                 >
-                  Open Acrylic Dialog
+                  Desktop Band Entrance
+                </k-button>
+                <k-button
+                  id="hero-enter-mobile"
+                  style="
+                    --k-button-bg: rgba(255, 255, 255, 0.14);
+                    --k-button-bg-hover: rgba(255, 255, 255, 0.22);
+                    --k-button-bg-active: rgba(255, 255, 255, 0.1);
+                    --k-button-fg: #ffffff;
+                    --k-button-border-color: rgba(255, 255, 255, 0.45);
+                  "
+                >
+                  Turnstile 3D Entrance
+                </k-button>
+                <k-button
+                  id="hero-flip-launch"
+                  style="
+                    --k-button-bg: rgba(255, 255, 255, 0.14);
+                    --k-button-bg-hover: rgba(255, 255, 255, 0.22);
+                    --k-button-bg-active: rgba(255, 255, 255, 0.1);
+                    --k-button-fg: #ffffff;
+                    --k-button-border-color: rgba(255, 255, 255, 0.45);
+                  "
+                >
+                  3D Flip App Launch
                 </k-button>
               </div>
+              <output
+                id="hero-tile-status"
+                style="font-size: 12px; color: rgba(255, 255, 255, 0.82)"
+              >
+                Drag any Start tile (or focus + Alt+Shift+Arrow) to reorder live.
+              </output>
             </div>
 
-            <div class="start-tiles">
-              <k-surface
-                class="metro-tile wide"
-                reveal
-                pressure
-                shape="chamfer"
-                radius="10"
-                style="--k-surface-bg: #2563eb; --k-surface-border-color: rgba(255, 255, 255, 0.22)"
-                data-jump="sec-acrylic"
+            <k-tile-bound style="--k-tile-entrance: desktop">
+              <k-tile-group
+                id="hero-tile-group"
+                drag="press"
+                contextmenu
+                orientation="vertical"
+                style="
+                  --k-tile-cell-width: 58px;
+                  --k-tile-cell-height: 54px;
+                  --k-tile-gap: 8px;
+                  --k-tile-columns: 6;
+                "
               >
-                <div class="metro-tile-inner">
-                  <k-icon name="eye" size="lg"></k-icon>
-                  <div>
-                    <div class="metro-tile-title">Acrylic Glass</div>
-                    <div class="metro-tile-meta">Blur · Saturate · Brightness · Grain</div>
+                <k-tile
+                  id="hero-launch-tile"
+                  class="metro-tile"
+                  columns="4"
+                  rows="2"
+                  shape="chamfer"
+                  radius="10"
+                  style="
+                    --k-surface-bg: #2563eb;
+                    --k-surface-border-color: rgba(255, 255, 255, 0.24);
+                    --k-tile-splash-color: #1d4ed8;
+                    --k-tile-splash-hold: 280ms;
+                  "
+                  data-jump="sec-acrylic"
+                >
+                  <div class="metro-tile-inner">
+                    <k-icon name="eye" size="lg"></k-icon>
+                    <div class="metro-tile-meta">Blur · Saturate · Grain</div>
                   </div>
-                </div>
-              </k-surface>
+                  <button slot="action" type="button">Acrylic Glass</button>
+                  <template slot="splash">
+                    <div style="display: grid; place-items: center; gap: 12px; color: #ffffff">
+                      <k-icon name="eye" size="lg"></k-icon>
+                      <strong style="font-size: 18px; letter-spacing: 0.04em"
+                        >ACRYLIC MATERIAL LAB</strong
+                      >
+                    </div>
+                  </template>
+                </k-tile>
 
-              <k-surface
-                class="metro-tile"
-                reveal
-                pressure
-                shape="rounded"
-                radius="8"
-                style="--k-surface-bg: #1e7145; --k-surface-border-color: rgba(255, 255, 255, 0.22)"
-                data-jump="sec-reveal"
-              >
-                <div class="metro-tile-inner">
-                  <k-icon name="star" size="lg"></k-icon>
-                  <div>
-                    <div class="metro-tile-title">Reveal</div>
-                    <div class="metro-tile-meta">Border + Ripple</div>
+                <k-tile
+                  class="metro-tile"
+                  columns="2"
+                  rows="2"
+                  shape="rounded"
+                  radius="0"
+                  style="
+                    --k-surface-bg: #1e7145;
+                    --k-surface-border-color: rgba(255, 255, 255, 0.24);
+                  "
+                  data-jump="sec-reveal"
+                >
+                  <div class="metro-tile-inner">
+                    <k-icon name="star" size="lg"></k-icon>
+                    <div class="metro-tile-meta">2000ms Wave</div>
                   </div>
-                </div>
-              </k-surface>
+                  <button slot="action" type="button">Reveal</button>
+                </k-tile>
 
-              <k-surface
-                class="metro-tile"
-                reveal
-                pressure
-                shape="scallop"
-                radius="10"
-                style="--k-surface-bg: #603cba; --k-surface-border-color: rgba(255, 255, 255, 0.22)"
-                data-jump="sec-shape"
-              >
-                <div class="metro-tile-inner">
-                  <k-icon name="info" size="lg"></k-icon>
-                  <div>
-                    <div class="metro-tile-title">Shape</div>
-                    <div class="metro-tile-meta">4 Corner Types</div>
+                <k-tile
+                  class="metro-tile"
+                  columns="2"
+                  rows="2"
+                  shape="scallop"
+                  radius="10"
+                  style="
+                    --k-surface-bg: #603cba;
+                    --k-surface-border-color: rgba(255, 255, 255, 0.24);
+                  "
+                  data-jump="sec-shape"
+                >
+                  <div class="metro-tile-inner">
+                    <k-icon name="info" size="lg"></k-icon>
+                    <div class="metro-tile-meta">Parametric Edges</div>
                   </div>
-                </div>
-              </k-surface>
+                  <button slot="action" type="button">Shape</button>
+                </k-tile>
 
-              <k-surface
-                class="metro-tile"
-                reveal
-                pressure
-                shape="notch"
-                radius="8"
-                style="--k-surface-bg: #c2410c; --k-surface-border-color: rgba(255, 255, 255, 0.22)"
-                data-jump="sec-overlays"
-              >
-                <div class="metro-tile-inner">
-                  <k-icon name="chevron-right" size="lg"></k-icon>
-                  <div>
-                    <div class="metro-tile-title">Top Layer</div>
+                <k-tile
+                  class="metro-tile"
+                  columns="2"
+                  rows="2"
+                  shape="notch"
+                  radius="8"
+                  style="
+                    --k-surface-bg: #c2410c;
+                    --k-surface-border-color: rgba(255, 255, 255, 0.24);
+                  "
+                  data-jump="sec-overlays"
+                >
+                  <div class="metro-tile-inner">
+                    <k-icon name="chevron-right" size="lg"></k-icon>
                     <div class="metro-tile-meta">Popover API</div>
                   </div>
-                </div>
-              </k-surface>
+                  <button slot="action" type="button">Top Layer</button>
+                </k-tile>
 
-              <k-surface
-                class="metro-tile"
-                reveal
-                pressure
-                shape="rounded"
-                radius="8"
-                style="--k-surface-bg: #0f766e; --k-surface-border-color: rgba(255, 255, 255, 0.22)"
-                data-jump="sec-controls"
-              >
-                <div class="metro-tile-inner">
-                  <k-icon name="check" size="lg"></k-icon>
-                  <div>
-                    <div class="metro-tile-title">Forms</div>
-                    <div class="metro-tile-meta">ElementInternals</div>
+                <k-tile
+                  class="metro-tile"
+                  columns="1"
+                  rows="1"
+                  shape="rounded"
+                  radius="0"
+                  label="hidden"
+                  style="
+                    --k-surface-bg: #0f766e;
+                    --k-surface-border-color: rgba(255, 255, 255, 0.24);
+                  "
+                  data-jump="sec-controls"
+                >
+                  <div
+                    class="metro-tile-inner"
+                    style="align-items: center; justify-content: center"
+                  >
+                    <k-icon name="check" size="md"></k-icon>
                   </div>
-                </div>
-              </k-surface>
-            </div>
+                  <button slot="action" type="button">Forms &amp; Controls</button>
+                </k-tile>
+
+                <k-tile
+                  class="metro-tile"
+                  columns="1"
+                  rows="1"
+                  shape="rounded"
+                  radius="0"
+                  label="hidden"
+                  style="
+                    --k-surface-bg: #0284c7;
+                    --k-surface-border-color: rgba(255, 255, 255, 0.24);
+                  "
+                  data-jump="sec-scrollbar"
+                >
+                  <div
+                    class="metro-tile-inner"
+                    style="align-items: center; justify-content: center"
+                  >
+                    <k-icon name="search" size="md"></k-icon>
+                  </div>
+                  <button slot="action" type="button">Scrollbar Studio</button>
+                </k-tile>
+
+                <k-tile
+                  class="metro-tile"
+                  columns="2"
+                  rows="1"
+                  shape="rounded"
+                  radius="0"
+                  style="
+                    --k-surface-bg: #be185d;
+                    --k-surface-border-color: rgba(255, 255, 255, 0.24);
+                  "
+                  id="hero-open-dialog"
+                >
+                  <button slot="action" type="button">Acrylic Dialog</button>
+                </k-tile>
+              </k-tile-group>
+            </k-tile-bound>
           </div>
         </section>
 

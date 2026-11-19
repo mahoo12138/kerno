@@ -11,3 +11,4 @@ export * from './empty-state/index.js';
 export * from './table/index.js';
 export * from './form-field/index.js';
 export * from './scrollbar/index.js';
+export * from './tile/index.js';
