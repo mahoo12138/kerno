@@ -1,10 +1,10 @@
 import {
   FormAssociatedElement,
   KernoElement,
-  autoPosition,
   enterTopLayer,
   exitTopLayer,
   getActiveElement,
+  isServer,
   overlayManager,
   prop,
   uniqueId,
@@ -30,7 +30,7 @@ export type SelectShape = CornerKind;
 export class KOption extends KernoElement {
   static override styles = optionStyles;
   static override shadowRootOptions: ShadowRootInit = { mode: 'open', delegatesFocus: true };
-  static override template = /* html */ `<button part="base" class="base" type="button" role="option" aria-selected="false"><span part="label" class="label"><slot></slot></span><span class="check" aria-hidden="true"></span></button>`;
+  static override template = /* html */ `<button part="base" class="base" type="button" role="option" aria-selected="false"><span part="label" class="label"><slot></slot></span></button>`;
 
   @prop({ reflect: true }) accessor value = '';
   @prop({ type: Boolean, reflect: true }) accessor selected = false;
@@ -55,8 +55,6 @@ export class KOption extends KernoElement {
 
   protected override setup(): void {
     this.#base = this.renderRoot.querySelector('.base') as HTMLButtonElement;
-    const check = this.renderRoot.querySelector('.check') as HTMLSpanElement;
-    check.innerHTML = `<svg viewBox="0 0 16 16">${getIcon('check') ?? ''}</svg>`;
   }
 
   protected override update(_changed: PropertyValues): void {
@@ -66,8 +64,8 @@ export class KOption extends KernoElement {
 }
 
 /**
- * Form-associated select control with floating listbox, keyboard navigation and
- * constraint validation.
+ * Form-associated select control with Windows 10 ComboBox overlay popup,
+ * keyboard navigation and constraint validation.
  *
  * @tag k-select
  *
@@ -183,11 +181,7 @@ export class KSelect extends FormAssociatedElement {
       this.#wasOpen = true;
       this.#cancelExit();
       enterTopLayer(this.#listbox);
-      this.#listbox.style.minWidth = `${this.#combobox.offsetWidth || 180}px`;
-      this.#stopPositioning = autoPosition(this.#combobox, this.#listbox, {
-        placement: 'bottom-start',
-        offset: 4,
-      });
+      this.#stopPositioning = this.#startOverlayPositioning();
       overlayManager.add({
         id: this.#overlayId,
         content: this.#listbox,
@@ -211,6 +205,51 @@ export class KSelect extends FormAssociatedElement {
       overlayManager.remove(this.#overlayId);
       this.#playExit();
     }
+  }
+
+  /**
+   * Positions the Windows 10 ComboBox popup directly over the combobox trigger
+   * so the selected option overlays the trigger row in-place.
+   */
+  #startOverlayPositioning(): () => void {
+    if (isServer) return () => {};
+    const update = (): void => {
+      const triggerRect = this.#combobox.getBoundingClientRect();
+      const width = Math.max(triggerRect.width, 120);
+      this.#listbox.style.width = `${width}px`;
+      this.#listbox.style.minWidth = `${width}px`;
+
+      const options = this.getOptions();
+      const selected = options.find((o) => o.selected) ?? options[0];
+      let offsetY = 5; // 1px border + 4px top padding
+      if (selected) {
+        offsetY = selected.offsetTop - this.#listbox.scrollTop;
+      }
+
+      const listHeight = this.#listbox.offsetHeight || 160;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const pad = 8;
+
+      let left = triggerRect.left;
+      let top = triggerRect.top - offsetY;
+
+      if (left + width > vw - pad) left = Math.max(pad, vw - pad - width);
+      if (left < pad) left = pad;
+      if (top + listHeight > vh - pad) top = Math.max(pad, vh - pad - listHeight);
+      if (top < pad) top = pad;
+
+      this.#listbox.style.left = `${Math.round(left)}px`;
+      this.#listbox.style.top = `${Math.round(top)}px`;
+    };
+
+    update();
+    window.addEventListener('resize', update, { passive: true });
+    window.addEventListener('scroll', update, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, { capture: true });
+    };
   }
 
   #syncOptions(): void {

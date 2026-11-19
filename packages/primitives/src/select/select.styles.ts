@@ -1,6 +1,12 @@
 import { css } from '@kerno/core';
 import { token } from '@kerno/tokens';
 
+/**
+ * Windows 10 UWP ComboBox option item:
+ * - Edge-to-edge full-width row (0 horizontal margin, 0 border-radius)
+ * - Normal font weight (no checkmark icon, no bold weight shift)
+ * - Deep accent tint background when `[selected]`
+ */
 export const optionStyles = css`
   :host {
     display: block;
@@ -17,17 +23,16 @@ export const optionStyles = css`
     display: flex;
     width: 100%;
     align-items: center;
-    justify-content: space-between;
-    gap: ${token('spacing.sm')};
-    min-height: ${token('control.height.md')};
-    padding: 4px ${token('spacing.sm')};
+    min-height: 32px;
+    padding: 4px ${token('control.paddingX.md')};
     border-radius: 0px;
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
     font-size: ${token('font.size.sm')};
+    font-weight: ${token('font.weight.regular')};
     cursor: pointer;
     user-select: none;
-    transition: background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
+    transition: background-color 80ms ${token('motion.easing.standard')};
   }
 
   .base:hover:not(:disabled),
@@ -36,41 +41,35 @@ export const optionStyles = css`
     outline: none;
   }
 
+  .base:active:not(:disabled) {
+    background: ${token('color.control.default')};
+  }
+
   :host([selected]) .base {
-    font-weight: ${token('font.weight.semibold')};
-    background: color-mix(in srgb, ${token('color.accent.default')} 22%, transparent);
+    background: color-mix(in srgb, ${token('color.accent.default')} 38%, transparent);
     color: ${token('color.fg.default')};
   }
 
-  :host([selected]) .base:hover:not(:disabled) {
-    background: color-mix(in srgb, ${token('color.accent.default')} 32%, transparent);
+  :host([selected]) .base:hover:not(:disabled),
+  :host([selected]) .base:focus-visible:not(:disabled) {
+    background: color-mix(in srgb, ${token('color.accent.default')} 52%, transparent);
   }
 
   .base:disabled {
     cursor: default;
     color: ${token('color.fg.disabled')};
   }
-
-  .check {
-    display: inline-flex;
-    width: 14px;
-    height: 14px;
-    opacity: 0;
-  }
-
-  :host([selected]) .check {
-    opacity: 1;
-  }
-
-  .check svg {
-    width: 100%;
-    height: 100%;
-  }
 `;
 
+/**
+ * Windows 10 UWP ComboBox:
+ * - Closed trigger: transparent/inset background with a crisp 2px border
+ * - Opened listbox: overlays directly on top of the trigger with a 1px border,
+ *   4px top/bottom padding, and 0 left/right padding so selected rows span edge-to-edge
+ */
 export const selectStyles = css`
   :host {
-    --_height: ${token('control.height.md')};
+    --_height: 32px;
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
     --_radius: 0px;
@@ -115,7 +114,7 @@ export const selectStyles = css`
     padding-inline: var(--_padding-x);
     border-radius: var(--_radius);
     border: 2px solid ${token('color.stroke.strong')};
-    background: ${token('color.bg.layer')};
+    background: transparent;
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
     font-size: var(--_font-size);
@@ -150,7 +149,7 @@ export const selectStyles = css`
   }
 
   .combobox:hover:not(:disabled) {
-    border-color: color-mix(in srgb, ${token('color.fg.default')} 68%, transparent);
+    border-color: color-mix(in srgb, ${token('color.fg.default')} 72%, transparent);
   }
 
   :host([shape='chamfer']) .combobox:hover:not(:disabled),
@@ -160,23 +159,25 @@ export const selectStyles = css`
   }
 
   .combobox:hover:not(:disabled) .shape-stroke {
-    stroke: color-mix(in srgb, ${token('color.fg.default')} 68%, transparent);
+    stroke: color-mix(in srgb, ${token('color.fg.default')} 72%, transparent);
   }
 
-  :host([open]) .combobox,
+  .combobox:active:not(:disabled) {
+    background: ${token('color.subtle.hover')};
+  }
+
   .combobox:focus-visible {
     border-color: ${token('color.accent.default')};
     outline: none;
   }
 
-  :host([open]) .shape-stroke,
   .combobox:focus-visible .shape-stroke {
     stroke: ${token('color.accent.default')};
   }
 
   .combobox:disabled {
     cursor: default;
-    background: ${token('color.control.disabled')};
+    background: transparent;
     color: ${token('color.fg.disabled')};
     border-color: ${token('color.stroke.default')};
   }
@@ -194,14 +195,13 @@ export const selectStyles = css`
     position: relative;
     z-index: 2;
     display: inline-flex;
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     color: ${token('color.fg.secondary')};
-    transition: transform ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
-  :host([open]) .arrow {
-    transform: rotate(180deg);
+  .combobox:hover:not(:disabled) .arrow {
+    color: ${token('color.fg.default')};
   }
 
   .arrow svg {
@@ -217,14 +217,16 @@ export const selectStyles = css`
     position: fixed;
     inset: auto;
     margin: 0;
+    box-sizing: border-box;
     z-index: ${token('zIndex.dropdown')};
     min-width: 180px;
-    max-height: 240px;
+    max-height: 260px;
     overflow: auto;
-    padding: 2px;
+    padding: 4px 0;
     border-radius: 0px;
-    border: 2px solid ${token('color.stroke.strong')};
-    background: ${token('color.bg.layer')};
+    border: 1px solid
+      color-mix(in srgb, ${token('color.stroke.strong')} 35%, ${token('color.stroke.default')});
+    background: ${token('color.bg.layerAlt')};
     color: ${token('color.fg.default')};
     box-shadow: ${token('elevation.4')};
   }
