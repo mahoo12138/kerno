@@ -295,6 +295,26 @@ export function toClipPath(
 }
 
 /**
+ * Generates a CSS `mask-image: url("data:image/svg+xml,...")` value for
+ * `(width × height)`. Used on Chromium to clip `backdrop-filter` layers to
+ * non-rectangular outlines (Chromium ignores `clip-path` for `backdrop-filter`
+ * whenever an ancestor clips overflow with `border-radius`).
+ */
+export function toMaskImage(
+  width: number,
+  height: number,
+  input: ShapeInput | ShapeSpec,
+  inset = 0,
+): string {
+  const d = toSvgPath(width, height, input, inset);
+  if (!d) return '';
+  const w = fmt(Math.max(0, width));
+  const h = fmt(Math.max(0, height));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}"/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+/**
  * Traces the shape onto a Canvas `CanvasPath` (`CanvasRenderingContext2D` or `Path2D`).
  */
 export function traceCanvasPath(

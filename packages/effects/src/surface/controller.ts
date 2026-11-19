@@ -1,5 +1,5 @@
 import { isServer, type ReactiveController, type ReactiveControllerHost } from '@kerno/core';
-import type { AcrylicMaterialParams } from '../acrylic/index.js';
+import { shouldCutBackdropWithClipPath, type AcrylicMaterialParams } from '../acrylic/index.js';
 import {
   elevationToken,
   normalizeElevation,
@@ -11,6 +11,7 @@ import {
   isRoundedOnly,
   normalizeShape,
   toClipPath,
+  toMaskImage,
   type ShapeInput,
   type ShapeSpec,
 } from '../shape/index.js';
@@ -21,6 +22,7 @@ import { cancelFrame, scheduleFrame } from './scheduler.js';
 export interface SurfaceControllerConfig {
   readonly canvas: HTMLCanvasElement;
   readonly shadowCanvas?: HTMLCanvasElement;
+  readonly backdropTarget?: HTMLElement;
   readonly clipTarget?: HTMLElement;
   getShape(): ShapeInput | ShapeSpec;
   getElevation(): ElevationInput;
@@ -48,6 +50,7 @@ export class SurfaceController implements ReactiveController {
   #visible = true;
   #dirty = false;
   #paintCount = 0;
+  #lastGeometryKey = '';
 
   constructor(host: ReactiveControllerHost & HTMLElement) {
     this.host = host;
@@ -130,6 +133,7 @@ export class SurfaceController implements ReactiveController {
     this.#intersectionObserver = null;
     this.#stopEnvObserver?.();
     this.#stopEnvObserver = null;
+    this.#lastGeometryKey = '';
     const layers = this.#config?.getLayers?.() ?? defaultSurfaceLayers;
     for (const layer of layers) layer.destroy?.();
   }
@@ -178,24 +182,61 @@ export class SurfaceController implements ReactiveController {
     const cfg = this.#config;
     const shape = normalizeShape(cfg.getShape());
     const roundedOnly = isRoundedOnly(shape);
+    const acrylic = cfg.getAcrylic();
     const clipEl = cfg.clipTarget ?? this.host;
+    const backdropEl = cfg.backdropTarget;
 
-    // 1. Geometry clip & border-radius sync
-    if (roundedOnly) {
-      clipEl.style.clipPath = '';
-      clipEl.style.borderRadius = `${shape.topLeft.radius}px ${shape.topRight.radius}px ${shape.bottomRight.radius}px ${shape.bottomLeft.radius}px`;
-    } else {
-      clipEl.style.borderRadius = '0px';
-      clipEl.style.clipPath = toClipPath(w, h, shape);
+    // 1. Geometry clip, backdrop mask & border-radius sync (cached to avoid
+    //    re-decoding SVG data URLs during 60fps Reveal hover repaints).
+    const geometryKey = `${w}|${h}|${acrylic ? 1 : 0}|${shape.topLeft.kind}:${shape.topLeft.radius}|${shape.topRight.kind}:${shape.topRight.radius}|${shape.bottomRight.kind}:${shape.bottomRight.radius}|${shape.bottomLeft.kind}:${shape.bottomLeft.radius}`;
+    if (geometryKey !== this.#lastGeometryKey) {
+      this.#lastGeometryKey = geometryKey;
+      if (roundedOnly) {
+        const radiusCss = `${shape.topLeft.radius}px ${shape.topRight.radius}px ${shape.bottomRight.radius}px ${shape.bottomLeft.radius}px`;
+        clipEl.style.clipPath = '';
+        clipEl.style.borderRadius = radiusCss;
+        cfg.canvas.style.borderRadius = radiusCss;
+        if (backdropEl) {
+          backdropEl.style.borderRadius = radiusCss;
+          backdropEl.style.clipPath = '';
+          backdropEl.style.maskImage = '';
+          backdropEl.style.webkitMaskImage = '';
+        }
+      } else {
+        const clipCss = toClipPath(w, h, shape);
+        clipEl.style.borderRadius = '0px';
+        clipEl.style.clipPath = clipCss;
+        cfg.canvas.style.borderRadius = '0px';
+        if (backdropEl) {
+          backdropEl.style.borderRadius = '0px';
+          if (acrylic) {
+            if (shouldCutBackdropWithClipPath()) {
+              backdropEl.style.maskImage = '';
+              backdropEl.style.webkitMaskImage = '';
+              backdropEl.style.clipPath = clipCss;
+            } else {
+              const mask = toMaskImage(w, h, shape);
+              backdropEl.style.clipPath = '';
+              backdropEl.style.maskImage = mask;
+              backdropEl.style.webkitMaskImage = mask;
+            }
+          } else {
+            backdropEl.style.clipPath = '';
+            backdropEl.style.maskImage = '';
+            backdropEl.style.webkitMaskImage = '';
+          }
+        }
+      }
     }
 
     // 2. Elevation sync
-    // Rounded shapes use compositor-friendly box-shadow; non-rectangular shapes
-    // paint an outer knockout shadow onto the sibling shadowCanvas so `:host`
-    // NEVER receives CSS `filter` (which would break `backdrop-filter` on Acrylic).
+    // Rounded shapes use compositor-friendly box-shadow on the full-host canvas
+    // element; non-rectangular shapes paint an outer knockout shadow onto the
+    // sibling shadowCanvas so `:host` NEVER receives CSS `filter` (which would
+    // break `backdrop-filter` on Acrylic).
     const elevation = normalizeElevation(cfg.getElevation());
     const nextShadow = elevation === 0 || !roundedOnly ? 'none' : elevationToken(elevation);
-    if (clipEl.style.boxShadow !== nextShadow) clipEl.style.boxShadow = nextShadow;
+    if (cfg.canvas.style.boxShadow !== nextShadow) cfg.canvas.style.boxShadow = nextShadow;
 
     // 3. HiDPI Canvas draw
     const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
@@ -230,7 +271,7 @@ export class SurfaceController implements ReactiveController {
       strokeWidth,
       fillColor: cfg.getFillColor(),
       strokeColor: cfg.getStrokeColor(),
-      acrylic: cfg.getAcrylic(),
+      acrylic,
       acrylicOverrides: cfg.getAcrylicOverrides?.(),
     };
 

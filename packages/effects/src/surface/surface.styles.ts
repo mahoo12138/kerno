@@ -26,7 +26,8 @@ export const surfaceStyles = css`
     --_radius: var(--k-surface-radius, ${token('radius.lg')});
 
     position: relative;
-    display: block;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     box-sizing: border-box;
     isolation: isolate;
     color: ${token('color.fg.default')};
@@ -56,17 +57,22 @@ export const surfaceStyles = css`
     display: none;
   }
 
-  .clip {
-    position: relative;
-    z-index: 1;
-    box-sizing: border-box;
+  .backdrop {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    transition: box-shadow ${token('motion.duration.normal')} ${token('motion.easing.standard')};
+    pointer-events: none;
+    display: none;
+    z-index: 1;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
   }
 
-  :host([acrylic]) .clip {
+  :host([acrylic]) .backdrop {
+    display: block;
     backdrop-filter: blur(${token('surface.acrylic.blur')})
       saturate(${token('surface.acrylic.saturation')})
       brightness(${token('surface.acrylic.brightness')});
@@ -76,21 +82,20 @@ export const surfaceStyles = css`
   }
 
   @media (prefers-reduced-transparency: reduce) {
-    :host([acrylic]) .clip {
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
+    :host([acrylic]) .backdrop {
+      display: none;
     }
   }
 
-  :host([reduced-transparency]) .clip {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+  :host([reduced-transparency]) .backdrop {
+    display: none;
   }
 
   @media (forced-colors: active) {
+    :host([acrylic]) .backdrop {
+      display: none;
+    }
     :host([acrylic]) .clip {
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
       background: Canvas;
     }
   }
@@ -102,14 +107,25 @@ export const surfaceStyles = css`
     height: 100%;
     pointer-events: none;
     display: block;
+    z-index: 2;
+    transition: box-shadow ${token('motion.duration.normal')} ${token('motion.easing.standard')};
+  }
+
+  .clip {
+    position: relative;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .content {
     position: relative;
-    z-index: 1;
     box-sizing: border-box;
     width: 100%;
-    height: 100%;
     padding: var(--k-surface-padding, ${token('spacing.lg')});
   }
 `;

@@ -20,6 +20,7 @@ import {
   scheduleFrame,
   slideIn,
   toClipPath,
+  toMaskImage,
   toSvgPath,
   type KSurface,
   type SurfaceLayer,
@@ -168,8 +169,15 @@ describe('<k-surface> & FrameScheduler', () => {
     flushFrames();
 
     const clip = el.shadowRoot!.querySelector<HTMLElement>('.clip')!;
+    const backdrop = el.shadowRoot!.querySelector<HTMLElement>('.backdrop')!;
     const shadowCanvas = el.shadowRoot!.querySelector<HTMLCanvasElement>('.shadow-canvas')!;
     expect(clip.style.clipPath).toContain('path(');
+    // In Chromium, non-rectangular acrylic backdrop is clipped via SVG mask-image
+    // (avoiding Blink's bug where clip-path is ignored for backdrop-filter inside
+    // rounded overflow:hidden ancestors).
+    expect(toMaskImage(160, 80, { kind: 'chamfer', radius: 10 })).toContain('data:image/svg+xml');
+    expect(backdrop.style.maskImage).toContain('data:image/svg+xml');
+    expect(backdrop.style.clipPath).toBe('');
     // Non-rectangular elevation paints to sibling shadowCanvas without putting CSS filter on host
     // (preserving backdrop-filter sampling on Acrylic surfaces).
     expect(el.style.filter).toBe('');
@@ -177,6 +185,38 @@ describe('<k-surface> & FrameScheduler', () => {
     expect(shadowCanvas.width).toBeGreaterThan(160);
     expect(customLayerDraw).toHaveBeenCalled();
     expect(el.surface.paintCount).toBeGreaterThan(0);
+
+    // Switching back to rounded clears mask-image and uses native border-radius.
+    el.shape = 'rounded';
+    await el.updateComplete;
+    flushFrames();
+    expect(backdrop.style.maskImage).toBe('');
+    expect(backdrop.style.borderRadius).toBe('10px');
+  });
+
+  it('aligns .backdrop, .canvas and .clip to full host height under min-height', async () => {
+    document.body.innerHTML = `
+      <k-surface
+        shape="chamfer"
+        radius="16"
+        elevation="4"
+        acrylic
+        style="width: 280px; min-height: 180px"
+      >Short content</k-surface>
+    `;
+    const el = document.querySelector('k-surface') as KSurface;
+    await el.updateComplete;
+    flushFrames();
+
+    const hostRect = el.getBoundingClientRect();
+    const backdropRect = el.shadowRoot!.querySelector('.backdrop')!.getBoundingClientRect();
+    const canvasRect = el.shadowRoot!.querySelector('.canvas')!.getBoundingClientRect();
+    const clipRect = el.shadowRoot!.querySelector('.clip')!.getBoundingClientRect();
+
+    expect(hostRect.height).toBeCloseTo(180, 0);
+    expect(backdropRect.height).toBeCloseTo(hostRect.height, 0);
+    expect(canvasRect.height).toBeCloseTo(hostRect.height, 0);
+    expect(clipRect.height).toBeCloseTo(hostRect.height, 0);
   });
 
   it('pauses painting while off-screen and repaints when visible again', async () => {

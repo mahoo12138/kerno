@@ -17,9 +17,11 @@ import { surfaceStyles } from './surface.styles.js';
  *
  * @slot - Surface content.
  *
- * @csspart clip - Clipped backdrop and shadow receiver.
+ * @csspart shadow - Non-rectangular knockout elevation shadow canvas.
+ * @csspart backdrop - Shape-clipped Acrylic `backdrop-filter` layer.
  * @csspart canvas - Internal 2D rendering canvas.
- * @csspart content - Foreground content container.
+ * @csspart clip - Shape-clipped foreground container.
+ * @csspart content - Foreground content wrapper.
  *
  * @cssprop --k-surface-bg
  * @cssprop --k-surface-border-color
@@ -29,7 +31,7 @@ import { surfaceStyles } from './surface.styles.js';
  */
 export class KSurface extends KernoElement {
   static override styles = surfaceStyles;
-  static override template = /* html */ `<canvas part="shadow" class="shadow-canvas" aria-hidden="true" hidden></canvas><div part="clip" class="clip"><canvas part="canvas" class="canvas" aria-hidden="true"></canvas><div part="content" class="content"><slot></slot></div></div>`;
+  static override template = /* html */ `<canvas part="shadow" class="shadow-canvas" aria-hidden="true" hidden></canvas><div part="backdrop" class="backdrop" aria-hidden="true"></div><canvas part="canvas" class="canvas" aria-hidden="true"></canvas><div part="clip" class="clip"><div part="content" class="content"><slot></slot></div></div>`;
 
   /** Corner geometry family (`'rounded' | 'chamfer' | 'scallop' | 'notch'`). */
   @prop({ reflect: true }) accessor shape: CornerKind = 'rounded';
@@ -72,17 +74,20 @@ export class KSurface extends KernoElement {
   readonly #revealLayer = this.revealController.createLayer();
 
   #shadowCanvas!: HTMLCanvasElement;
+  #backdrop!: HTMLDivElement;
   #clip!: HTMLDivElement;
   #canvas!: HTMLCanvasElement;
 
   protected override setup(): void {
     this.#shadowCanvas = this.renderRoot.querySelector('.shadow-canvas') as HTMLCanvasElement;
+    this.#backdrop = this.renderRoot.querySelector('.backdrop') as HTMLDivElement;
     this.#clip = this.renderRoot.querySelector('.clip') as HTMLDivElement;
     this.#canvas = this.renderRoot.querySelector('.canvas') as HTMLCanvasElement;
 
     this.surface.bind({
       canvas: this.#canvas,
       shadowCanvas: this.#shadowCanvas,
+      backdropTarget: this.#backdrop,
       clipTarget: this.#clip,
       getShape: () => this.#resolveShape(),
       getElevation: () => this.elevation,

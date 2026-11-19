@@ -94,10 +94,36 @@ export function resolveAcrylicParams(
 
 const noiseTiles = new Map<number, HTMLCanvasElement>();
 
+let backdropClipPathCache: boolean | null = null;
+
 /**
- * Generates (and caches) a deterministic grayscale noise tile `<canvas>` of
- * `(size × size)` pixels (defaults to `128×128` for seamless frosted glass
- * grain). Zero network requests; shared across all Acrylic surfaces.
+ * Returns whether the current browser engine should clip non-rectangular
+ * `backdrop-filter` layers with `clip-path: path(...)` rather than SVG
+ * `mask-image`.
+ *
+ * - **Chromium (Blink)** returns `false`: Blink ignores `clip-path` for
+ *   `backdrop-filter` whenever any ancestor clips overflow with `border-radius`,
+ *   leaking unclipped blurry corners; SVG `mask-image` clips cleanly.
+ * - **Gecko (Firefox)** and **WebKit (Safari)** return `true`: they drop frames
+ *   when rapidly replacing `mask-image` data URLs during animations/drags, while
+ *   their `clip-path: path(...)` clips `backdrop-filter` reliably.
+ */
+export function shouldCutBackdropWithClipPath(): boolean {
+  if (backdropClipPathCache !== null) return backdropClipPathCache;
+  if (isServer || typeof CSS === 'undefined' || typeof CSS.supports !== 'function') {
+    return false;
+  }
+  const hasPathClip = CSS.supports('clip-path', 'path("M0 0H1V1Z")');
+  const isGecko = CSS.supports('-moz-appearance', 'none');
+  const isWebKit = typeof navigator !== 'undefined' && navigator.vendor === 'Apple Computer, Inc.';
+  backdropClipPathCache = hasPathClip && (isGecko || isWebKit);
+  return backdropClipPathCache;
+}
+
+/**
+ * Generates (and caches) a deterministic variable-alpha grayscale noise tile
+ * `<canvas>` of `(size × size)` pixels (defaults to `128×128` for seamless
+ * frosted glass grain). Zero network requests; shared across all Acrylic surfaces.
  */
 export function getNoiseTile(size = 128): HTMLCanvasElement | null {
   if (isServer) return null;
@@ -112,17 +138,21 @@ export function getNoiseTile(size = 128): HTMLCanvasElement | null {
 
   const image = ctx.createImageData(size, size);
   const data = image.data;
-  // Deterministic xorshift32 PRNG for reproducible monochrome grain.
+  // Deterministic xorshift32 PRNG for reproducible variable-alpha monochrome grain.
   let seed = 0x6d2b79f5;
   for (let i = 0; i < data.length; i += 4) {
     seed ^= seed << 13;
     seed ^= seed >>> 17;
     seed ^= seed << 5;
     const v = (seed >>> 0) & 0xff;
+    seed ^= seed << 13;
+    seed ^= seed >>> 17;
+    seed ^= seed << 5;
+    const a = (seed >>> 0) & 0xff;
     data[i] = v;
     data[i + 1] = v;
     data[i + 2] = v;
-    data[i + 3] = 255;
+    data[i + 3] = a;
   }
   ctx.putImageData(image, 0, 0);
   noiseTiles.set(size, canvas);
