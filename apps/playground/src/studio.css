@@ -248,8 +248,8 @@ code {
   --k-surface-padding: 14px;
   --k-surface-border-width: 1.5px;
   --k-surface-reveal-color: rgba(255, 255, 255, 0.22);
-  --k-surface-reveal-border-color: rgba(255, 255, 255, 0.85);
-  --k-surface-reveal-press-color: rgba(255, 255, 255, 0.32);
+  --k-surface-reveal-border-color: rgba(255, 255, 255, 0.65);
+  --k-surface-reveal-press-color: rgba(255, 255, 255, 0.65);
 }
 
 .metro-tile.wide {
@@ -333,7 +333,6 @@ code {
   cursor: grab;
   touch-action: none;
   --k-surface-padding: 20px;
-  --k-surface-reveal-size: 160px;
 }
 
 #acrylic-live-pane.dragging {
@@ -486,10 +485,9 @@ code {
   --k-surface-bg: rgba(255, 255, 255, 0.06);
   --k-surface-border-color: rgba(255, 255, 255, 0.1);
   --k-surface-border-width: 1.5px;
-  --k-surface-reveal-color: rgba(255, 255, 255, 0.16);
-  --k-surface-reveal-border-color: rgba(255, 255, 255, 0.85);
-  --k-surface-reveal-press-color: rgba(255, 255, 255, 0.28);
-  --k-surface-reveal-size: 150px;
+  --k-surface-reveal-color: rgba(255, 255, 255, 0.225);
+  --k-surface-reveal-border-color: rgba(255, 255, 255, 0.45);
+  --k-surface-reveal-press-color: rgba(255, 255, 255, 0.45);
 }
 
 .reveal-cell-inner {

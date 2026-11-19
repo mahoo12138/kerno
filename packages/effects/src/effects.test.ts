@@ -2,6 +2,10 @@ import { applyTheme, generateTokensCss } from '@kerno/tokens';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './define.js';
 import {
+  DEFAULT_PRESS_SPEED,
+  DEFAULT_RELEASE_ACCELERATE_RATE,
+  advancePressAnimation,
+  applyPressGradientStops,
   boxShadowToDropShadow,
   clampRadii,
   computePressureTransform,
@@ -13,6 +17,7 @@ import {
   normalizeElevation,
   normalizeShape,
   paintAcrylicCanvas,
+  parseColorToRgba,
   parseDurationMs,
   parseRadius,
   resolveDurationMs,
@@ -23,6 +28,7 @@ import {
   toMaskImage,
   toSvgPath,
   type KSurface,
+  type PressTimeline,
   type SurfaceLayer,
 } from './index.js';
 
@@ -288,6 +294,95 @@ describe('Reveal Highlight & Pressure', () => {
     el.revealController.setPointerPosition(null);
     flushFrames();
     expect(el.revealController.point).toBeNull();
+  });
+
+  it('matches WinUI / Axiom press timeline (2000ms linear, 7x release acceleration, 3-stop gradient)', () => {
+    expect(DEFAULT_PRESS_SPEED).toBe(2000);
+    expect(DEFAULT_RELEASE_ACCELERATE_RATE).toBe(6);
+    expect(parseColorToRgba('rgba(255, 255, 255, 0.45)')).toEqual({
+      rgb: '255, 255, 255',
+      alpha: 0.45,
+    });
+    expect(parseColorToRgba('#0078d4')).toEqual({ rgb: '0, 120, 212', alpha: 1 });
+
+    const timeline: PressTimeline = {
+      startFrame: null,
+      currentFrame: null,
+      releasedFrame: null,
+      logicFrame: null,
+      pressed: true,
+      released: false,
+      hasUp: false,
+      downX: 10,
+      downY: 10,
+      upX: 10,
+      upY: 10,
+    };
+
+    // Frame 0 at t=1000ms -> logicFrame = 0
+    expect(advancePressAnimation(timeline, 1000)).toBe(false);
+    expect(timeline.logicFrame).toBe(0);
+
+    // Held 400ms (t=1400ms) -> linear 400 / 2000 = 0.2
+    expect(advancePressAnimation(timeline, 1400)).toBe(false);
+    expect(timeline.logicFrame).toBeCloseTo(0.2, 5);
+
+    // Released at currentFrame=400; 100ms later (t=1500ms):
+    // unitLogicFrame = 500 + (500 - 400) * 6 = 1100 -> 1100 / 2000 = 0.55
+    timeline.released = true;
+    timeline.releasedFrame = timeline.currentFrame;
+    expect(advancePressAnimation(timeline, 1500)).toBe(false);
+    expect(timeline.logicFrame).toBeCloseTo(0.55, 5);
+
+    // 250ms after release (t=1650ms): 650 + 250 * 6 = 2150 > 2000 -> finished
+    expect(advancePressAnimation(timeline, 1650)).toBe(true);
+
+    // Verify 3-stop gradient curves at frame=0 and frame=0.5
+    const stops0: [number, string][] = [];
+    applyPressGradientStops(
+      { addColorStop: (o: number, c: string) => stops0.push([o, c]) } as CanvasGradient,
+      '255, 255, 255',
+      0.5,
+      0,
+    );
+    expect(stops0).toEqual([
+      [0, 'rgba(255, 255, 255, 0.1)'],
+      [0.05500000000000001, 'rgba(255, 255, 255, 0.05)'],
+      [0.1, 'rgba(255, 255, 255, 0)'],
+    ]);
+
+    const stopsMid: [number, string][] = [];
+    applyPressGradientStops(
+      { addColorStop: (o: number, c: string) => stopsMid.push([o, c]) } as CanvasGradient,
+      '255, 255, 255',
+      0.5,
+      0.5,
+    );
+    expect(stopsMid[0]).toEqual([0, 'rgba(255, 255, 255, 0)']);
+    expect(stopsMid[1]![0]).toBeCloseTo(0.275, 5);
+    expect(stopsMid[2]![0]).toBeCloseTo(0.5, 5);
+  });
+
+  it('accelerates press ripple on mouse release and clears immediately on touch release', async () => {
+    document.body.innerHTML = `<k-surface reveal style="width: 160px; height: 80px">Tap</k-surface>`;
+    const el = document.querySelector('k-surface') as KSurface;
+    await el.updateComplete;
+    flushFrames();
+
+    el.revealController.triggerPress(80, 40);
+    flushFrames();
+    expect(el.revealController.press?.pressed).toBe(true);
+    expect(el.revealController.pressRemaining()).toBeGreaterThan(0);
+
+    el.revealController.releasePress(82, 42, 'mouse');
+    expect(el.revealController.press?.released).toBe(true);
+    expect(el.revealController.press?.upX).toBe(82);
+
+    // Touch release clears ripple immediately like WinUI / Axiom
+    el.revealController.triggerPress(80, 40);
+    flushFrames();
+    el.revealController.releasePress(80, 40, 'touch');
+    expect(el.revealController.press).toBeNull();
   });
 
   it('computes 3D perspective tilt transform and applies pressure on <k-surface pressure>', async () => {
