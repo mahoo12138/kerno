@@ -219,14 +219,17 @@ export class KSelect extends FormAssociatedElement {
       this.#listbox.style.width = `${width}px`;
       this.#listbox.style.minWidth = `${width}px`;
 
-      const options = this.getOptions();
-      const selected = options.find((o) => o.selected) ?? options[0];
+      const options = this.getOptions().filter((o) => !o.hidden);
+      const selectedIdx = options.findIndex((o) => o.selected);
       let offsetY = 5; // 1px border + 4px top padding
-      if (selected) {
-        offsetY = selected.offsetTop - this.#listbox.scrollTop;
+      if (selectedIdx > 0) {
+        for (let i = 0; i < selectedIdx; i++) {
+          offsetY += options[i]!.offsetHeight || 32;
+        }
       }
+      offsetY -= this.#listbox.scrollTop;
 
-      const listHeight = this.#listbox.offsetHeight || 160;
+      const listHeight = this.#listbox.offsetHeight || options.length * 32 + 10;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const pad = 8;
@@ -239,6 +242,7 @@ export class KSelect extends FormAssociatedElement {
       if (top + listHeight > vh - pad) top = Math.max(pad, vh - pad - listHeight);
       if (top < pad) top = pad;
 
+      this.#listbox.style.transformOrigin = `50% ${Math.round(triggerRect.top - top + triggerRect.height / 2)}px`;
       this.#listbox.style.left = `${Math.round(left)}px`;
       this.#listbox.style.top = `${Math.round(top)}px`;
     };

@@ -44,6 +44,40 @@ describe('<k-select>, <k-badge> & <k-separator>', () => {
     expect(new FormData(form).get('role')).toBeNull();
   });
 
+  it('positions listbox overlay directly over the trigger without drifting across multiple opens', async () => {
+    document.body.innerHTML = `
+      <div style="margin-top: 240px; margin-left: 120px">
+        <k-select value="b">
+          <k-option value="a">Option A</k-option>
+          <k-option value="b">Option B</k-option>
+          <k-option value="c">Option C</k-option>
+        </k-select>
+      </div>
+    `;
+    const select = document.querySelector('k-select') as KSelect;
+    const options = [...select.querySelectorAll('k-option')] as KOption[];
+    await Promise.all([select.updateComplete, ...options.map((o) => o.updateComplete)]);
+
+    const combobox = select.shadowRoot!.querySelector<HTMLElement>('.combobox')!;
+    const listbox = select.shadowRoot!.querySelector<HTMLElement>('.listbox')!;
+
+    for (let cycle = 0; cycle < 3; cycle++) {
+      select.open = true;
+      await select.updateComplete;
+
+      const triggerRect = combobox.getBoundingClientRect();
+      const listboxTop = Number.parseFloat(listbox.style.top);
+      const listboxLeft = Number.parseFloat(listbox.style.left);
+
+      // Option B (index 1, 32px after index 0 + 5px top border/padding = 37px) sits directly over triggerRect.top
+      expect(listboxLeft).toBeCloseTo(triggerRect.left, 0);
+      expect(listboxTop).toBeCloseTo(triggerRect.top - 37, 0);
+
+      select.open = false;
+      await select.updateComplete;
+    }
+  });
+
   it('renders <k-badge> and <k-separator> with proper ARIA roles', async () => {
     document.body.innerHTML = `
       <div>
