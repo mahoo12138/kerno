@@ -441,19 +441,25 @@ export class RevealController implements ReactiveController {
         ctx.fill(state.fillPath);
       }
 
-      // 2. Proximity border highlight (illuminates edges as pointer approaches)
-      const borderGrad = ctx.createRadialGradient(x, y, 0, x, y, lightRadius);
-      borderGrad.addColorStop(0, params.borderColor);
-      borderGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      if (state.borderRingPath) {
-        ctx.fillStyle = borderGrad;
-        ctx.fill(state.borderRingPath, 'evenodd');
-      } else {
-        const strokeWidth = Math.max(1.25, state.strokeWidth);
-        ctx.lineWidth = strokeWidth;
-        ctx.strokeStyle = borderGrad;
-        ctx.lineJoin = 'round';
-        ctx.stroke(state.strokePath);
+      // 2. Proximity border highlight (illuminates edges as pointer approaches,
+      //    matching Axiom `hasBorder: borderWidths.some(w => w > 0)`)
+      const hasBorder = state.borderWidths
+        ? state.borderWidths.some((w) => w > 0)
+        : state.strokeWidth > 0;
+      if (hasBorder) {
+        const borderGrad = ctx.createRadialGradient(x, y, 0, x, y, lightRadius);
+        borderGrad.addColorStop(0, params.borderColor);
+        borderGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        if (state.borderRingPath) {
+          ctx.fillStyle = borderGrad;
+          ctx.fill(state.borderRingPath, 'evenodd');
+        } else {
+          const strokeWidth = Math.max(1.25, state.strokeWidth);
+          ctx.lineWidth = strokeWidth;
+          ctx.strokeStyle = borderGrad;
+          ctx.lineJoin = 'round';
+          ctx.stroke(state.strokePath);
+        }
       }
     }
 
