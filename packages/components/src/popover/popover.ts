@@ -2,13 +2,15 @@ import {
   KernoElement,
   autoPosition,
   emit,
+  enterTopLayer,
+  exitTopLayer,
   overlayManager,
   prop,
   uniqueId,
   type Placement,
   type PropertyValues,
 } from '@kerno/core';
-import { scaleIn } from '@kerno/effects/motion';
+import { scaleIn, scaleOut, type MotionHandle } from '@kerno/effects/motion';
 import { popoverStyles } from './popover.styles.js';
 
 export type PopoverTrigger = 'click' | 'manual';
@@ -45,10 +47,12 @@ export class KPopover extends KernoElement {
   #panel!: HTMLDivElement;
   #stopPositioning: (() => void) | null = null;
   #wasOpen = false;
+  #exitAnim: MotionHandle | null = null;
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.#cleanup();
+    this.#cancelExit();
+    this.#cleanup(false);
     this.#wasOpen = false;
   }
 
@@ -83,6 +87,8 @@ export class KPopover extends KernoElement {
 
     if (this.open && !this.#wasOpen) {
       this.#wasOpen = true;
+      this.#cancelExit();
+      enterTopLayer(this.#panel);
       const anchor = this.#getAnchorElement();
       this.#stopPositioning = autoPosition(anchor, this.#panel, {
         placement: this.placement,
@@ -105,8 +111,9 @@ export class KPopover extends KernoElement {
       emit(this, 'k-open');
     } else if (!this.open && this.#wasOpen) {
       this.#wasOpen = false;
-      this.#cleanup();
+      overlayManager.remove(this.#overlayId);
       emit(this, 'k-close');
+      this.#playExit();
     } else if (this.open && this.#wasOpen) {
       this.#stopPositioning?.();
       this.#stopPositioning = autoPosition(this.#getAnchorElement(), this.#panel, {
@@ -128,9 +135,30 @@ export class KPopover extends KernoElement {
     }
   }
 
-  #cleanup(): void {
+  #playExit(): void {
+    this.#panel.classList.add('closing');
+    const anim = scaleOut(this.#panel, { duration: 'fast' });
+    this.#exitAnim = anim;
+    void anim.finished.then(() => {
+      if (this.open) return;
+      this.#panel.classList.remove('closing');
+      this.#stopPositioning?.();
+      this.#stopPositioning = null;
+      exitTopLayer(this.#panel);
+      this.#exitAnim = null;
+    });
+  }
+
+  #cancelExit(): void {
+    this.#exitAnim?.cancel();
+    this.#exitAnim = null;
+    this.#panel?.classList.remove('closing');
+  }
+
+  #cleanup(restoreFocus = true): void {
     this.#stopPositioning?.();
     this.#stopPositioning = null;
-    overlayManager.remove(this.#overlayId);
+    exitTopLayer(this.#panel);
+    overlayManager.remove(this.#overlayId, restoreFocus);
   }
 }

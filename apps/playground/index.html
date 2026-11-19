@@ -206,13 +206,16 @@
           </div>
         </k-card>
         <k-card title="Build Pipeline" shape="rounded" radius="12" elevation="2" interactive>
-          <div style="display: grid; gap: 8px">
+          <div style="display: grid; gap: 10px">
             <div class="row" style="justify-content: space-between">
               <span>Packages compiled</span>
-              <k-badge variant="success">100%</k-badge>
+              <k-badge variant="success">75%</k-badge>
             </div>
             <k-progress value="75" max="100" variant="accent"></k-progress>
-            <k-skeleton width="70%" height="10px"></k-skeleton>
+            <div style="display: grid; gap: 6px; margin-top: 2px">
+              <code>Skeleton placeholder</code>
+              <k-skeleton width="70%" height="10px"></k-skeleton>
+            </div>
           </div>
         </k-card>
         <k-empty-state

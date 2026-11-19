@@ -449,3 +449,5 @@ export function createPath2D(
   traceCanvasPath(path, width, height, input, inset);
   return path;
 }
+
+export { ShapeOutlineController, type ShapeOutlineConfig } from './outline.js';

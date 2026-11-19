@@ -138,6 +138,10 @@ describe('tokens.css', () => {
     expect(accent(light)).toBe(lightTheme.tokens.color.accent.default);
     expect(getComputedStyle(dark).colorScheme).toBe('dark');
 
+    // Ensure dark media query only targets un-themed :root, never custom themes like data-k-theme="ocean"
+    expect(style.textContent).toContain(':root:not([data-k-theme])');
+    expect(style.textContent).not.toContain(':root:not([data-k-theme="light"])');
+
     style.remove();
   });
 });

@@ -52,7 +52,8 @@ export class KRadio extends FormAssociatedElement {
   }
 
   get group(): KRadioGroup | null {
-    return this.closest<KRadioGroup>('k-radio-group');
+    const el = this.closest('k-radio-group');
+    return el instanceof KRadioGroup ? el : null;
   }
 
   override connectedCallback(): void {

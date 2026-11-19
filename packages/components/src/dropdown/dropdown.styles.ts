@@ -73,11 +73,14 @@ export const menuStyles = css`
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: ${token('spacing.xs')};
-    border-radius: ${token('radius.lg')};
-    border: ${token('control.borderWidth')} solid ${token('color.stroke.default')};
-    background: ${token('color.bg.layer')};
-    box-shadow: ${token('elevation.3')};
+    padding: var(--_menu-padding, ${token('spacing.xs')});
+    border-radius: var(--_menu-radius, ${token('radius.lg')});
+    border: var(
+      --_menu-border,
+      ${token('control.borderWidth')} solid ${token('color.stroke.default')}
+    );
+    background: var(--_menu-bg, ${token('color.bg.layer')});
+    box-shadow: var(--_menu-shadow, ${token('elevation.3')});
   }
 `;
 
@@ -90,19 +93,26 @@ export const dropdownStyles = css`
     display: inline-flex;
   }
 
-  :host(:not([open])) .panel {
+  :host(:not([open])) .panel:not(.closing) {
     display: none;
   }
 
   .panel {
     position: fixed;
+    inset: auto;
+    margin: 0;
     z-index: ${token('zIndex.dropdown')};
     min-width: 160px;
     border-radius: ${token('radius.lg')};
     border: ${token('control.borderWidth')} solid ${token('color.stroke.default')};
     background: ${token('color.bg.layer')};
+    color: ${token('color.fg.default')};
     box-shadow: ${token('elevation.4')};
     padding: ${token('spacing.xs')};
+  }
+
+  .panel.closing {
+    pointer-events: none;
   }
 
   :host([acrylic]) .panel {
@@ -114,6 +124,10 @@ export const dropdownStyles = css`
   }
 
   ::slotted(k-menu) {
-    --_in-dropdown: 1;
+    --_menu-padding: 0;
+    --_menu-border: none;
+    --_menu-bg: transparent;
+    --_menu-shadow: none;
+    --_menu-radius: 0;
   }
 `;

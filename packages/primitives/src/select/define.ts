@@ -1,8 +1,8 @@
 import { define } from '@kerno/core';
 import { KOption, KSelect } from './select.js';
 
-define('k-option', KOption);
 define('k-select', KSelect);
+define('k-option', KOption);
 
 declare global {
   interface HTMLElementTagNameMap {

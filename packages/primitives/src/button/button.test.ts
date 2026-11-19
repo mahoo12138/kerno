@@ -145,6 +145,12 @@ describe('<k-button>', () => {
     expect(base.style.clipPath).toContain('path(');
     expect(base.querySelector('.shape-stroke path')?.getAttribute('d')).toContain('M ');
 
+    // Disconnect and reconnect preserves shape outline
+    el.remove();
+    document.body.append(el);
+    await el.updateComplete;
+    expect(base.style.clipPath).toContain('path(');
+
     el.shape = 'rounded';
     await el.updateComplete;
     expect(base.style.clipPath).toBe('');

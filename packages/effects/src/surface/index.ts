@@ -6,6 +6,7 @@ export {
   type SurfaceLayer,
   type SurfaceRenderState,
 } from './layers.js';
+export { observeSurfaceEnvironment, type EnvChangeCallback } from './env-observer.js';
 export { SurfaceController, type SurfaceControllerConfig } from './controller.js';
 export { KSurface } from './surface.js';
 export { surfaceStyles } from './surface.styles.js';

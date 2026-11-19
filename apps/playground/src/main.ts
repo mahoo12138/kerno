@@ -34,7 +34,6 @@ function selectTheme(name: string): void {
   themeButtons.forEach((b) =>
     b.setAttribute('variant', b.dataset.theme === name ? 'accent' : 'standard'),
   );
-  document.querySelectorAll<KSurface>('k-surface').forEach((s) => s.surface.invalidate());
 }
 
 themeButtons.forEach((b) => b.addEventListener('click', () => selectTheme(b.dataset.theme!)));

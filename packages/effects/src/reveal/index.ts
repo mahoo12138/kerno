@@ -1,6 +1,7 @@
 import { isServer, type ReactiveController, type ReactiveControllerHost } from '@kerno/core';
 import { tokenName } from '@kerno/tokens';
 import type { SurfaceLayer, SurfaceRenderState } from '../surface/layers.js';
+import { cancelFrame, scheduleFrame } from '../surface/scheduler.js';
 
 export interface RevealParams {
   color: string;
@@ -38,20 +39,77 @@ export interface PointerPoint {
   inside: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Global shared pointer tracker (one listener + one frame batch for all surfaces)
+// ---------------------------------------------------------------------------
+
+const activeReveals = new Set<RevealController>();
+let trackerListening = false;
+let latestPointer: { clientX: number; clientY: number } | null = null;
+
+function processPointerFrame(): void {
+  const ptr = latestPointer;
+  if (!ptr) {
+    for (const ctrl of activeReveals) ctrl._clearFromTracker();
+    return;
+  }
+  for (const ctrl of activeReveals) {
+    ctrl._updateFromClientPoint(ptr.clientX, ptr.clientY);
+  }
+}
+
+const onDocPointerMove = (event: PointerEvent): void => {
+  latestPointer = { clientX: event.clientX, clientY: event.clientY };
+  scheduleFrame(processPointerFrame);
+};
+
+const onDocPointerLeave = (): void => {
+  latestPointer = null;
+  scheduleFrame(processPointerFrame);
+};
+
+function registerReveal(ctrl: RevealController): void {
+  if (isServer) return;
+  activeReveals.add(ctrl);
+  if (!trackerListening) {
+    trackerListening = true;
+    document.addEventListener('pointermove', onDocPointerMove, { passive: true });
+    document.addEventListener('pointerleave', onDocPointerLeave, { passive: true });
+  }
+}
+
+function unregisterReveal(ctrl: RevealController): void {
+  activeReveals.delete(ctrl);
+  if (activeReveals.size === 0 && trackerListening) {
+    trackerListening = false;
+    latestPointer = null;
+    cancelFrame(processPointerFrame);
+    document.removeEventListener('pointermove', onDocPointerMove);
+    document.removeEventListener('pointerleave', onDocPointerLeave);
+  }
+}
+
 /**
- * Tracks pointer position for a Reveal-enabled surface and triggers canvas
- * redraws only while the pointer is within illumination range.
+ * Tracks pointer position for a Reveal-enabled surface via a shared document
+ * pointer tracker and frame-coalesced geometry checks, caching token params
+ * between theme changes so the pointer hot path never reads `getComputedStyle`.
  */
 export class RevealController implements ReactiveController {
   readonly host: ReactiveControllerHost & HTMLElement;
   readonly #onInvalidate: () => void;
+  readonly #isVisible?: () => boolean;
   #enabled = false;
   #point: PointerPoint | null = null;
-  #listening = false;
+  #cachedParams: RevealParams | null = null;
 
-  constructor(host: ReactiveControllerHost & HTMLElement, onInvalidate: () => void) {
+  constructor(
+    host: ReactiveControllerHost & HTMLElement,
+    onInvalidate: () => void,
+    isVisible?: () => boolean,
+  ) {
     this.host = host;
     this.#onInvalidate = onInvalidate;
+    this.#isVisible = isVisible;
     host.addController(this);
   }
 
@@ -62,7 +120,7 @@ export class RevealController implements ReactiveController {
   set enabled(value: boolean) {
     if (this.#enabled === value) return;
     this.#enabled = value;
-    this.#syncListeners();
+    this.#syncTracker();
     if (!value && this.#point) {
       this.#point = null;
       this.#onInvalidate();
@@ -71,6 +129,11 @@ export class RevealController implements ReactiveController {
 
   get point(): PointerPoint | null {
     return this.#point;
+  }
+
+  /** Clears cached reveal token values (called when theme or host style changes). */
+  invalidateCache(): void {
+    this.#cachedParams = null;
   }
 
   /** Programmatically sets local pointer coordinates (or `null` to clear) and invalidates. */
@@ -99,7 +162,7 @@ export class RevealController implements ReactiveController {
   draw(ctx: CanvasRenderingContext2D, state: SurfaceRenderState): void {
     if (!this.#enabled || !this.#point) return;
     const { x, y, inside } = this.#point;
-    const params = resolveRevealParams(this.host);
+    const params = this.#getParams();
     const radius = params.size;
 
     ctx.save();
@@ -127,37 +190,23 @@ export class RevealController implements ReactiveController {
   }
 
   hostConnected(): void {
-    this.#syncListeners();
+    this.#cachedParams = null;
+    this.#syncTracker();
   }
 
   hostDisconnected(): void {
-    this.#removeListeners();
+    unregisterReveal(this);
+    this.#point = null;
   }
 
-  #syncListeners(): void {
-    if (isServer) return;
-    if (this.#enabled && this.host.isConnected && !this.#listening) {
-      this.#listening = true;
-      document.addEventListener('pointermove', this.#onPointerMove, { passive: true });
-      document.addEventListener('pointerleave', this.#onPointerLeave, { passive: true });
-    } else if ((!this.#enabled || !this.host.isConnected) && this.#listening) {
-      this.#removeListeners();
-    }
-  }
-
-  #removeListeners(): void {
-    if (!this.#listening) return;
-    this.#listening = false;
-    document.removeEventListener('pointermove', this.#onPointerMove);
-    document.removeEventListener('pointerleave', this.#onPointerLeave);
-  }
-
-  #onPointerMove = (event: PointerEvent): void => {
+  /** @internal */
+  _updateFromClientPoint(clientX: number, clientY: number): void {
+    if (this.#isVisible && !this.#isVisible()) return;
     const rect = this.host.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
-    const { size } = resolveRevealParams(this.host);
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const { size } = this.#getParams();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
 
     const inRange = x >= -size && y >= -size && x <= rect.width + size && y <= rect.height + size;
     if (!inRange) {
@@ -169,14 +218,38 @@ export class RevealController implements ReactiveController {
     }
 
     const inside = x >= 0 && y >= 0 && x <= rect.width && y <= rect.height;
+    if (
+      this.#point &&
+      this.#point.x === x &&
+      this.#point.y === y &&
+      this.#point.inside === inside
+    ) {
+      return;
+    }
     this.#point = { x, y, inside };
     this.#onInvalidate();
-  };
+  }
 
-  #onPointerLeave = (): void => {
+  /** @internal */
+  _clearFromTracker(): void {
     if (this.#point !== null) {
       this.#point = null;
       this.#onInvalidate();
     }
-  };
+  }
+
+  #getParams(): RevealParams {
+    if (!this.#cachedParams) {
+      this.#cachedParams = resolveRevealParams(this.host);
+    }
+    return this.#cachedParams;
+  }
+
+  #syncTracker(): void {
+    if (this.#enabled && this.host.isConnected) {
+      registerReveal(this);
+    } else {
+      unregisterReveal(this);
+    }
+  }
 }

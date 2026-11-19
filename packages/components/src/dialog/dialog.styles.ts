@@ -16,19 +16,32 @@ export const dialogStyles = css`
     display: contents;
   }
 
-  :host(:not([open])) .overlay {
+  :host(:not([open])) .overlay:not(.closing) {
     display: none;
   }
 
   .overlay {
     position: fixed;
     inset: 0;
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    overflow: visible;
     z-index: ${token('zIndex.modal')};
     display: flex;
     align-items: center;
     justify-content: center;
     padding: ${token('spacing.xl')};
     box-sizing: border-box;
+  }
+
+  .overlay.closing {
+    pointer-events: none;
   }
 
   .backdrop {

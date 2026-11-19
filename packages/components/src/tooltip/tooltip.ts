@@ -2,13 +2,15 @@ import {
   KernoElement,
   autoPosition,
   emit,
+  enterTopLayer,
+  exitTopLayer,
   overlayManager,
   prop,
   uniqueId,
   type Placement,
   type PropertyValues,
 } from '@kerno/core';
-import { fadeIn } from '@kerno/effects/motion';
+import { fadeIn, fadeOut, type MotionHandle } from '@kerno/effects/motion';
 import { tooltipStyles } from './tooltip.styles.js';
 
 /**
@@ -46,10 +48,12 @@ export class KTooltip extends KernoElement {
   #stopPositioning: (() => void) | null = null;
   #timer: ReturnType<typeof setTimeout> | null = null;
   #wasOpen = false;
+  #exitAnim: MotionHandle | null = null;
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.#clearTimer();
+    this.#cancelExit();
     this.#cleanup();
     this.#wasOpen = false;
   }
@@ -119,6 +123,8 @@ export class KTooltip extends KernoElement {
 
     if (this.open && !this.#wasOpen) {
       this.#wasOpen = true;
+      this.#cancelExit();
+      enterTopLayer(this.#popup);
       const anchor = this.#defaultSlot.assignedElements({ flatten: true })[0] ?? this.#triggerEl;
       this.#stopPositioning = autoPosition(anchor, this.#popup, {
         placement: this.placement,
@@ -141,8 +147,9 @@ export class KTooltip extends KernoElement {
       emit(this, 'k-open');
     } else if (!this.open && this.#wasOpen) {
       this.#wasOpen = false;
-      this.#cleanup();
+      overlayManager.remove(this.#overlayId, false);
       emit(this, 'k-close');
+      this.#playExit();
     }
   }
 
@@ -153,9 +160,30 @@ export class KTooltip extends KernoElement {
     }
   }
 
+  #playExit(): void {
+    this.#popup.classList.add('closing');
+    const anim = fadeOut(this.#popup, { duration: 'fast' });
+    this.#exitAnim = anim;
+    void anim.finished.then(() => {
+      if (this.open) return;
+      this.#popup.classList.remove('closing');
+      this.#stopPositioning?.();
+      this.#stopPositioning = null;
+      exitTopLayer(this.#popup);
+      this.#exitAnim = null;
+    });
+  }
+
+  #cancelExit(): void {
+    this.#exitAnim?.cancel();
+    this.#exitAnim = null;
+    this.#popup?.classList.remove('closing');
+  }
+
   #cleanup(): void {
     this.#stopPositioning?.();
     this.#stopPositioning = null;
+    exitTopLayer(this.#popup);
     overlayManager.remove(this.#overlayId, false);
   }
 }

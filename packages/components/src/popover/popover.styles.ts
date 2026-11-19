@@ -19,12 +19,14 @@ export const popoverStyles = css`
     display: inline-flex;
   }
 
-  :host(:not([open])) .panel {
+  :host(:not([open])) .panel:not(.closing) {
     display: none;
   }
 
   .panel {
     position: fixed;
+    inset: auto;
+    margin: 0;
     z-index: ${token('zIndex.popover')};
     box-sizing: border-box;
     width: var(--k-popover-width, auto);
@@ -38,6 +40,11 @@ export const popoverStyles = css`
     font-size: ${token('font.size.sm')};
     line-height: ${token('font.lineHeight.normal')};
     box-shadow: ${token('elevation.4')};
+    overflow: visible;
+  }
+
+  .panel.closing {
+    pointer-events: none;
   }
 
   :host([acrylic]) .panel {

@@ -106,9 +106,9 @@ export const inputStyles = css`
 
   .shape-stroke {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    inset: calc(-1 * ${token('control.borderWidth')});
+    width: calc(100% + 2 * ${token('control.borderWidth')});
+    height: calc(100% + 2 * ${token('control.borderWidth')});
     pointer-events: none;
     overflow: visible;
     fill: none;

@@ -19,12 +19,14 @@ export const tooltipStyles = css`
     display: inline-flex;
   }
 
-  :host(:not([open])) .popup {
+  :host(:not([open])) .popup:not(.closing) {
     display: none;
   }
 
   .popup {
     position: fixed;
+    inset: auto;
+    margin: 0;
     z-index: ${token('zIndex.tooltip')};
     box-sizing: border-box;
     max-width: var(--k-tooltip-max-width, 260px);

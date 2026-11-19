@@ -38,7 +38,8 @@ export class KTab extends KernoElement {
       this.id = uniqueId('k-tab');
     }
     super.connectedCallback();
-    this.closest<KTabs>('k-tabs')?.notifyTabsChanged();
+    const tabs = this.closest('k-tabs');
+    if (tabs instanceof KTabs) tabs.notifyTabsChanged();
   }
 
   override click(): void {
@@ -91,7 +92,8 @@ export class KTabPanel extends KernoElement {
     }
     this.setAttribute('role', 'tabpanel');
     super.connectedCallback();
-    this.closest<KTabs>('k-tabs')?.notifyTabsChanged();
+    const tabs = this.closest('k-tabs');
+    if (tabs instanceof KTabs) tabs.notifyTabsChanged();
   }
 
   protected override update(_changed: PropertyValues): void {

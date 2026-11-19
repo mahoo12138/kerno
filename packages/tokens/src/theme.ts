@@ -108,10 +108,25 @@ export function applyTheme(theme: Theme | BuiltInThemeName, target?: Element): (
     sheet.replaceSync(themeToCss(theme));
   }
 
-  el.setAttribute(THEME_ATTRIBUTE, typeof theme === 'string' ? theme : theme.name);
+  const themeName = typeof theme === 'string' ? theme : theme.name;
+  el.setAttribute(THEME_ATTRIBUTE, themeName);
+  el.dispatchEvent(
+    new CustomEvent('k-theme-change', {
+      bubbles: true,
+      composed: true,
+      detail: { theme: themeName },
+    }),
+  );
 
   return () => {
     if (previous === null) el.removeAttribute(THEME_ATTRIBUTE);
     else el.setAttribute(THEME_ATTRIBUTE, previous);
+    el.dispatchEvent(
+      new CustomEvent('k-theme-change', {
+        bubbles: true,
+        composed: true,
+        detail: { theme: previous },
+      }),
+    );
   };
 }

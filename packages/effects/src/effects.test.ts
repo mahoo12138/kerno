@@ -1,4 +1,4 @@
-import { generateTokensCss } from '@kerno/tokens';
+import { applyTheme, generateTokensCss } from '@kerno/tokens';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './define.js';
 import {
@@ -254,5 +254,59 @@ describe('Reveal Highlight & Pressure', () => {
     el.pressureController.reset();
     expect(el.pressureController.isPressed).toBe(false);
     expect(el.style.transform).toBe('');
+  });
+
+  it('auto-invalidates <k-surface> on theme/style changes without repainting on transform-only pressure', async () => {
+    document.body.innerHTML = `<k-surface pressure style="width: 100px; height: 50px">Auto</k-surface>`;
+    const el = document.querySelector('k-surface') as KSurface;
+    await el.updateComplete;
+    flushFrames();
+    const afterMount = el.surface.paintCount;
+
+    // Theme change via applyTheme() automatically invalidates the surface
+    const dispose = applyTheme('dark', document.body);
+    flushFrames();
+    expect(el.surface.paintCount).toBe(afterMount + 1);
+
+    // Inline CSS variable change automatically invalidates
+    el.style.setProperty('--k-surface-bg', 'rgb(10, 20, 30)');
+    await Promise.resolve(); // allow MutationObserver microtask
+    flushFrames();
+    const afterBg = el.surface.paintCount;
+    expect(afterBg).toBeGreaterThan(afterMount + 1);
+
+    // Compositor-only transform from PressureController must NOT trigger canvas repaints
+    el.pressureController.pressAt(20, 20);
+    await Promise.resolve();
+    flushFrames();
+    expect(el.surface.paintCount).toBe(afterBg);
+
+    dispose();
+  });
+
+  it('repaints off-screen <k-surface> immediately with new theme colors upon becoming visible', async () => {
+    const disposeDark = applyTheme('dark', document.body);
+    document.body.innerHTML = `<k-surface style="width: 100px; height: 50px">Theme</k-surface>`;
+    const el = document.querySelector('k-surface') as KSurface;
+    await el.updateComplete;
+    flushFrames();
+
+    const canvas = el.shadowRoot!.querySelector('canvas')!;
+    const ctx = canvas.getContext('2d')!;
+    const darkPixel = ctx.getImageData(20, 20, 1, 1).data;
+    // Dark bg.layer is #232327 (35, 35, 39)
+    expect(darkPixel[0]).toBeLessThan(60);
+
+    // Go off-screen, switch to light theme, then scroll back into view
+    el.surface.setVisible(false);
+    disposeDark();
+    const disposeLight = applyTheme('light', document.body);
+    el.surface.setVisible(true);
+
+    // Must have repainted synchronously on becoming visible (no stale dark pixels!)
+    const lightPixel = ctx.getImageData(20, 20, 1, 1).data;
+    expect([lightPixel[0], lightPixel[1], lightPixel[2]]).toEqual([255, 255, 255]);
+
+    disposeLight();
   });
 });

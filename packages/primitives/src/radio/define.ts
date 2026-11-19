@@ -1,8 +1,8 @@
 import { define } from '@kerno/core';
 import { KRadio, KRadioGroup } from './radio.js';
 
-define('k-radio', KRadio);
 define('k-radio-group', KRadioGroup);
+define('k-radio', KRadio);
 
 declare global {
   interface HTMLElementTagNameMap {

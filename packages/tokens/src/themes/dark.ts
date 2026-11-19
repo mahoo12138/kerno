@@ -26,7 +26,7 @@ export const darkTheme: Theme = {
         default: p.neutral['0'],
         secondary: 'rgba(255, 255, 255, 0.79)',
         tertiary: 'rgba(255, 255, 255, 0.54)',
-        disabled: 'rgba(255, 255, 255, 0.36)',
+        disabled: 'rgba(255, 255, 255, 0.45)',
       },
       control: {
         default: 'rgba(255, 255, 255, 0.06)',

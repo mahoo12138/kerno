@@ -63,7 +63,11 @@ export class KSurface extends KernoElement {
   @prop({ attribute: false }) accessor layers: readonly SurfaceLayer[] = defaultSurfaceLayers;
 
   readonly surface = new SurfaceController(this);
-  readonly revealController = new RevealController(this, () => this.surface.invalidate());
+  readonly revealController = new RevealController(
+    this,
+    () => this.surface.invalidate(),
+    () => this.surface.isVisible,
+  );
   readonly pressureController = new PressureController(this);
   readonly #revealLayer = this.revealController.createLayer();
 
@@ -85,6 +89,7 @@ export class KSurface extends KernoElement {
       getStrokeColor: () => this.#readCssVar('--_border-color', 'transparent'),
       getStrokeWidth: () => Number.parseFloat(this.#readCssVar('--_border-width', '1')) || 0,
       getLayers: () => (this.reveal ? [...this.layers, this.#revealLayer] : this.layers),
+      onEnvironmentChange: () => this.revealController.invalidateCache(),
     });
   }
 

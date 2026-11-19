@@ -1,6 +1,12 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { computeFloatingPosition, overlayManager } from './index.js';
+import {
+  computeFloatingPosition,
+  enterTopLayer,
+  exitTopLayer,
+  overlayManager,
+  supportsPopoverApi,
+} from './index.js';
 
 afterEach(() => {
   for (const entry of [...overlayManager.stack]) {
@@ -67,5 +73,48 @@ describe('overlayManager', () => {
     expect(close1).toHaveBeenCalledWith('escape');
     expect(document.body.style.overflow).toBe('');
     expect(document.activeElement).toBe(trigger);
+  });
+
+  it('updates active overlay config in place and keeps focus on external target after outside-click', async () => {
+    document.body.innerHTML = `
+      <button id="trigger">Trigger</button>
+      <button id="outside">Outside</button>
+      <div id="popup"><button id="inside">Inside</button></div>
+    `;
+    const trigger = document.getElementById('trigger') as HTMLButtonElement;
+    const outside = document.getElementById('outside') as HTMLButtonElement;
+    const popup = document.getElementById('popup') as HTMLDivElement;
+
+    trigger.focus();
+    const onClose = vi.fn(() => overlayManager.remove('pop'));
+    overlayManager.add({
+      id: 'pop',
+      content: popup,
+      trigger,
+      trapFocus: false,
+      restoreFocus: true,
+      onRequestClose: onClose,
+    });
+
+    // Updating options must not remove/re-add or lose stack entry
+    overlayManager.update('pop', { closeOnEscape: false });
+    expect(overlayManager.top?.closeOnEscape).toBe(false);
+
+    // Clicking outside should dismiss WITHOUT pulling focus back to trigger
+    outside.focus();
+    outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
+    expect(onClose).toHaveBeenCalledWith('outside-click');
+    expect(document.activeElement).toBe(outside);
+  });
+
+  it('promotes and removes elements from browser Top Layer when Popover API is supported', () => {
+    const el = document.createElement('div');
+    document.body.append(el);
+    if (supportsPopoverApi) {
+      expect(enterTopLayer(el)).toBe(true);
+      expect(el.matches(':popover-open')).toBe(true);
+      exitTopLayer(el);
+      expect(el.matches(':popover-open')).toBe(false);
+    }
   });
 });

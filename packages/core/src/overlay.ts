@@ -165,6 +165,43 @@ export function autoPosition(
   };
 }
 
+export const supportsPopoverApi: boolean =
+  !isServer &&
+  typeof HTMLElement !== 'undefined' &&
+  typeof HTMLElement.prototype.showPopover === 'function';
+
+/**
+ * Promotes `el` into the browser Top Layer via `popover="manual"` so floating
+ * overlays escape ancestor `transform`, `filter`, `overflow` and `z-index`
+ * stacking contexts. Falls back gracefully where Popover API is unavailable.
+ */
+export function enterTopLayer(el: HTMLElement): boolean {
+  if (!supportsPopoverApi || !el.isConnected) return false;
+  if (el.getAttribute('popover') !== 'manual') {
+    el.setAttribute('popover', 'manual');
+  }
+  try {
+    if (!el.matches(':popover-open')) {
+      el.showPopover();
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Removes `el` from the browser Top Layer. */
+export function exitTopLayer(el: HTMLElement): void {
+  if (!supportsPopoverApi) return;
+  try {
+    if (el.matches(':popover-open')) {
+      el.hidePopover();
+    }
+  } catch {
+    // Element may already be disconnected or closed.
+  }
+}
+
 export type OverlayCloseReason = 'escape' | 'outside-click' | 'programmatic';
 
 export interface OverlayConfig {
@@ -188,6 +225,7 @@ export interface OverlayConfig {
 
 interface ActiveOverlay extends OverlayConfig {
   readonly previouslyFocused: HTMLElement | null;
+  suppressFocusRestore: boolean;
 }
 
 /**
@@ -207,7 +245,7 @@ class OverlayManager {
     return this.#stack[this.#stack.length - 1];
   }
 
-  /** Pushes or updates an overlay at the top of the stack. */
+  /** Pushes an overlay onto the top of the stack. */
   add(config: OverlayConfig): () => void {
     this.remove(config.id, false);
     const active = isServer ? null : getActiveElement();
@@ -217,6 +255,7 @@ class OverlayManager {
       restoreFocus: true,
       ...config,
       previouslyFocused: active instanceof HTMLElement ? active : null,
+      suppressFocusRestore: false,
     };
     this.#stack.push(entry);
     this.#syncListeners();
@@ -237,6 +276,18 @@ class OverlayManager {
     return () => this.remove(config.id);
   }
 
+  /**
+   * Updates an active overlay's options in place without altering stack order,
+   * overwriting `previouslyFocused`, or re-stealing focus.
+   */
+  update(id: string, patch: Partial<Omit<OverlayConfig, 'id'>>): void {
+    const idx = this.#stack.findIndex((e) => e.id === id);
+    if (idx === -1) return;
+    const current = this.#stack[idx]!;
+    this.#stack[idx] = { ...current, ...patch };
+    this.#syncScrollLock();
+  }
+
   /** Removes an overlay from the stack and optionally restores focus. */
   remove(id: string, restoreFocus = true): void {
     const idx = this.#stack.findIndex((e) => e.id === id);
@@ -247,7 +298,9 @@ class OverlayManager {
 
     if (
       restoreFocus &&
-      removed?.restoreFocus &&
+      removed &&
+      !removed.suppressFocusRestore &&
+      removed.restoreFocus &&
       removed.previouslyFocused &&
       removed.previouslyFocused.isConnected
     ) {
@@ -328,6 +381,8 @@ class OverlayManager {
     if (path.includes(top.content)) return;
     if (top.trigger && path.includes(top.trigger)) return;
 
+    // Outside click: let focus land on the user's clicked target instead of pulling it back.
+    top.suppressFocusRestore = !top.trapFocus;
     top.onRequestClose?.('outside-click');
   };
 }

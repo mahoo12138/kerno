@@ -45,7 +45,7 @@ ${declarations(lightVars)}
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not(${attr('light')}),
+  :root:not([${THEME_ATTRIBUTE}]),
   ${attr('auto')} {
     color-scheme: dark;
 ${declarations(darkDiff, '    ')}

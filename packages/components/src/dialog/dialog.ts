@@ -1,12 +1,14 @@
 import {
   KernoElement,
   emit,
+  enterTopLayer,
+  exitTopLayer,
   overlayManager,
   prop,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
-import { fadeIn, scaleIn } from '@kerno/effects/motion';
+import { fadeIn, fadeOut, scaleIn, scaleOut, type MotionHandle } from '@kerno/effects/motion';
 import { getIcon } from '@kerno/primitives/icon';
 import { dialogStyles } from './dialog.styles.js';
 
@@ -54,6 +56,7 @@ export class KDialog extends KernoElement {
   readonly #overlayId = uniqueId('k-dialog');
   readonly #titleId = uniqueId('k-dialog-title');
 
+  #overlay!: HTMLDivElement;
   #backdrop!: HTMLDivElement;
   #panel!: HTMLDivElement;
   #titleEl!: HTMLHeadingElement;
@@ -61,9 +64,12 @@ export class KDialog extends KernoElement {
   #closeBtn!: HTMLButtonElement;
   #headerSlot!: HTMLSlotElement;
   #wasOpen = false;
+  #exitAnims: MotionHandle[] = [];
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.#cancelExit();
+    exitTopLayer(this.#overlay);
     overlayManager.remove(this.#overlayId, false);
     this.#wasOpen = false;
   }
@@ -77,6 +83,7 @@ export class KDialog extends KernoElement {
   }
 
   protected override setup(): void {
+    this.#overlay = this.renderRoot.querySelector('.overlay') as HTMLDivElement;
     this.#backdrop = this.renderRoot.querySelector('.backdrop') as HTMLDivElement;
     this.#panel = this.renderRoot.querySelector('.panel') as HTMLDivElement;
     this.#titleEl = this.renderRoot.querySelector('.title') as HTMLHeadingElement;
@@ -111,6 +118,8 @@ export class KDialog extends KernoElement {
 
     if (this.open && !this.#wasOpen) {
       this.#wasOpen = true;
+      this.#cancelExit();
+      enterTopLayer(this.#overlay);
       overlayManager.add({
         id: this.#overlayId,
         content: this.#panel,
@@ -130,21 +139,34 @@ export class KDialog extends KernoElement {
       this.#wasOpen = false;
       overlayManager.remove(this.#overlayId);
       emit(this, 'k-close');
+      this.#playExit();
     } else if (this.open && this.#wasOpen) {
-      // Update active overlay config if modal/closeOnEscape/closeOnBackdrop changed while open.
-      overlayManager.add({
-        id: this.#overlayId,
-        content: this.#panel,
+      overlayManager.update(this.#overlayId, {
         trapFocus: this.modal,
         lockScroll: this.modal,
-        restoreFocus: false,
         closeOnEscape: this.closeOnEscape,
         closeOnOutsideClick: this.closeOnBackdrop,
-        onRequestClose: (reason) => {
-          this.#requestClose(reason === 'escape' ? 'escape' : 'backdrop');
-        },
       });
     }
+  }
+
+  #playExit(): void {
+    this.#overlay.classList.add('closing');
+    const anims: MotionHandle[] = [scaleOut(this.#panel, { duration: 'fast' })];
+    if (this.modal) anims.push(fadeOut(this.#backdrop, { duration: 'fast' }));
+    this.#exitAnims = anims;
+    void Promise.all(anims.map((a) => a.finished)).then(() => {
+      if (this.open) return;
+      this.#overlay.classList.remove('closing');
+      exitTopLayer(this.#overlay);
+      this.#exitAnims = [];
+    });
+  }
+
+  #cancelExit(): void {
+    for (const anim of this.#exitAnims) anim.cancel();
+    this.#exitAnims = [];
+    this.#overlay?.classList.remove('closing');
   }
 
   #requestClose(source: DialogCloseSource): void {

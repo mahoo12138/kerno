@@ -2,13 +2,15 @@ import {
   FormAssociatedElement,
   KernoElement,
   autoPosition,
+  enterTopLayer,
+  exitTopLayer,
   getActiveElement,
   overlayManager,
   prop,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
-import { scaleIn } from '@kerno/effects/motion';
+import { scaleIn, scaleOut, type MotionHandle } from '@kerno/effects/motion';
 import { getIcon } from '../icon/registry.js';
 import { optionStyles, selectStyles } from './select.styles.js';
 
@@ -36,7 +38,8 @@ export class KOption extends KernoElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.closest<KSelect>('k-select')?.notifyOptionsChanged();
+    const select = this.closest('k-select');
+    if (select instanceof KSelect) select.notifyOptionsChanged();
   }
 
   override click(): void {
@@ -95,6 +98,7 @@ export class KSelect extends FormAssociatedElement {
   #initialOptionAdopted = false;
   #stopPositioning: (() => void) | null = null;
   #wasOpen = false;
+  #exitAnim: MotionHandle | null = null;
 
   constructor() {
     super();
@@ -112,7 +116,8 @@ export class KSelect extends FormAssociatedElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.#cleanup();
+    this.#cancelExit();
+    this.#cleanup(false);
     this.#wasOpen = false;
   }
 
@@ -160,6 +165,8 @@ export class KSelect extends FormAssociatedElement {
 
     if (this.open && !this.#wasOpen && !this.isDisabled) {
       this.#wasOpen = true;
+      this.#cancelExit();
+      enterTopLayer(this.#listbox);
       this.#listbox.style.minWidth = `${this.#combobox.offsetWidth || 180}px`;
       this.#stopPositioning = autoPosition(this.#combobox, this.#listbox, {
         placement: 'bottom-start',
@@ -185,7 +192,8 @@ export class KSelect extends FormAssociatedElement {
       });
     } else if ((!this.open || this.isDisabled) && this.#wasOpen) {
       this.#wasOpen = false;
-      this.#cleanup();
+      overlayManager.remove(this.#overlayId);
+      this.#playExit();
     }
   }
 
@@ -272,9 +280,30 @@ export class KSelect extends FormAssociatedElement {
     }
   };
 
-  #cleanup(): void {
+  #playExit(): void {
+    this.#listbox.classList.add('closing');
+    const anim = scaleOut(this.#listbox, { duration: 'fast' });
+    this.#exitAnim = anim;
+    void anim.finished.then(() => {
+      if (this.open) return;
+      this.#listbox.classList.remove('closing');
+      this.#stopPositioning?.();
+      this.#stopPositioning = null;
+      exitTopLayer(this.#listbox);
+      this.#exitAnim = null;
+    });
+  }
+
+  #cancelExit(): void {
+    this.#exitAnim?.cancel();
+    this.#exitAnim = null;
+    this.#listbox?.classList.remove('closing');
+  }
+
+  #cleanup(restoreFocus = true): void {
     this.#stopPositioning?.();
     this.#stopPositioning = null;
-    overlayManager.remove(this.#overlayId);
+    exitTopLayer(this.#listbox);
+    overlayManager.remove(this.#overlayId, restoreFocus);
   }
 }

@@ -36,7 +36,8 @@ export class KNavItem extends KernoElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.closest<KNav>('k-nav')?.notifyItemsChanged();
+    const nav = this.closest('k-nav');
+    if (nav instanceof KNav) nav.notifyItemsChanged();
   }
 
   override click(): void {

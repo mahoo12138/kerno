@@ -153,12 +153,14 @@ export const selectStyles = css`
     height: 100%;
   }
 
-  :host(:not([open])) .listbox {
+  :host(:not([open])) .listbox:not(.closing) {
     display: none;
   }
 
   .listbox {
     position: fixed;
+    inset: auto;
+    margin: 0;
     z-index: ${token('zIndex.dropdown')};
     min-width: 180px;
     max-height: 240px;
@@ -167,6 +169,11 @@ export const selectStyles = css`
     border-radius: ${token('radius.lg')};
     border: ${token('control.borderWidth')} solid ${token('color.stroke.default')};
     background: ${token('color.bg.layer')};
+    color: ${token('color.fg.default')};
     box-shadow: ${token('elevation.4')};
+  }
+
+  .listbox.closing {
+    pointer-events: none;
   }
 `;

@@ -1,13 +1,11 @@
 import { FormAssociatedElement, emit, prop, state, type PropertyValues } from '@kerno/core';
-import { isCornerKind, toClipPath, toSvgPath, type CornerKind } from '@kerno/effects/shape';
+import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
 import { getIcon } from '../icon/registry.js';
 import { inputStyles } from './input.styles.js';
 
 export type InputType = 'text' | 'password' | 'email' | 'number' | 'search' | 'tel' | 'url';
 export type InputSize = 'sm' | 'md' | 'lg';
 export type InputShape = CornerKind;
-
-const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /**
  * Form-associated text input control with prefix/suffix slots, clearable and
@@ -59,9 +57,10 @@ export class KInput extends FormAssociatedElement {
   #passwordBtn!: HTMLButtonElement;
   #defaultValue = '';
   #defaultCaptured = false;
-  #shapeObserver: ResizeObserver | null = null;
-  #shapeSvg: SVGSVGElement | null = null;
-  #shapePath: SVGPathElement | null = null;
+  readonly #shapeOutline = new ShapeOutlineController(this, {
+    getTarget: () => this.#base ?? null,
+    getKind: () => this.shape,
+  });
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -69,12 +68,6 @@ export class KInput extends FormAssociatedElement {
       this.#defaultCaptured = true;
     }
     super.connectedCallback();
-  }
-
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this.#shapeObserver?.disconnect();
-    this.#shapeObserver = null;
   }
 
   override formResetCallback(): void {
@@ -180,7 +173,7 @@ export class KInput extends FormAssociatedElement {
     this.#syncFormAndValidity();
 
     if (changed.has('shape') || changed.has('size')) {
-      this.#syncShapeMode();
+      this.#shapeOutline.sync();
     }
   }
 
@@ -240,52 +233,5 @@ export class KInput extends FormAssociatedElement {
       (tooShort ? `Please lengthen this text to ${this.minLength} characters or more.` : '') ||
       (tooLong ? `Please shorten this text to ${this.maxLength} characters or less.` : '');
     this.setValidity(flags, message, this.#input);
-  }
-
-  #syncShapeMode(): void {
-    const kind = isCornerKind(this.shape) ? this.shape : 'rounded';
-    if (kind === 'rounded') {
-      this.#shapeObserver?.disconnect();
-      this.#shapeObserver = null;
-      this.#base.style.clipPath = '';
-      this.#shapeSvg?.remove();
-      this.#shapeSvg = null;
-      this.#shapePath = null;
-      return;
-    }
-
-    if (!this.#shapeSvg) {
-      const svg = document.createElementNS(SVG_NS, 'svg');
-      svg.setAttribute('class', 'shape-stroke');
-      svg.setAttribute('aria-hidden', 'true');
-      const path = document.createElementNS(SVG_NS, 'path');
-      svg.append(path);
-      this.#base.prepend(svg);
-      this.#shapeSvg = svg;
-      this.#shapePath = path;
-    }
-
-    if (typeof ResizeObserver === 'function' && !this.#shapeObserver) {
-      this.#shapeObserver = new ResizeObserver(() => this.#applyCustomShape());
-      this.#shapeObserver.observe(this.#base);
-    }
-
-    this.#applyCustomShape();
-  }
-
-  #applyCustomShape(): void {
-    const kind = isCornerKind(this.shape) ? this.shape : 'rounded';
-    if (kind === 'rounded') return;
-    const rect = this.#base.getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
-    if (w <= 0 || h <= 0) return;
-
-    const rawRadius = Number.parseFloat(getComputedStyle(this.#base).borderTopLeftRadius);
-    const radius = Number.isFinite(rawRadius) && rawRadius > 0 ? rawRadius : 6;
-    const spec = { kind, radius };
-
-    this.#base.style.clipPath = toClipPath(w, h, spec);
-    this.#shapePath?.setAttribute('d', toSvgPath(w, h, spec, 0.5));
   }
 }

@@ -14,6 +14,7 @@ import {
   type ShapeInput,
   type ShapeSpec,
 } from '../shape/index.js';
+import { observeSurfaceEnvironment } from './env-observer.js';
 import { defaultSurfaceLayers, type SurfaceLayer, type SurfaceRenderState } from './layers.js';
 import { cancelFrame, scheduleFrame } from './scheduler.js';
 
@@ -28,6 +29,7 @@ export interface SurfaceControllerConfig {
   getStrokeColor(): string;
   getStrokeWidth(): number;
   getLayers?(): readonly SurfaceLayer[];
+  onEnvironmentChange?(): void;
 }
 
 /**
@@ -39,6 +41,7 @@ export class SurfaceController implements ReactiveController {
   #config: SurfaceControllerConfig | null = null;
   #resizeObserver: ResizeObserver | null = null;
   #intersectionObserver: IntersectionObserver | null = null;
+  #stopEnvObserver: (() => void) | null = null;
   #width = 0;
   #height = 0;
   #visible = true;
@@ -77,7 +80,7 @@ export class SurfaceController implements ReactiveController {
     if (isServer) return;
     if (typeof ResizeObserver === 'function' && !this.#resizeObserver) {
       this.#resizeObserver = new ResizeObserver((entries) => {
-        const entry = entries[0];
+        const entry = entries[entries.length - 1];
         if (!entry) return;
         const box = entry.borderBoxSize?.[0];
         const w = box ? box.inlineSize : entry.contentRect.width;
@@ -92,12 +95,22 @@ export class SurfaceController implements ReactiveController {
     }
 
     if (typeof IntersectionObserver === 'function' && !this.#intersectionObserver) {
-      this.#intersectionObserver = new IntersectionObserver((entries) => {
-        const entry = entries[0];
-        if (!entry) return;
-        this.setVisible(entry.isIntersecting);
-      });
+      this.#intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[entries.length - 1];
+          if (!entry) return;
+          this.setVisible(entry.isIntersecting);
+        },
+        { rootMargin: '200px' },
+      );
       this.#intersectionObserver.observe(this.host);
+    }
+
+    if (!this.#stopEnvObserver) {
+      this.#stopEnvObserver = observeSurfaceEnvironment(this.host, () => {
+        this.#config?.onEnvironmentChange?.();
+        this.invalidate();
+      });
     }
 
     this.#measureFallback();
@@ -114,18 +127,20 @@ export class SurfaceController implements ReactiveController {
     this.#resizeObserver = null;
     this.#intersectionObserver?.disconnect();
     this.#intersectionObserver = null;
+    this.#stopEnvObserver?.();
+    this.#stopEnvObserver = null;
     const layers = this.#config?.getLayers?.() ?? defaultSurfaceLayers;
     for (const layer of layers) layer.destroy?.();
   }
 
-  /** Updates visibility state; when resuming visibility with pending changes, schedules a frame. */
+  /** Updates visibility state; when resuming visibility with pending changes, repaints immediately. */
   setVisible(visible: boolean): void {
     if (this.#visible === visible) return;
     this.#visible = visible;
     if (!visible) {
       cancelFrame(this.#paintTask);
     } else if (this.#dirty) {
-      scheduleFrame(this.#paintTask);
+      this.paintNow();
     }
   }
 
@@ -175,16 +190,11 @@ export class SurfaceController implements ReactiveController {
 
     // 2. Elevation sync (box-shadow for rounded, drop-shadow filter for custom shapes)
     const elevation = normalizeElevation(cfg.getElevation());
-    if (elevation === 0) {
-      clipEl.style.boxShadow = 'none';
-      this.host.style.filter = '';
-    } else if (roundedOnly) {
-      clipEl.style.boxShadow = elevationToken(elevation);
-      this.host.style.filter = '';
-    } else {
-      clipEl.style.boxShadow = 'none';
-      this.host.style.filter = resolveDropShadowFilter(this.host, elevation);
-    }
+    const nextFilter =
+      elevation === 0 || roundedOnly ? '' : resolveDropShadowFilter(this.host, elevation);
+    const nextShadow = elevation === 0 || !roundedOnly ? 'none' : elevationToken(elevation);
+    if (clipEl.style.boxShadow !== nextShadow) clipEl.style.boxShadow = nextShadow;
+    if (this.host.style.filter !== nextFilter) this.host.style.filter = nextFilter;
 
     // 3. HiDPI Canvas draw
     const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
