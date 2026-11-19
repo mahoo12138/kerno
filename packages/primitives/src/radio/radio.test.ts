@@ -71,4 +71,23 @@ describe('<k-radio-group> & <k-radio>', () => {
     expect(b.checked).toBe(true);
     expect(new FormData(form).get('tier')).toBe('b');
   });
+
+  it('keeps checked ring and dot inside the accent chromatic ramp on rest and hover', async () => {
+    document.head.insertAdjacentHTML(
+      'beforeend',
+      '<style id="radio-accent">:root { --k-color-accent-default: rgb(13, 148, 136); --k-color-accent-hover: rgb(20, 184, 166); --k-color-accent-border-hover: rgb(94, 234, 212); }</style>',
+    );
+    const el = await mount<KRadio>('<k-radio checked>Pro</k-radio>');
+    const control = el.shadowRoot!.querySelector<HTMLElement>('.control')!;
+    const dot = el.shadowRoot!.querySelector<HTMLElement>('.indicator')!;
+    expect(getComputedStyle(control).borderTopColor).toBe('rgb(13, 148, 136)');
+    expect(getComputedStyle(dot).backgroundColor).toBe('rgb(13, 148, 136)');
+
+    await userEvent.hover(control);
+    expect(getComputedStyle(control).borderTopColor).toBe('rgb(94, 234, 212)');
+    expect(getComputedStyle(dot).backgroundColor).toBe('rgb(20, 184, 166)');
+
+    await userEvent.unhover(control);
+    document.getElementById('radio-accent')!.remove();
+  });
 });

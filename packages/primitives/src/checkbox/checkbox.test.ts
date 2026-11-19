@@ -67,4 +67,22 @@ describe('<k-checkbox>', () => {
     expect(el.checked).toBe(false);
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('keeps checked hover fill and border inside the accent chromatic ramp', async () => {
+    document.head.insertAdjacentHTML(
+      'beforeend',
+      '<style id="cb-accent">:root { --k-color-accent-default: rgb(13, 148, 136); --k-color-accent-hover: rgb(20, 184, 166); --k-color-accent-border-hover: rgb(94, 234, 212); }</style>',
+    );
+    const el = await mount('<k-checkbox checked>Checked</k-checkbox>');
+    const control = el.shadowRoot!.querySelector<HTMLElement>('.control')!;
+    expect(getComputedStyle(control).backgroundColor).toBe('rgb(13, 148, 136)');
+    expect(getComputedStyle(control).borderTopColor).toBe('rgba(0, 0, 0, 0)');
+
+    await userEvent.hover(control);
+    expect(getComputedStyle(control).backgroundColor).toBe('rgb(20, 184, 166)');
+    expect(getComputedStyle(control).borderTopColor).toBe('rgb(94, 234, 212)');
+
+    await userEvent.unhover(control);
+    document.getElementById('cb-accent')!.remove();
+  });
 });

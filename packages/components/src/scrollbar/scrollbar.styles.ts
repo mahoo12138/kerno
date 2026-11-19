@@ -384,6 +384,11 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     background: var(--_sb-marker-hover-bg);
   }
 
+  .bar.v .marker[current][hover],
+  .bar.h .marker[current][hover] {
+    background: ${token('color.accent.hover')};
+  }
+
   .marker[on-thumb] {
     background: var(--_sb-marker-on-thumb-bg);
   }

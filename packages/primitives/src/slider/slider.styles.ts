@@ -10,10 +10,13 @@ import { token } from '@kerno/tokens';
  * --k-slider-track-bg
  * --k-slider-fill-bg
  * --k-slider-thumb-bg
+ * --k-slider-thumb-hover-bg
+ * --k-slider-thumb-active-bg
+ * --k-slider-thumb-border-hover
  *
  * Styled after authentic Windows 10 (MDL2 / Fluent 1) Slider:
- * - Crisp 2px horizontal track
- * - Vertical capsule thumb (8px × 24px pill) in Accent Blue
+ * - Crisp 2px horizontal track with chromatic Accent fill
+ * - Vertical capsule thumb (8px × 24px pill) staying within the Accent hue ramp
  */
 export const sliderStyles = css`
   :host {
@@ -61,11 +64,20 @@ export const sliderStyles = css`
   .range {
     -webkit-appearance: none;
     appearance: none;
+    --_fill: var(--k-slider-fill-bg, ${token('color.accent.default')});
     width: 100%;
     height: var(--_thumb-h);
     margin: 0;
     background: transparent;
     cursor: pointer;
+  }
+
+  .range:hover:not(:disabled) {
+    --_fill: var(--k-slider-fill-bg, ${token('color.accent.hover')});
+  }
+
+  .range:active:not(:disabled) {
+    --_fill: var(--k-slider-fill-bg, ${token('color.accent.active')});
   }
 
   .range:disabled {
@@ -82,8 +94,8 @@ export const sliderStyles = css`
     border-radius: 0px;
     background: linear-gradient(
       to right,
-      var(--k-slider-fill-bg, ${token('color.accent.default')}) 0%,
-      var(--k-slider-fill-bg, ${token('color.accent.default')}) var(--_percent),
+      var(--_fill) 0%,
+      var(--_fill) var(--_percent),
       var(--k-slider-track-bg, ${token('color.stroke.strong')}) var(--_percent),
       var(--k-slider-track-bg, ${token('color.stroke.strong')}) 100%
     );
@@ -98,7 +110,7 @@ export const sliderStyles = css`
   .range::-moz-range-progress {
     height: var(--_track-h);
     border-radius: 0px;
-    background: var(--k-slider-fill-bg, ${token('color.accent.default')});
+    background: var(--_fill);
   }
 
   .range::-webkit-slider-thumb {
@@ -109,19 +121,22 @@ export const sliderStyles = css`
     height: var(--_thumb-h);
     margin-top: calc((var(--_track-h) - var(--_thumb-h)) / 2);
     border-radius: ${token('radius.full')};
-    border: none;
+    border: 1.5px solid transparent;
     background: var(--k-slider-thumb-bg, ${token('color.accent.default')});
     transition:
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
+      border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
       transform ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .range:hover:not(:disabled)::-webkit-slider-thumb {
-    background: ${token('color.fg.default')};
+    background: var(--k-slider-thumb-hover-bg, ${token('color.accent.hover')});
+    border-color: var(--k-slider-thumb-border-hover, ${token('color.accent.borderHover')});
   }
 
   .range:active:not(:disabled)::-webkit-slider-thumb {
-    background: ${token('color.accent.active')};
+    background: var(--k-slider-thumb-active-bg, ${token('color.accent.active')});
+    border-color: transparent;
   }
 
   .range:focus-visible::-webkit-slider-thumb {
@@ -134,7 +149,26 @@ export const sliderStyles = css`
     width: var(--_thumb-w);
     height: var(--_thumb-h);
     border-radius: ${token('radius.full')};
-    border: none;
+    border: 1.5px solid transparent;
     background: var(--k-slider-thumb-bg, ${token('color.accent.default')});
+    transition:
+      background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
+      border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
+      transform ${token('motion.duration.fast')} ${token('motion.easing.standard')};
+  }
+
+  .range:hover:not(:disabled)::-moz-range-thumb {
+    background: var(--k-slider-thumb-hover-bg, ${token('color.accent.hover')});
+    border-color: var(--k-slider-thumb-border-hover, ${token('color.accent.borderHover')});
+  }
+
+  .range:active:not(:disabled)::-moz-range-thumb {
+    background: var(--k-slider-thumb-active-bg, ${token('color.accent.active')});
+    border-color: transparent;
+  }
+
+  .range:focus-visible::-moz-range-thumb {
+    outline: ${token('focus.ringWidth')} solid ${token('color.stroke.focusOuter')};
+    outline-offset: ${token('focus.ringOffset')};
   }
 `;

@@ -52,7 +52,11 @@ export const optionStyles = css`
 
   :host([selected]) .base:hover:not(:disabled),
   :host([selected]) .base:focus-visible:not(:disabled) {
-    background: color-mix(in srgb, ${token('color.accent.default')} 52%, transparent);
+    background: color-mix(in srgb, ${token('color.accent.hover')} 48%, transparent);
+  }
+
+  :host([selected]) .base:active:not(:disabled) {
+    background: color-mix(in srgb, ${token('color.accent.active')} 60%, transparent);
   }
 
   .base:disabled {
@@ -103,6 +107,7 @@ export const selectStyles = css`
 
   .combobox {
     all: unset;
+    --_border: ${token('color.stroke.strong')};
     position: relative;
     box-sizing: border-box;
     display: inline-flex;
@@ -113,7 +118,7 @@ export const selectStyles = css`
     min-height: var(--_height);
     padding-inline: var(--_padding-x);
     border-radius: var(--_radius);
-    border: 2px solid ${token('color.stroke.strong')};
+    border: 2px solid var(--_border);
     background: transparent;
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
@@ -125,12 +130,6 @@ export const selectStyles = css`
       border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
-  :host([shape='chamfer']) .combobox,
-  :host([shape='scallop']) .combobox,
-  :host([shape='notch']) .combobox {
-    border-color: transparent;
-  }
-
   .shape-stroke {
     position: absolute;
     inset: -2px;
@@ -139,47 +138,40 @@ export const selectStyles = css`
     pointer-events: none;
     overflow: visible;
     fill: none;
-    stroke: ${token('color.stroke.strong')};
+    stroke: var(--_border);
     stroke-width: 2px;
     transition: stroke ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
-  :host([data-user-invalid]) .combobox {
-    border-color: ${token('color.status.danger.solid')};
-  }
-
   .combobox:hover:not(:disabled) {
-    border-color: color-mix(in srgb, ${token('color.fg.default')} 72%, transparent);
-  }
-
-  :host([shape='chamfer']) .combobox:hover:not(:disabled),
-  :host([shape='scallop']) .combobox:hover:not(:disabled),
-  :host([shape='notch']) .combobox:hover:not(:disabled) {
-    border-color: transparent;
-  }
-
-  .combobox:hover:not(:disabled) .shape-stroke {
-    stroke: color-mix(in srgb, ${token('color.fg.default')} 72%, transparent);
+    --_border: color-mix(in srgb, ${token('color.fg.default')} 72%, transparent);
   }
 
   .combobox:active:not(:disabled) {
     background: ${token('color.subtle.hover')};
   }
 
+  :host([open]) .combobox,
   .combobox:focus-visible {
-    border-color: ${token('color.accent.default')};
+    --_border: ${token('color.accent.default')};
     outline: none;
   }
 
-  .combobox:focus-visible .shape-stroke {
-    stroke: ${token('color.accent.default')};
+  :host([data-user-invalid]) .combobox {
+    --_border: ${token('color.status.danger.solid')};
   }
 
   .combobox:disabled {
     cursor: default;
     background: transparent;
     color: ${token('color.fg.disabled')};
-    border-color: ${token('color.stroke.default')};
+    --_border: ${token('color.stroke.default')};
+  }
+
+  :host([shape='chamfer']) .combobox,
+  :host([shape='scallop']) .combobox,
+  :host([shape='notch']) .combobox {
+    border-color: transparent;
   }
 
   .display {

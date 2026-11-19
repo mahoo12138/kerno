@@ -49,4 +49,22 @@ describe('<k-switch>', () => {
     await sw.updateComplete;
     expect(sw.checked).toBe(false);
   });
+
+  it('reveals chromatic accent hover border on checked switch without gray fallback', async () => {
+    document.head.insertAdjacentHTML(
+      'beforeend',
+      '<style id="sw-accent">:root { --k-color-accent-default: rgb(13, 148, 136); --k-color-accent-hover: rgb(20, 184, 166); --k-color-accent-border-hover: rgb(94, 234, 212); }</style>',
+    );
+    const el = await mount('<k-switch checked>Telemetry</k-switch>');
+    const track = el.shadowRoot!.querySelector<HTMLElement>('.track')!;
+    expect(getComputedStyle(track).backgroundColor).toBe('rgb(13, 148, 136)');
+    expect(getComputedStyle(track).borderTopColor).toBe('rgba(0, 0, 0, 0)');
+
+    await userEvent.hover(track);
+    expect(getComputedStyle(track).backgroundColor).toBe('rgb(20, 184, 166)');
+    expect(getComputedStyle(track).borderTopColor).toBe('rgb(94, 234, 212)');
+
+    await userEvent.unhover(track);
+    document.getElementById('sw-accent')!.remove();
+  });
 });

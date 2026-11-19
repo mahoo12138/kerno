@@ -8,13 +8,16 @@ import { token } from '@kerno/tokens';
  * --k-checkbox-radius
  * --k-checkbox-bg
  * --k-checkbox-checked-bg
+ * --k-checkbox-checked-bg-hover
+ * --k-checkbox-checked-bg-active
+ * --k-checkbox-checked-border-hover
  * --k-checkbox-fg
  * --k-checkbox-border-color
  *
  * Styled after authentic Windows 10 (MDL2 / Fluent 1) CheckBox:
  * - 20×20 sharp square (`0px` radius by default; `4px` for chamfer/scallop/notch)
  * - Unchecked: transparent background, crisp 2px high-contrast border
- * - Checked/Indeterminate: solid Accent Blue fill, 2px high-contrast border frame on hover
+ * - Checked/Indeterminate: solid Accent fill, chromatic 2px Accent hover border frame
  */
 export const checkboxStyles = css`
   :host {
@@ -66,6 +69,7 @@ export const checkboxStyles = css`
 
   .control {
     all: unset;
+    --_border: var(--k-checkbox-border-color, ${token('color.fg.secondary')});
     position: relative;
     box-sizing: border-box;
     display: inline-flex;
@@ -74,19 +78,13 @@ export const checkboxStyles = css`
     width: var(--k-checkbox-size, var(--_size));
     height: var(--k-checkbox-size, var(--_size));
     border-radius: var(--k-checkbox-radius, var(--_radius));
-    border: 2px solid var(--k-checkbox-border-color, ${token('color.fg.secondary')});
+    border: 2px solid var(--_border);
     background: var(--k-checkbox-bg, transparent);
     color: var(--k-checkbox-fg, ${token('color.accent.fg')});
     flex-shrink: 0;
     transition:
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
       border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
-  }
-
-  :host([shape='chamfer']) .control,
-  :host([shape='scallop']) .control,
-  :host([shape='notch']) .control {
-    border-color: transparent;
   }
 
   .shape-stroke {
@@ -97,73 +95,43 @@ export const checkboxStyles = css`
     pointer-events: none;
     overflow: visible;
     fill: none;
-    stroke: var(--k-checkbox-border-color, ${token('color.fg.secondary')});
+    stroke: var(--_border);
     stroke-width: 2px;
     transition: stroke ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
-  :host([checked]) .shape-stroke,
-  :host([indeterminate]) .shape-stroke {
-    stroke: transparent;
-  }
-
   .base:hover:not(.disabled) .control {
-    border-color: var(--k-checkbox-border-color, ${token('color.fg.default')});
-  }
-
-  :host([shape='chamfer']) .base:hover:not(.disabled) .control,
-  :host([shape='scallop']) .base:hover:not(.disabled) .control,
-  :host([shape='notch']) .base:hover:not(.disabled) .control {
-    border-color: transparent;
-  }
-
-  .base:hover:not(.disabled) .shape-stroke {
-    stroke: var(--k-checkbox-border-color, ${token('color.fg.default')});
+    --_border: var(--k-checkbox-border-color, ${token('color.fg.default')});
   }
 
   .base:active:not(.disabled) .control {
     background: ${token('color.control.active')};
-    border-color: transparent;
-  }
-
-  .base:active:not(.disabled) .shape-stroke {
-    stroke: transparent;
+    --_border: transparent;
   }
 
   :host([checked]) .control,
   :host([indeterminate]) .control {
     background: var(--k-checkbox-checked-bg, ${token('color.accent.default')});
-    border-color: transparent;
+    --_border: transparent;
   }
 
   :host([checked]) .base:hover:not(.disabled) .control,
   :host([indeterminate]) .base:hover:not(.disabled) .control {
-    background: var(--k-checkbox-checked-bg, ${token('color.accent.default')});
-    border-color: ${token('color.fg.default')};
-  }
-
-  :host([checked][shape='chamfer']) .base:hover:not(.disabled) .control,
-  :host([checked][shape='scallop']) .base:hover:not(.disabled) .control,
-  :host([checked][shape='notch']) .base:hover:not(.disabled) .control,
-  :host([indeterminate][shape='chamfer']) .base:hover:not(.disabled) .control,
-  :host([indeterminate][shape='scallop']) .base:hover:not(.disabled) .control,
-  :host([indeterminate][shape='notch']) .base:hover:not(.disabled) .control {
-    border-color: transparent;
-  }
-
-  :host([checked]) .base:hover:not(.disabled) .shape-stroke,
-  :host([indeterminate]) .base:hover:not(.disabled) .shape-stroke {
-    stroke: ${token('color.fg.default')};
+    background: var(
+      --k-checkbox-checked-bg-hover,
+      var(--k-checkbox-checked-bg, ${token('color.accent.hover')})
+    );
+    --_border: var(--k-checkbox-checked-border-hover, ${token('color.accent.borderHover')});
   }
 
   :host([checked]) .base:active:not(.disabled) .control,
   :host([indeterminate]) .base:active:not(.disabled) .control {
-    background: ${token('color.accent.active')};
-    border-color: transparent;
+    background: var(--k-checkbox-checked-bg-active, ${token('color.accent.active')});
+    --_border: transparent;
   }
 
   :host([data-user-invalid]) .control {
-    border-color: ${token('color.status.danger.solid')};
+    --_border: ${token('color.status.danger.solid')};
   }
 
   .control:focus-visible {
@@ -174,7 +142,7 @@ export const checkboxStyles = css`
 
   .control:disabled {
     background: transparent;
-    border-color: ${token('color.fg.disabled')};
+    --_border: ${token('color.fg.disabled')};
     color: ${token('color.fg.disabled')};
   }
 
@@ -182,6 +150,12 @@ export const checkboxStyles = css`
   :host([indeterminate]) .control:disabled {
     background: ${token('color.accent.disabled')};
     color: ${token('color.accent.fgDisabled')};
+    --_border: transparent;
+  }
+
+  :host([shape='chamfer']) .control,
+  :host([shape='scallop']) .control,
+  :host([shape='notch']) .control {
     border-color: transparent;
   }
 

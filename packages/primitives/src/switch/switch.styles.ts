@@ -9,11 +9,14 @@ import { token } from '@kerno/tokens';
  * --k-switch-thumb-size
  * --k-switch-track-bg
  * --k-switch-track-checked-bg
+ * --k-switch-track-checked-bg-hover
+ * --k-switch-track-checked-bg-active
+ * --k-switch-checked-border-hover
  * --k-switch-thumb-bg
  *
  * Styled after authentic Windows 10 (MDL2 / Fluent 1) ToggleSwitch:
  * - Unchecked: transparent track, crisp 2px high-contrast border, matching solid thumb
- * - Checked: solid Accent Blue track, transparent border, pure white thumb
+ * - Checked: solid Accent track, chromatic 2px Accent hover border frame, crisp white thumb
  */
 export const switchStyles = css`
   :host {
@@ -71,6 +74,7 @@ export const switchStyles = css`
 
   .track {
     all: unset;
+    --_border: ${token('color.fg.secondary')};
     position: relative;
     box-sizing: border-box;
     display: inline-flex;
@@ -79,18 +83,12 @@ export const switchStyles = css`
     height: var(--k-switch-height, var(--_height));
     padding: 3px;
     border-radius: var(--_radius);
-    border: 2px solid ${token('color.fg.secondary')};
+    border: 2px solid var(--_border);
     background: var(--k-switch-track-bg, transparent);
     flex-shrink: 0;
     transition:
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
       border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
-  }
-
-  :host([shape='chamfer']) .track,
-  :host([shape='scallop']) .track,
-  :host([shape='notch']) .track {
-    border-color: transparent;
   }
 
   .shape-stroke {
@@ -101,58 +99,40 @@ export const switchStyles = css`
     pointer-events: none;
     overflow: visible;
     fill: none;
-    stroke: ${token('color.fg.secondary')};
+    stroke: var(--_border);
     stroke-width: 2px;
     transition: stroke ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
-  :host([checked]) .shape-stroke {
-    stroke: transparent;
-  }
-
   .base:hover:not(.disabled) .track {
-    border-color: ${token('color.fg.default')};
-  }
-
-  :host([shape='chamfer']) .base:hover:not(.disabled) .track,
-  :host([shape='scallop']) .base:hover:not(.disabled) .track,
-  :host([shape='notch']) .base:hover:not(.disabled) .track {
-    border-color: transparent;
-  }
-
-  .base:hover:not(.disabled) .shape-stroke {
-    stroke: ${token('color.fg.default')};
+    --_border: ${token('color.fg.default')};
   }
 
   .base:active:not(.disabled) .track {
     background: ${token('color.control.active')};
-    border-color: transparent;
-  }
-
-  .base:active:not(.disabled) .shape-stroke {
-    stroke: transparent;
+    --_border: transparent;
   }
 
   :host([checked]) .track {
     background: var(--k-switch-track-checked-bg, ${token('color.accent.default')});
-    border-color: transparent;
+    --_border: transparent;
   }
 
   :host([checked]) .base:hover:not(.disabled) .track {
-    background: ${token('color.accent.hover')};
-    border-color: transparent;
-  }
-
-  :host([checked]) .base:hover:not(.disabled) .shape-stroke {
-    stroke: transparent;
+    background: var(
+      --k-switch-track-checked-bg-hover,
+      var(--k-switch-track-checked-bg, ${token('color.accent.hover')})
+    );
+    --_border: var(--k-switch-checked-border-hover, ${token('color.accent.borderHover')});
   }
 
   :host([checked]) .base:active:not(.disabled) .track {
-    background: ${token('color.accent.active')};
+    background: var(--k-switch-track-checked-bg-active, ${token('color.accent.active')});
+    --_border: transparent;
   }
 
   :host([data-user-invalid]) .track {
-    border-color: ${token('color.status.danger.solid')};
+    --_border: ${token('color.status.danger.solid')};
   }
 
   .track:focus-visible {
@@ -163,11 +143,17 @@ export const switchStyles = css`
 
   .track:disabled {
     background: transparent;
-    border-color: ${token('color.fg.disabled')};
+    --_border: ${token('color.fg.disabled')};
   }
 
   :host([checked]) .track:disabled {
     background: ${token('color.accent.disabled')};
+    --_border: transparent;
+  }
+
+  :host([shape='chamfer']) .track,
+  :host([shape='scallop']) .track,
+  :host([shape='notch']) .track {
     border-color: transparent;
   }
 

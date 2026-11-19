@@ -37,10 +37,22 @@ export const navItemStyles = css`
     color: ${token('color.fg.default')};
   }
 
+  .base:active:not(:disabled) {
+    background: ${token('color.subtle.active')};
+  }
+
   :host([active]) .base {
-    background: ${token('color.subtle.hover')};
+    background: color-mix(in srgb, ${token('color.accent.default')} 14%, transparent);
     color: ${token('color.fg.default')};
     font-weight: ${token('font.weight.semibold')};
+  }
+
+  :host([active]) .base:hover:not(:disabled) {
+    background: color-mix(in srgb, ${token('color.accent.hover')} 22%, transparent);
+  }
+
+  :host([active]) .base:active:not(:disabled) {
+    background: color-mix(in srgb, ${token('color.accent.active')} 28%, transparent);
   }
 
   .base::before {
@@ -53,11 +65,21 @@ export const navItemStyles = css`
     border-radius: ${token('radius.full')};
     background: ${token('color.accent.default')};
     transform: scaleY(0);
-    transition: transform ${token('motion.duration.fast')} ${token('motion.easing.decelerate')};
+    transition:
+      transform ${token('motion.duration.fast')} ${token('motion.easing.decelerate')},
+      background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   :host([active]) .base::before {
     transform: scaleY(1);
+  }
+
+  :host([active]) .base:hover:not(:disabled)::before {
+    background: ${token('color.accent.hover')};
+  }
+
+  :host([active]) .base:active:not(:disabled)::before {
+    background: ${token('color.accent.active')};
   }
 
   .base:focus-visible {

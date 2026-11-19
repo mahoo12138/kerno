@@ -129,6 +129,10 @@ export const inputStyles = css`
     stroke-width: 2px;
   }
 
+  .base.disabled .shape-stroke {
+    stroke: ${token('color.stroke.default')};
+  }
+
   .input {
     all: unset;
     position: relative;
