@@ -9,3 +9,4 @@ export * from './switch/index.js';
 export * from './badge/index.js';
 export * from './separator/index.js';
 export * from './select/index.js';
+export * from './slider/index.js';

@@ -135,7 +135,9 @@ function stopGlobal(): void {
  */
 function stripCompositorStyle(styleAttr: string | null): string {
   if (!styleAttr) return '';
-  return styleAttr.replace(/(?:^|;)\s*(?:transform|filter)\s*:[^;]*/gi, '').trim();
+  return styleAttr
+    .replace(/(?:^|;)\s*(?:transform|filter|left|top|right|bottom)\s*:[^;]*/gi, '')
+    .trim();
 }
 
 export function observeSurfaceEnvironment(

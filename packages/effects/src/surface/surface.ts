@@ -29,7 +29,7 @@ import { surfaceStyles } from './surface.styles.js';
  */
 export class KSurface extends KernoElement {
   static override styles = surfaceStyles;
-  static override template = /* html */ `<div part="clip" class="clip"><canvas part="canvas" class="canvas" aria-hidden="true"></canvas><div part="content" class="content"><slot></slot></div></div>`;
+  static override template = /* html */ `<canvas part="shadow" class="shadow-canvas" aria-hidden="true" hidden></canvas><div part="clip" class="clip"><canvas part="canvas" class="canvas" aria-hidden="true"></canvas><div part="content" class="content"><slot></slot></div></div>`;
 
   /** Corner geometry family (`'rounded' | 'chamfer' | 'scallop' | 'notch'`). */
   @prop({ reflect: true }) accessor shape: CornerKind = 'rounded';
@@ -71,15 +71,18 @@ export class KSurface extends KernoElement {
   readonly pressureController = new PressureController(this);
   readonly #revealLayer = this.revealController.createLayer();
 
+  #shadowCanvas!: HTMLCanvasElement;
   #clip!: HTMLDivElement;
   #canvas!: HTMLCanvasElement;
 
   protected override setup(): void {
+    this.#shadowCanvas = this.renderRoot.querySelector('.shadow-canvas') as HTMLCanvasElement;
     this.#clip = this.renderRoot.querySelector('.clip') as HTMLDivElement;
     this.#canvas = this.renderRoot.querySelector('.canvas') as HTMLCanvasElement;
 
     this.surface.bind({
       canvas: this.#canvas,
+      shadowCanvas: this.#shadowCanvas,
       clipTarget: this.#clip,
       getShape: () => this.#resolveShape(),
       getElevation: () => this.elevation,

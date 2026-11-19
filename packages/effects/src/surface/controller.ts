@@ -3,7 +3,7 @@ import type { AcrylicMaterialParams } from '../acrylic/index.js';
 import {
   elevationToken,
   normalizeElevation,
-  resolveDropShadowFilter,
+  resolveShadowLayers,
   type ElevationInput,
 } from '../elevation/index.js';
 import {
@@ -20,6 +20,7 @@ import { cancelFrame, scheduleFrame } from './scheduler.js';
 
 export interface SurfaceControllerConfig {
   readonly canvas: HTMLCanvasElement;
+  readonly shadowCanvas?: HTMLCanvasElement;
   readonly clipTarget?: HTMLElement;
   getShape(): ShapeInput | ShapeSpec;
   getElevation(): ElevationInput;
@@ -188,13 +189,13 @@ export class SurfaceController implements ReactiveController {
       clipEl.style.clipPath = toClipPath(w, h, shape);
     }
 
-    // 2. Elevation sync (box-shadow for rounded, drop-shadow filter for custom shapes)
+    // 2. Elevation sync
+    // Rounded shapes use compositor-friendly box-shadow; non-rectangular shapes
+    // paint an outer knockout shadow onto the sibling shadowCanvas so `:host`
+    // NEVER receives CSS `filter` (which would break `backdrop-filter` on Acrylic).
     const elevation = normalizeElevation(cfg.getElevation());
-    const nextFilter =
-      elevation === 0 || roundedOnly ? '' : resolveDropShadowFilter(this.host, elevation);
     const nextShadow = elevation === 0 || !roundedOnly ? 'none' : elevationToken(elevation);
     if (clipEl.style.boxShadow !== nextShadow) clipEl.style.boxShadow = nextShadow;
-    if (this.host.style.filter !== nextFilter) this.host.style.filter = nextFilter;
 
     // 3. HiDPI Canvas draw
     const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
@@ -213,6 +214,10 @@ export class SurfaceController implements ReactiveController {
     const strokeWidth = Math.max(0, cfg.getStrokeWidth());
     const fillPath = createPath2D(w, h, shape, 0);
     const strokePath = strokeWidth > 0 ? createPath2D(w, h, shape, strokeWidth / 2) : fillPath;
+
+    if (cfg.shadowCanvas) {
+      this.#paintShadowCanvas(cfg.shadowCanvas, w, h, dpr, fillPath, roundedOnly ? 0 : elevation);
+    }
 
     const state: SurfaceRenderState = {
       host: this.host,
@@ -235,4 +240,54 @@ export class SurfaceController implements ReactiveController {
     }
     this.#paintCount++;
   };
+
+  #paintShadowCanvas(
+    shadowCanvas: HTMLCanvasElement,
+    w: number,
+    h: number,
+    dpr: number,
+    fillPath: Path2D,
+    elevation: number,
+  ): void {
+    const layers = elevation > 0 ? resolveShadowLayers(this.host, elevation) : [];
+    if (layers.length === 0) {
+      shadowCanvas.hidden = true;
+      return;
+    }
+    shadowCanvas.hidden = false;
+    const pad = 48;
+    const totalW = w + pad * 2;
+    const totalH = h + pad * 2;
+    const pxW = Math.max(1, Math.round(totalW * dpr));
+    const pxH = Math.max(1, Math.round(totalH * dpr));
+    if (shadowCanvas.width !== pxW) shadowCanvas.width = pxW;
+    if (shadowCanvas.height !== pxH) shadowCanvas.height = pxH;
+
+    const sctx = shadowCanvas.getContext('2d');
+    if (!sctx) return;
+
+    sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sctx.clearRect(0, 0, totalW, totalH);
+    sctx.save();
+    sctx.translate(pad, pad);
+
+    // Draw outer shadow for each elevation layer using a far off-screen caster offset
+    // or filling and then knocking out the shape interior with destination-out.
+    for (const layer of layers) {
+      sctx.save();
+      sctx.shadowOffsetX = layer.offsetX;
+      sctx.shadowOffsetY = layer.offsetY;
+      sctx.shadowBlur = layer.blur;
+      sctx.shadowColor = layer.color;
+      sctx.fillStyle = '#000000';
+      sctx.fill(fillPath);
+      sctx.restore();
+    }
+
+    // Punch out the interior so Acrylic remains 100% translucent with zero dark backing.
+    sctx.globalCompositeOperation = 'destination-out';
+    sctx.fillStyle = '#000000';
+    sctx.fill(fillPath);
+    sctx.restore();
+  }
 }

@@ -3,6 +3,13 @@ import { token, tokenName, type ElevationTokens } from '@kerno/tokens';
 export type ElevationLevel = 0 | 1 | 2 | 3 | 4 | 5;
 export type ElevationInput = ElevationLevel | keyof ElevationTokens | number | string;
 
+export interface ParsedShadowLayer {
+  offsetX: number;
+  offsetY: number;
+  blur: number;
+  color: string;
+}
+
 /** Clamps any number or string input to a valid `ElevationLevel` (`0..5`). */
 export function normalizeElevation(value: ElevationInput | null | undefined): ElevationLevel {
   const n = typeof value === 'number' ? value : Number.parseInt(String(value ?? 0), 10);
@@ -49,9 +56,43 @@ export function splitShadowLayers(boxShadow: string): string[] {
 }
 
 /**
+ * Parses a CSS `box-shadow` value into structured Canvas shadow parameters so
+ * non-rectangular surfaces can draw shape-conforming outer shadows without
+ * applying CSS `filter` to ancestors of `backdrop-filter`.
+ */
+export function parseShadowLayers(boxShadow: string): ParsedShadowLayer[] {
+  const layers = splitShadowLayers(boxShadow);
+  const parsed: ParsedShadowLayer[] = [];
+  for (const raw of layers) {
+    const cleaned = raw.replace(/\binset\b/gi, '').trim();
+    const match = cleaned.match(
+      /^(-?\d*\.?\d+)(?:px)?\s+(-?\d*\.?\d+)(?:px)?(?:\s+(-?\d*\.?\d+)(?:px)?)?(?:\s+(-?\d*\.?\d+)(?:px)?)?\s+(.+)$/,
+    );
+    if (!match) continue;
+    const [, x, y, blur, _spread, color] = match;
+    parsed.push({
+      offsetX: Number.parseFloat(x!) || 0,
+      offsetY: Number.parseFloat(y!) || 0,
+      blur: blur ? Math.max(0, Number.parseFloat(blur) || 0) : 0,
+      color: color!.trim(),
+    });
+  }
+  return parsed;
+}
+
+/**
+ * Reads the resolved `--k-elevation-N` token from `el` and parses its layers.
+ */
+export function resolveShadowLayers(el: Element, level: ElevationInput): ParsedShadowLayer[] {
+  const norm = normalizeElevation(level);
+  if (norm === 0 || typeof getComputedStyle === 'undefined') return [];
+  const raw = getComputedStyle(el).getPropertyValue(elevationVarName(norm)).trim();
+  return raw ? parseShadowLayers(raw) : [];
+}
+
+/**
  * Converts a CSS `box-shadow` value (single or comma-separated layers) into a
- * `filter: drop-shadow(...)` chain so non-rectangular shapes (`chamfer`,
- * `scallop`, `notch`) cast shadows that conform to their clipped geometry.
+ * `filter: drop-shadow(...)` chain.
  */
 export function boxShadowToDropShadow(boxShadow: string): string {
   const layers = splitShadowLayers(boxShadow);
@@ -60,9 +101,7 @@ export function boxShadowToDropShadow(boxShadow: string): string {
 }
 
 function stripSpreadAndInset(layer: string): string {
-  // Remove leading/trailing `inset` keyword if present; drop-shadow only supports outer shadows.
   const withoutInset = layer.replace(/\binset\b/gi, '').trim();
-  // Match up to 4 length tokens before the color, dropping the 4th (spread-radius).
   const match = withoutInset.match(
     /^(-?\d*\.?\d+(?:px|rem|em)?)\s+(-?\d*\.?\d+(?:px|rem|em)?)(?:\s+(-?\d*\.?\d+(?:px|rem|em)?))?(?:\s+(-?\d*\.?\d+(?:px|rem|em)?))?\s+(.+)$/,
   );

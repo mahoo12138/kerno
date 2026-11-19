@@ -120,10 +120,12 @@ describe('Acrylic material', () => {
 
     paintAcrylicCanvas(ctx, path, {
       tint: '#ffffff',
-      tintOpacity: 0.7,
-      blur: '30px',
-      saturation: '125%',
+      tintOpacity: 0.55,
+      blur: '24px',
+      saturation: '190%',
+      brightness: '104%',
       noiseOpacity: 0.05,
+      border: 'rgba(255, 255, 255, 0.5)',
       fallback: 'rgb(18, 52, 86)',
       reducedTransparency: true,
     });
@@ -166,8 +168,13 @@ describe('<k-surface> & FrameScheduler', () => {
     flushFrames();
 
     const clip = el.shadowRoot!.querySelector<HTMLElement>('.clip')!;
+    const shadowCanvas = el.shadowRoot!.querySelector<HTMLCanvasElement>('.shadow-canvas')!;
     expect(clip.style.clipPath).toContain('path(');
-    expect(el.style.filter).toContain('drop-shadow(');
+    // Non-rectangular elevation paints to sibling shadowCanvas without putting CSS filter on host
+    // (preserving backdrop-filter sampling on Acrylic surfaces).
+    expect(el.style.filter).toBe('');
+    expect(shadowCanvas.hidden).toBe(false);
+    expect(shadowCanvas.width).toBeGreaterThan(160);
     expect(customLayerDraw).toHaveBeenCalled();
     expect(el.surface.paintCount).toBeGreaterThan(0);
   });
@@ -234,6 +241,10 @@ describe('Reveal Highlight & Pressure', () => {
     expect(el.revealController.point).toEqual({ x: 40, y: 30, inside: true });
     expect(el.surface.paintCount).toBe(initialPaints + 1);
 
+    el.revealController.triggerPress(40, 30);
+    flushFrames();
+    expect(el.surface.paintCount).toBeGreaterThan(initialPaints + 1);
+
     el.revealController.setPointerPosition(null);
     flushFrames();
     expect(el.revealController.point).toBeNull();
@@ -291,7 +302,7 @@ describe('Reveal Highlight & Pressure', () => {
     await el.updateComplete;
     flushFrames();
 
-    const canvas = el.shadowRoot!.querySelector('canvas')!;
+    const canvas = el.shadowRoot!.querySelector<HTMLCanvasElement>('.canvas')!;
     const ctx = canvas.getContext('2d')!;
     const darkPixel = ctx.getImageData(20, 20, 1, 1).data;
     // Dark bg.layer is #232327 (35, 35, 39)

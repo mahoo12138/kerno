@@ -6,18 +6,22 @@ export interface AcrylicMaterialParams {
   tintOpacity: number;
   blur: string;
   saturation: string;
+  brightness: string;
   noiseOpacity: number;
+  border: string;
   fallback: string;
   reducedTransparency: boolean;
 }
 
 const DEFAULT_ACRYLIC: Omit<AcrylicMaterialParams, 'reducedTransparency'> = {
-  tint: '#fcfcfc',
-  tintOpacity: 0.75,
-  blur: '30px',
-  saturation: '125%',
-  noiseOpacity: 0.02,
-  fallback: '#f9f9f9',
+  tint: '#ffffff',
+  tintOpacity: 0.55,
+  blur: '24px',
+  saturation: '190%',
+  brightness: '104%',
+  noiseOpacity: 0.035,
+  border: 'rgba(255, 255, 255, 0.55)',
+  fallback: '#f5f5f7',
 };
 
 /**
@@ -67,9 +71,11 @@ export function resolveAcrylicParams(
     (Number.isFinite(rawTintOpacity) ? rawTintOpacity : DEFAULT_ACRYLIC.tintOpacity);
   const blur = overrides.blur ?? (read('blur') || DEFAULT_ACRYLIC.blur);
   const saturation = overrides.saturation ?? (read('saturation') || DEFAULT_ACRYLIC.saturation);
+  const brightness = overrides.brightness ?? (read('brightness') || DEFAULT_ACRYLIC.brightness);
   const rawNoise = Number.parseFloat(read('noiseOpacity'));
   const noiseOpacity =
     overrides.noiseOpacity ?? (Number.isFinite(rawNoise) ? rawNoise : DEFAULT_ACRYLIC.noiseOpacity);
+  const border = overrides.border ?? (read('border') || DEFAULT_ACRYLIC.border);
   const fallback = overrides.fallback ?? (read('fallback') || DEFAULT_ACRYLIC.fallback);
   const reducedTransparency = overrides.reducedTransparency ?? prefersReducedTransparency();
 
@@ -78,7 +84,9 @@ export function resolveAcrylicParams(
     tintOpacity: Math.min(1, Math.max(0, tintOpacity)),
     blur,
     saturation,
+    brightness,
     noiseOpacity: Math.min(1, Math.max(0, noiseOpacity)),
+    border,
     fallback,
     reducedTransparency,
   };
@@ -88,10 +96,10 @@ const noiseTiles = new Map<number, HTMLCanvasElement>();
 
 /**
  * Generates (and caches) a deterministic grayscale noise tile `<canvas>` of
- * `(size × size)` pixels. Zero network requests; shared across all Acrylic
- * surfaces in the document.
+ * `(size × size)` pixels (defaults to `128×128` for seamless frosted glass
+ * grain). Zero network requests; shared across all Acrylic surfaces.
  */
-export function getNoiseTile(size = 64): HTMLCanvasElement | null {
+export function getNoiseTile(size = 128): HTMLCanvasElement | null {
   if (isServer) return null;
   const cached = noiseTiles.get(size);
   if (cached) return cached;

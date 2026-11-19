@@ -134,13 +134,17 @@ export interface SurfaceTokens {
     tintOpacity: string;
     blur: string;
     saturation: string;
+    brightness: string;
     noiseOpacity: string;
+    /** Subtle specular edge highlight for frosted glass panels. */
+    border: string;
     /** Solid color used when transparency is unavailable or reduced. */
     fallback: string;
   };
   reveal: {
     color: string;
     borderColor: string;
+    pressColor: string;
     size: string;
   };
 }

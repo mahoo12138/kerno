@@ -60,6 +60,7 @@ import '@kerno/components/define';
 | `<k-radio>` / `<k-radio-group>` | `KRadio` / `KRadioGroup` | `name`、`value`、`checked`、`orientation="horizontal\|vertical"`、`required`、`disabled`                                         | 支持组模式与独立同名互斥模式、方向键漫游     |
 | `<k-switch>`                    | `KSwitch`                | `checked`、`value`、`size`、`required`、`disabled`（`role="switch"`）                                                            | 完整支持 `FormData`、`required` 与 `reset`   |
 | `<k-select>` / `<k-option>`     | `KSelect` / `KOption`    | `value`、`placeholder`、`size`、`open`、`required`、`disabled`                                                                   | 完整支持 `FormData`、`required` 与 `reset`   |
+| `<k-slider>`                    | `KSlider`                | `value`、`min`、`max`、`step`、`label`、`unit`、`show-value`、`disabled`                                                         | 完整支持 `FormData` 与 `reset`               |
 | `<k-badge>`                     | `KBadge`                 | `variant="neutral\|accent\|success\|warning\|danger"`、`pill`                                                                    | —                                            |
 | `<k-separator>`                 | `KSeparator`             | `orientation="horizontal\|vertical"`、`decorative`                                                                               | —                                            |
 

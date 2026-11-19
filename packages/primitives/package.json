@@ -110,6 +110,16 @@
       "source": "./src/select/define.ts",
       "default": "./dist/select/define.js"
     },
+    "./slider": {
+      "types": "./dist/slider/index.d.ts",
+      "source": "./src/slider/index.ts",
+      "default": "./dist/slider/index.js"
+    },
+    "./slider/define": {
+      "types": "./dist/slider/define.d.ts",
+      "source": "./src/slider/define.ts",
+      "default": "./dist/slider/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
