@@ -160,6 +160,76 @@
       "source": "./src/tile/define.ts",
       "default": "./dist/tile/define.js"
     },
+    "./alert": {
+      "types": "./dist/alert/index.d.ts",
+      "source": "./src/alert/index.ts",
+      "default": "./dist/alert/index.js"
+    },
+    "./alert/define": {
+      "types": "./dist/alert/define.d.ts",
+      "source": "./src/alert/define.ts",
+      "default": "./dist/alert/define.js"
+    },
+    "./toast": {
+      "types": "./dist/toast/index.d.ts",
+      "source": "./src/toast/index.ts",
+      "default": "./dist/toast/index.js"
+    },
+    "./toast/define": {
+      "types": "./dist/toast/define.d.ts",
+      "source": "./src/toast/define.ts",
+      "default": "./dist/toast/define.js"
+    },
+    "./drawer": {
+      "types": "./dist/drawer/index.d.ts",
+      "source": "./src/drawer/index.ts",
+      "default": "./dist/drawer/index.js"
+    },
+    "./drawer/define": {
+      "types": "./dist/drawer/define.d.ts",
+      "source": "./src/drawer/define.ts",
+      "default": "./dist/drawer/define.js"
+    },
+    "./command": {
+      "types": "./dist/command/index.d.ts",
+      "source": "./src/command/index.ts",
+      "default": "./dist/command/index.js"
+    },
+    "./command/define": {
+      "types": "./dist/command/define.d.ts",
+      "source": "./src/command/define.ts",
+      "default": "./dist/command/define.js"
+    },
+    "./accordion": {
+      "types": "./dist/accordion/index.d.ts",
+      "source": "./src/accordion/index.ts",
+      "default": "./dist/accordion/index.js"
+    },
+    "./accordion/define": {
+      "types": "./dist/accordion/define.d.ts",
+      "source": "./src/accordion/define.ts",
+      "default": "./dist/accordion/define.js"
+    },
+    "./breadcrumb": {
+      "types": "./dist/breadcrumb/index.d.ts",
+      "source": "./src/breadcrumb/index.ts",
+      "default": "./dist/breadcrumb/index.js"
+    },
+    "./breadcrumb/define": {
+      "types": "./dist/breadcrumb/define.d.ts",
+      "source": "./src/breadcrumb/define.ts",
+      "default": "./dist/breadcrumb/define.js"
+    },
+    "./pagination": {
+      "types": "./dist/pagination/index.d.ts",
+      "source": "./src/pagination/index.ts",
+      "default": "./dist/pagination/index.js"
+    },
+    "./pagination/define": {
+      "types": "./dist/pagination/define.d.ts",
+      "source": "./src/pagination/define.ts",
+      "default": "./dist/pagination/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

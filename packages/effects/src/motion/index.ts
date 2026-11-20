@@ -312,3 +312,20 @@ export function slideIn(
     { id: 'slide', duration: 'normal', easing: 'decelerate', ...options },
   );
 }
+
+export function slideOut(
+  el: HTMLElement,
+  offset: { x?: number; y?: number } = { y: 8 },
+  options: KernoAnimateOptions = {},
+): MotionHandle {
+  const dx = offset.x ?? 0;
+  const dy = offset.y ?? 0;
+  return animate(
+    el,
+    [
+      { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+      { opacity: 0, transform: `translate3d(${dx}px, ${dy}px, 0)` },
+    ],
+    { id: 'slide', duration: 'fast', easing: 'accelerate', ...options },
+  );
+}

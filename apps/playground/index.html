@@ -65,7 +65,22 @@
               <k-icon slot="prefix" name="check"></k-icon>
               Controls &amp; Forms
             </k-nav-item>
+            <k-nav-item value="feedback">
+              <k-icon slot="prefix" name="info"></k-icon>
+              Feedback &amp; Command
+            </k-nav-item>
+            <k-nav-item value="structure">
+              <k-icon slot="prefix" name="user"></k-icon>
+              Structure &amp; Nav
+            </k-nav-item>
           </k-nav>
+        </div>
+
+        <div class="sidebar-group">
+          <k-button id="sidebar-open-command" size="sm" style="width: 100%">
+            <k-icon slot="prefix" name="search"></k-icon>
+            Command Palette (⌘K)
+          </k-button>
         </div>
 
         <div
@@ -1441,6 +1456,259 @@
             <output id="form-output">Submit the form to see FormData.</output>
           </div>
         </section>
+
+        <!-- 8. Feedback, Drawers & Command Palette -->
+        <section class="studio-section" id="sec-feedback" data-marker-label="Feedback & Command">
+          <div class="section-head">
+            <h2>Feedback, Edge Drawers &amp; Command Palette</h2>
+            <p>
+              Fluent 1 InfoBar alerts, Top-Layer toast stack with hover pause, four-edge Acrylic
+              drawers, and a global <code>Cmd/Ctrl + K</code> fuzzy command palette.
+            </p>
+          </div>
+
+          <div class="panel-box">
+            <div class="row" style="justify-content: space-between">
+              <span class="control-group-title">Fluent 1 InfoBar Alerts (&lt;k-alert&gt;)</span>
+              <k-button id="alert-reset-btn" size="sm">Reset Alerts</k-button>
+            </div>
+            <div id="alert-gallery" style="display: grid; gap: 10px">
+              <k-alert variant="info" title="System Update Ready" closable>
+                Kerno v0.5 introduces Top-Layer Toasts, Drawers, and Command Palette with zero
+                runtime dependencies.
+                <k-button slot="action" size="sm" variant="accent" id="alert-open-cmd"
+                  >Try ⌘K</k-button
+                >
+              </k-alert>
+              <k-alert variant="success" title="Build Verified" closable shape="chamfer">
+                All 5 workspace packages compiled cleanly and passed Playwright Chromium regression
+                tests.
+              </k-alert>
+              <k-alert variant="warning" title="Reduced Transparency Detected" closable>
+                Acrylic surfaces automatically fall back to high-contrast solid tints when system
+                transparency is reduced.
+              </k-alert>
+              <k-alert variant="danger" title="Connection Interrupted" closable>
+                Telemetry stream disconnected. Retrying with exponential backoff.
+              </k-alert>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <span class="control-group-title">Top-Layer Toast Service &amp; Edge Drawers</span>
+            <div class="row">
+              <k-button id="toast-info-btn" size="sm">Info Toast</k-button>
+              <k-button id="toast-success-btn" size="sm" variant="accent">Success Toast</k-button>
+              <k-button id="toast-warning-btn" size="sm">Warning Toast</k-button>
+              <k-button id="toast-danger-btn" size="sm">Danger Toast</k-button>
+              <k-button id="toast-action-btn" size="sm">With Undo Action</k-button>
+              <k-button id="toast-clear-btn" size="sm" variant="subtle">Clear All</k-button>
+            </div>
+            <div class="row">
+              <k-select id="toast-placement-select" size="sm" value="bottom-end">
+                <k-option value="bottom-end">Bottom End (Win10)</k-option>
+                <k-option value="bottom">Bottom Center</k-option>
+                <k-option value="bottom-start">Bottom Start</k-option>
+                <k-option value="top-end">Top End</k-option>
+                <k-option value="top">Top Center</k-option>
+                <k-option value="top-start">Top Start</k-option>
+              </k-select>
+              <k-switch id="toast-acrylic-toggle" checked>Acrylic Glass Toast</k-switch>
+            </div>
+
+            <k-separator></k-separator>
+
+            <div class="row">
+              <k-button id="drawer-right-btn" variant="accent">Right Acrylic Drawer</k-button>
+              <k-button id="drawer-left-btn">Left Drawer</k-button>
+              <k-button id="drawer-bottom-btn">Bottom Sheet</k-button>
+              <k-button id="drawer-top-btn">Top Panel</k-button>
+              <k-button id="open-command-btn" shape="chamfer">
+                <k-icon slot="prefix" name="search"></k-icon>
+                Open Command Palette (⌘K)
+              </k-button>
+            </div>
+            <output id="feedback-output">Trigger a toast, drawer, or press Cmd/Ctrl + K.</output>
+          </div>
+        </section>
+
+        <!-- 9. Avatars, Structure & Navigation -->
+        <section class="studio-section" id="sec-structure" data-marker-label="Structure & Nav">
+          <div class="section-head">
+            <h2>Avatars, Breadcrumbs, Accordion &amp; Pagination</h2>
+            <p>
+              Parametric avatars with automatic initials fallback and presence rings, collapsible
+              breadcrumbs, smooth CSS-Grid accordions, and chromatic Accent pagination.
+            </p>
+          </div>
+
+          <div class="panel-box">
+            <span class="control-group-title"
+              >Avatars &amp; Avatar Groups (&lt;k-avatar&gt; / &lt;k-avatar-group&gt;)</span
+            >
+            <div class="row" style="gap: 14px">
+              <k-avatar size="xs" alt="Ada Lovelace" variant="accent"></k-avatar>
+              <k-avatar size="sm" alt="Grace Hopper" status="online"></k-avatar>
+              <k-avatar size="md" alt="林徽因" variant="accent" status="busy"></k-avatar>
+              <k-avatar size="lg" alt="Alan Turing" shape="chamfer" status="away"></k-avatar>
+              <k-avatar size="lg" initials="KN" shape="notch" variant="accent"></k-avatar>
+              <k-avatar size="xl" shape="scallop" status="offline"></k-avatar>
+
+              <k-separator orientation="vertical" style="height: 32px"></k-separator>
+
+              <k-avatar-group max="4" size="md">
+                <k-avatar alt="Ada Lovelace" variant="accent" status="online"></k-avatar>
+                <k-avatar alt="Grace Hopper"></k-avatar>
+                <k-avatar alt="林徽因" variant="accent"></k-avatar>
+                <k-avatar alt="Alan Turing"></k-avatar>
+                <k-avatar alt="Margaret Hamilton"></k-avatar>
+                <k-avatar alt="Ken Thompson"></k-avatar>
+              </k-avatar-group>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <span class="control-group-title">Breadcrumbs (&lt;k-breadcrumb&gt;)</span>
+            <div style="display: grid; gap: 10px">
+              <k-breadcrumb id="demo-breadcrumb">
+                <k-breadcrumb-item href="#sec-start">Studio</k-breadcrumb-item>
+                <k-breadcrumb-item href="#sec-controls">Primitives</k-breadcrumb-item>
+                <k-breadcrumb-item href="#sec-structure">Navigation</k-breadcrumb-item>
+                <k-breadcrumb-item>Breadcrumb</k-breadcrumb-item>
+              </k-breadcrumb>
+              <k-breadcrumb max-items="3" separator="/">
+                <k-breadcrumb-item href="#sec-start">Workspace</k-breadcrumb-item>
+                <k-breadcrumb-item href="#sec-acrylic">Packages</k-breadcrumb-item>
+                <k-breadcrumb-item href="#sec-shape">Components</k-breadcrumb-item>
+                <k-breadcrumb-item href="#sec-feedback">Feedback</k-breadcrumb-item>
+                <k-breadcrumb-item>Collapsible Trail</k-breadcrumb-item>
+              </k-breadcrumb>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <div class="row" style="justify-content: space-between">
+              <span class="control-group-title">Accordion (&lt;k-accordion&gt;)</span>
+              <div class="row" style="gap: 14px">
+                <k-switch id="acc-multiple-toggle">Allow Multiple</k-switch>
+                <k-switch id="acc-collapsible-toggle" checked>Collapsible</k-switch>
+              </div>
+            </div>
+            <k-accordion id="demo-accordion">
+              <k-accordion-item value="surface" heading="Axiom Parametric Surface Engine" open>
+                Unified Canvas 2D renderer supporting rounded, chamfer, scallop, and notch corners,
+                per-side even-odd border rings, outward edge tabs, and 3D physical tilt.
+              </k-accordion-item>
+              <k-accordion-item value="fluent" heading="Windows 10 Fluent 1 Chromatic Controls">
+                All colored Accent controls stay cleanly inside their hue ramp across rest, hover
+                (2px chromatic border), active press, and disabled states in Light, Dark, and Ocean
+                themes.
+              </k-accordion-item>
+              <k-accordion-item value="toplayer" heading="Native Top-Layer Overlay Architecture">
+                Dialogs, Drawers, Command Palettes, Toasts, Popovers, and Select listboxes promote
+                directly into the browser Top Layer via Popover API, escaping overflow clipping.
+              </k-accordion-item>
+            </k-accordion>
+          </div>
+
+          <div class="panel-box">
+            <span class="control-group-title">Pagination (&lt;k-pagination&gt;)</span>
+            <div
+              id="pagination-preview"
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 8px;
+              "
+            ></div>
+            <k-pagination
+              id="demo-pagination"
+              total="48"
+              page-size="6"
+              page="1"
+              show-edges
+              show-total
+            ></k-pagination>
+          </div>
+        </section>
+
+        <k-drawer id="demo-drawer" placement="right" size="md" label="Surface Inspector" acrylic>
+          <div style="display: grid; gap: 14px">
+            <p style="margin: 0">
+              Edge-anchored Top-Layer drawer with directional slide motion, focus trapping, scroll
+              lock, and optional Acrylic backdrop vibrancy.
+            </p>
+            <k-form-field label="Workspace Name" help="Applied immediately to session metadata">
+              <k-input value="Kerno Fluent Studio"></k-input>
+            </k-form-field>
+            <k-switch checked>Enable Acrylic Glass</k-switch>
+            <k-checkbox checked>Sync theme across shadow roots</k-checkbox>
+          </div>
+          <k-button slot="footer" id="drawer-cancel">Cancel</k-button>
+          <k-button slot="footer" id="drawer-apply" variant="accent">Apply Changes</k-button>
+        </k-drawer>
+
+        <k-command
+          id="studio-command"
+          shortcut="mod+k"
+          acrylic
+          placeholder="Search sections, switch themes, or run an action..."
+        >
+          <k-command-group heading="Themes">
+            <k-command-item value="theme:light" keywords="day bright white" shortcut="L">
+              <k-icon slot="prefix" name="star"></k-icon>
+              Switch to Light Theme
+            </k-command-item>
+            <k-command-item value="theme:dark" keywords="night black azure" shortcut="D">
+              <k-icon slot="prefix" name="star"></k-icon>
+              Switch to Dark Theme
+            </k-command-item>
+            <k-command-item value="theme:ocean" keywords="teal cyan custom" shortcut="O">
+              <k-icon slot="prefix" name="star"></k-icon>
+              Switch to Ocean Theme
+            </k-command-item>
+          </k-command-group>
+          <k-command-group heading="Jump to Studio">
+            <k-command-item value="jump:sec-start" keywords="hero metro tiles">
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Start &amp; Live Tiles
+            </k-command-item>
+            <k-command-item value="jump:sec-acrylic" keywords="glass blur frost">
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Acrylic Material Lab
+            </k-command-item>
+            <k-command-item value="jump:sec-shape" keywords="chamfer notch border">
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Shape &amp; Elevation
+            </k-command-item>
+            <k-command-item value="jump:sec-controls" keywords="button input select checkbox radio">
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Controls &amp; Forms
+            </k-command-item>
+            <k-command-item value="jump:sec-feedback" keywords="alert toast drawer command">
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Feedback &amp; Command
+            </k-command-item>
+            <k-command-item value="jump:sec-structure" keywords="avatar breadcrumb accordion page">
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Structure &amp; Nav
+            </k-command-item>
+          </k-command-group>
+          <k-command-group heading="Quick Actions">
+            <k-command-item value="action:drawer" keywords="panel slide side">
+              <k-icon slot="prefix" name="info"></k-icon>
+              Open Acrylic Drawer
+            </k-command-item>
+            <k-command-item value="action:toast" keywords="notification alert">
+              <k-icon slot="prefix" name="success"></k-icon>
+              Fire Success Toast
+            </k-command-item>
+            <k-command-item value="action:dialog" keywords="modal popup">
+              <k-icon slot="prefix" name="eye"></k-icon>
+              Open Modal Dialog
+            </k-command-item>
+          </k-command-group>
+        </k-command>
 
         <k-dialog id="demo-dialog" label="Kerno Acrylic Modal Dialog" acrylic>
           <p style="margin: 0">

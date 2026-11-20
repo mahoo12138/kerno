@@ -120,6 +120,16 @@
       "source": "./src/slider/define.ts",
       "default": "./dist/slider/define.js"
     },
+    "./avatar": {
+      "types": "./dist/avatar/index.d.ts",
+      "source": "./src/avatar/index.ts",
+      "default": "./dist/avatar/index.js"
+    },
+    "./avatar/define": {
+      "types": "./dist/avatar/define.d.ts",
+      "source": "./src/avatar/define.ts",
+      "default": "./dist/avatar/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

@@ -69,6 +69,7 @@ export interface ColorTokens {
     focusInner: string;
   };
   status: {
+    info: StatusColor;
     danger: StatusColor;
     success: StatusColor;
     warning: StatusColor;

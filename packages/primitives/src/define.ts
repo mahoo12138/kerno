@@ -9,3 +9,4 @@ import './badge/define.js';
 import './separator/define.js';
 import './select/define.js';
 import './slider/define.js';
+import './avatar/define.js';

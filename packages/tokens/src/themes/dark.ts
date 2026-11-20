@@ -50,6 +50,7 @@ export const darkTheme: Theme = {
         focusInner: 'rgba(0, 0, 0, 0.7)',
       },
       status: {
+        info: { fg: p.azure['300'], bg: p.azure['950'], solid: p.azure['500'] },
         danger: { fg: p.red['300'], bg: p.red['950'], solid: p.red['500'] },
         success: { fg: p.green['300'], bg: p.green['950'], solid: p.green['500'] },
         warning: { fg: p.amber['300'], bg: p.amber['950'], solid: p.amber['400'] },

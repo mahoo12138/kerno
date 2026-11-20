@@ -50,6 +50,7 @@ export const lightTheme: Theme = {
         focusInner: p.neutral['0'],
       },
       status: {
+        info: { fg: p.azure['700'], bg: p.azure['50'], solid: p.azure['600'] },
         danger: { fg: p.red['600'], bg: p.red['50'], solid: p.red['600'] },
         success: { fg: p.green['600'], bg: p.green['50'], solid: p.green['600'] },
         warning: { fg: p.amber['700'], bg: p.amber['50'], solid: p.amber['500'] },

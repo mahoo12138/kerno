@@ -19,15 +19,28 @@ const BUILTIN_ICONS: Readonly<Record<string, string>> = {
     '<path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M2.2 2.2l11.6 11.6M6.6 6.7a2 2 0 002.7 2.7M3.6 4.9C2.2 6 1.5 8 1.5 8s2.4 4.2 6.5 4.2c1.4 0 2.6-.4 3.6-1M6.3 3.9c.5-.1 1.1-.1 1.7-.1 4.1 0 6.5 4.2 6.5 4.2a10.4 10.4 0 01-1.9 2.6"/>',
   'chevron-down':
     '<path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M3.8 6l4.2 4.2L12.2 6"/>',
+  'chevron-up':
+    '<path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M3.8 10.2L8 6l4.2 4.2"/>',
+  'chevron-left':
+    '<path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M10.2 3.8L6 8l4.2 4.2"/>',
   'chevron-right':
     '<path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M6 3.8L10.2 8 6 12.2"/>',
+  'chevrons-left':
+    '<path fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" d="M8.5 3.8L4.3 8l4.2 4.2M12.5 3.8L8.3 8l4.2 4.2"/>',
+  'chevrons-right':
+    '<path fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" d="M3.5 3.8L7.7 8l-4.2 4.2M7.5 3.8L11.7 8l-4.2 4.2"/>',
   loader:
     '<path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M8 2.2a5.8 5.8 0 1 1-4.1 1.7"/>',
   info: '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 7.2v3.8M8 5h.01"/>',
+  success:
+    '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M5.4 8.2l1.8 1.8 3.6-3.8"/>',
   warning:
     '<path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 2.2l6.2 11H1.8L8 2.2z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 6.4v3.2M8 11.4h.01"/>',
   danger:
     '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M5.7 5.7l4.6 4.6M10.3 5.7l-4.6 4.6"/>',
+  user: '<circle cx="8" cy="5.5" r="2.7" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M3 13.5c.8-2.4 2.7-3.7 5-3.7s4.2 1.3 5 3.7"/>',
+  'more-horizontal':
+    '<circle cx="3.5" cy="8" r="1.25" fill="currentColor"/><circle cx="8" cy="8" r="1.25" fill="currentColor"/><circle cx="12.5" cy="8" r="1.25" fill="currentColor"/>',
   star: '<path fill="currentColor" d="M8 1.5l1.9 4 4.4.5-3.3 3 .9 4.3L8 11.1l-3.9 2.2.9-4.3-3.3-3 4.4-.5z"/>',
 };
 

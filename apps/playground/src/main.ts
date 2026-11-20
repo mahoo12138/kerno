@@ -4,18 +4,26 @@ import './studio.css';
 import '@kerno/effects/define';
 import '@kerno/primitives/define';
 import '@kerno/components/define';
-import type {
-  KDialog,
-  KNav,
-  KScrollbar,
-  KScrollView,
-  KTable,
-  KTile,
-  KTileGroup,
-  MarkerEventDetail,
-  ScrollbarVariant,
-  TileReorderDetail,
-  TrackClickMode,
+import {
+  toast,
+  type DrawerPlacement,
+  type KAccordion,
+  type KAlert,
+  type KCommand,
+  type KDialog,
+  type KDrawer,
+  type KNav,
+  type KPagination,
+  type KScrollbar,
+  type KScrollView,
+  type KTable,
+  type KTile,
+  type KTileGroup,
+  type MarkerEventDetail,
+  type ScrollbarVariant,
+  type TileReorderDetail,
+  type ToastPlacement,
+  type TrackClickMode,
 } from '@kerno/components';
 import {
   fadeIn,
@@ -25,7 +33,7 @@ import {
   type ElevationLevel,
   type KSurface,
 } from '@kerno/effects';
-import type { KSlider, KSwitch } from '@kerno/primitives';
+import type { KSelect, KSlider, KSwitch } from '@kerno/primitives';
 import { applyTheme, createTheme, darkTheme, type BuiltInThemeName } from '@kerno/tokens';
 
 // ---------------------------------------------------------------------------
@@ -47,6 +55,9 @@ const ocean = createTheme({
         text: '#5eead4',
       },
       bg: { canvas: '#0b1e24', layer: '#11292f', layerAlt: '#163239' },
+      status: {
+        info: { fg: '#5eead4', bg: '#0c2f33', solid: '#0d9488' },
+      },
     },
     radius: { md: '8px', lg: '14px' },
   },
@@ -530,14 +541,14 @@ table.data = [
   },
   {
     pkg: '@kerno/primitives',
-    layer: 'Atomic Controls, Slider & Icons',
-    components: 10,
+    layer: 'Atomic Controls, Avatar, Slider & Icons',
+    components: 11,
     status: 'Ready',
   },
   {
     pkg: '@kerno/components',
-    layer: 'Composite, Overlays & Data Display',
-    components: 12,
+    layer: 'Overlays, Feedback, Navigation, Tiles & Data Display',
+    components: 21,
     status: 'Ready',
   },
 ];
@@ -560,3 +571,205 @@ const fieldset = document.querySelector<HTMLFieldSetElement>('#fs')!;
 document.querySelector('#fs-toggle')?.addEventListener('click', () => {
   fieldset.disabled = !fieldset.disabled;
 });
+
+// ---------------------------------------------------------------------------
+// Section 8: Alerts, Top-Layer Toasts, Drawers & Command Palette
+// ---------------------------------------------------------------------------
+const feedbackOut = document.querySelector<HTMLOutputElement>('#feedback-output');
+const toastPlacementSelect = document.querySelector<KSelect>('#toast-placement-select');
+const toastAcrylicToggle = document.querySelector<KSwitch>('#toast-acrylic-toggle');
+
+const currentToastOpts = () => ({
+  placement: (toastPlacementSelect?.value || 'bottom-end') as ToastPlacement,
+  acrylic: Boolean(toastAcrylicToggle?.checked),
+});
+
+document.querySelector('#alert-reset-btn')?.addEventListener('click', () => {
+  document.querySelectorAll<KAlert>('#alert-gallery k-alert').forEach((a) => {
+    a.open = true;
+  });
+  if (feedbackOut) feedbackOut.textContent = 'All closed alerts restored.';
+});
+
+document.querySelector('#toast-info-btn')?.addEventListener('click', () => {
+  toast.info('Sync Scheduled', {
+    ...currentToastOpts(),
+    description: 'Design tokens synchronized across shadow roots.',
+  });
+});
+
+document.querySelector('#toast-success-btn')?.addEventListener('click', () => {
+  toast.success('Deployment Complete', {
+    ...currentToastOpts(),
+    description: 'Kerno bundle published with zero runtime dependencies.',
+  });
+});
+
+document.querySelector('#toast-warning-btn')?.addEventListener('click', () => {
+  toast.warning('High Contrast Mode', {
+    ...currentToastOpts(),
+    description: 'Hover over this toast to pause auto-dismiss countdown.',
+    duration: 5000,
+  });
+});
+
+document.querySelector('#toast-danger-btn')?.addEventListener('click', () => {
+  toast.danger('Upload Interrupted', {
+    ...currentToastOpts(),
+    description: 'Network link dropped while streaming asset chunks.',
+  });
+});
+
+document.querySelector('#toast-action-btn')?.addEventListener('click', () => {
+  const handle = toast.show({
+    ...currentToastOpts(),
+    variant: 'info',
+    title: 'Archived 3 components',
+    description: 'Click Undo before the timer finishes (hover pauses timer).',
+    duration: 6000,
+    actionLabel: 'Undo',
+    onAction: () => {
+      if (feedbackOut) feedbackOut.textContent = 'Toast Undo action triggered!';
+      handle.dismiss();
+    },
+  });
+});
+
+document.querySelector('#toast-clear-btn')?.addEventListener('click', () => {
+  toast.clear();
+  if (feedbackOut) feedbackOut.textContent = 'Cleared active toast stack.';
+});
+
+const drawer = document.querySelector<KDrawer>('#demo-drawer');
+const openDrawer = (placement: DrawerPlacement, label: string, acrylic = true): void => {
+  if (!drawer) return;
+  drawer.placement = placement;
+  drawer.label = label;
+  drawer.acrylic = acrylic;
+  drawer.show();
+};
+
+drawer?.addEventListener('k-open', () => {
+  if (pageScrollbar) pageScrollbar.suspended = true;
+});
+drawer?.addEventListener('k-close', () => {
+  if (pageScrollbar && !sbSuspend?.checked) pageScrollbar.suspended = false;
+});
+
+document
+  .querySelector('#drawer-right-btn')
+  ?.addEventListener('click', () => openDrawer('right', 'Surface Inspector', true));
+document
+  .querySelector('#drawer-left-btn')
+  ?.addEventListener('click', () => openDrawer('left', 'Navigation Drawer', false));
+document
+  .querySelector('#drawer-bottom-btn')
+  ?.addEventListener('click', () => openDrawer('bottom', 'Bottom Sheet Actions', true));
+document
+  .querySelector('#drawer-top-btn')
+  ?.addEventListener('click', () => openDrawer('top', 'Command Banner', false));
+document.querySelector('#drawer-cancel')?.addEventListener('click', () => drawer?.close());
+document.querySelector('#drawer-apply')?.addEventListener('click', () => {
+  drawer?.close();
+  toast.success('Inspector Applied', currentToastOpts());
+});
+
+const studioCmd = document.querySelector<KCommand>('#studio-command');
+const openCommandPalette = (): void => {
+  studioCmd?.show();
+};
+document.querySelector('#sidebar-open-command')?.addEventListener('click', openCommandPalette);
+document.querySelector('#open-command-btn')?.addEventListener('click', openCommandPalette);
+document.querySelector('#alert-open-cmd')?.addEventListener('click', openCommandPalette);
+
+studioCmd?.addEventListener('k-open', () => {
+  if (pageScrollbar) pageScrollbar.suspended = true;
+});
+studioCmd?.addEventListener('k-close', () => {
+  if (pageScrollbar && !sbSuspend?.checked) pageScrollbar.suspended = false;
+});
+
+studioCmd?.addEventListener('k-command-select', (event) => {
+  const { value } = (event as CustomEvent<{ value: string }>).detail;
+  if (feedbackOut) feedbackOut.textContent = `Command executed: ${value}`;
+
+  if (value.startsWith('theme:')) {
+    selectTheme(value.slice(6));
+    toast.info(`Theme switched to ${value.slice(6)}`, currentToastOpts());
+  } else if (value.startsWith('jump:')) {
+    const id = value.slice(5);
+    scrollSpyLockUntil = Date.now() + 700;
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  } else if (value === 'action:drawer') {
+    openDrawer('right', 'Surface Inspector', true);
+  } else if (value === 'action:toast') {
+    toast.success('Triggered from Command Palette', currentToastOpts());
+  } else if (value === 'action:dialog') {
+    dialog.show();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Section 9: Breadcrumbs, Accordion & Pagination Live Data
+// ---------------------------------------------------------------------------
+document.querySelector('#demo-breadcrumb')?.addEventListener('k-breadcrumb-select', (event) => {
+  const { href } = (event as CustomEvent<{ href: string }>).detail;
+  if (href.startsWith('#')) {
+    event.preventDefault();
+    document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+  }
+});
+
+const accordion = document.querySelector<KAccordion>('#demo-accordion');
+const accMultiple = document.querySelector<KSwitch>('#acc-multiple-toggle');
+const accCollapsible = document.querySelector<KSwitch>('#acc-collapsible-toggle');
+accMultiple?.addEventListener('change', () => {
+  if (accordion) accordion.multiple = accMultiple.checked;
+});
+accCollapsible?.addEventListener('change', () => {
+  if (accordion) accordion.collapsible = accCollapsible.checked;
+});
+
+const demoPagination = document.querySelector<KPagination>('#demo-pagination');
+const paginationPreview = document.querySelector<HTMLDivElement>('#pagination-preview');
+const ALL_CATALOG_ITEMS = Array.from({ length: 48 }, (_, i) => ({
+  id: i + 1,
+  name: [
+    'Surface',
+    'Acrylic',
+    'Reveal',
+    'Pressure',
+    'Shape',
+    'Tile',
+    'Dialog',
+    'Drawer',
+    'Toast',
+    'Alert',
+    'Command',
+    'Avatar',
+  ][i % 12]!,
+  tag: ['Effects', 'Overlay', 'Feedback', 'Navigation'][i % 4]!,
+}));
+
+function renderPaginatedItems(page: number, pageSize: number): void {
+  if (!paginationPreview) return;
+  const start = (page - 1) * pageSize;
+  const slice = ALL_CATALOG_ITEMS.slice(start, start + pageSize);
+  paginationPreview.innerHTML = slice
+    .map(
+      (item) => `
+      <div style="padding:10px 12px;border:1px solid var(--k-color-stroke-default);background:var(--k-color-bg-layer-alt);display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:500">#${item.id} ${item.name}</span>
+        <k-badge>${item.tag}</k-badge>
+      </div>`,
+    )
+    .join('');
+}
+
+if (demoPagination) {
+  renderPaginatedItems(demoPagination.page, demoPagination.pageSize);
+  demoPagination.addEventListener('k-page-change', (event) => {
+    const { page, pageSize } = (event as CustomEvent<{ page: number; pageSize: number }>).detail;
+    renderPaginatedItems(page, pageSize);
+  });
+}
