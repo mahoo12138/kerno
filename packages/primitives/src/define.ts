@@ -10,3 +10,5 @@ import './separator/define.js';
 import './select/define.js';
 import './slider/define.js';
 import './avatar/define.js';
+import './textarea/define.js';
+import './number-input/define.js';

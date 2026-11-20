@@ -130,6 +130,26 @@
       "source": "./src/avatar/define.ts",
       "default": "./dist/avatar/define.js"
     },
+    "./textarea": {
+      "types": "./dist/textarea/index.d.ts",
+      "source": "./src/textarea/index.ts",
+      "default": "./dist/textarea/index.js"
+    },
+    "./textarea/define": {
+      "types": "./dist/textarea/define.d.ts",
+      "source": "./src/textarea/define.ts",
+      "default": "./dist/textarea/define.js"
+    },
+    "./number-input": {
+      "types": "./dist/number-input/index.d.ts",
+      "source": "./src/number-input/index.ts",
+      "default": "./dist/number-input/index.js"
+    },
+    "./number-input/define": {
+      "types": "./dist/number-input/define.d.ts",
+      "source": "./src/number-input/define.ts",
+      "default": "./dist/number-input/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

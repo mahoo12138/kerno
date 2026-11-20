@@ -11,3 +11,5 @@ export * from './separator/index.js';
 export * from './select/index.js';
 export * from './slider/index.js';
 export * from './avatar/index.js';
+export * from './textarea/index.js';
+export * from './number-input/index.js';

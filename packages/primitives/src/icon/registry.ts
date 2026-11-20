@@ -10,6 +10,7 @@ const BUILTIN_ICONS: Readonly<Record<string, string>> = {
     '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 8.5l3.2 3.2L13 4.8"/>',
   minus:
     '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3.5 8h9"/>',
+  plus: '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8 3.5v9M3.5 8h9"/>',
   close:
     '<path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/>',
   search:
@@ -41,6 +42,13 @@ const BUILTIN_ICONS: Readonly<Record<string, string>> = {
   user: '<circle cx="8" cy="5.5" r="2.7" fill="none" stroke="currentColor" stroke-width="1.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M3 13.5c.8-2.4 2.7-3.7 5-3.7s4.2 1.3 5 3.7"/>',
   'more-horizontal':
     '<circle cx="3.5" cy="8" r="1.25" fill="currentColor"/><circle cx="8" cy="8" r="1.25" fill="currentColor"/><circle cx="12.5" cy="8" r="1.25" fill="currentColor"/>',
+  calendar:
+    '<rect x="2.2" y="3.5" width="11.6" height="10.3" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M5.2 2v2.4M10.8 2v2.4M2.5 6.8h11"/>',
+  upload:
+    '<path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M8 10.8V2.8M4.8 5.8L8 2.6l3.2 3.2M2.5 11.2v1.6a1 1 0 001 1h9a1 1 0 001-1v-1.6"/>',
+  file: '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" d="M4 2.2h5.2L12.5 5.5v8.3H4V2.2z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" d="M9 2.2v3.5h3.5"/>',
+  trash:
+    '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.8 4.4h10.4M6 4.4V3h4v1.4M4.5 4.4l.6 8.8h5.8l.6-8.8"/>',
   star: '<path fill="currentColor" d="M8 1.5l1.9 4 4.4.5-3.3 3 .9 4.3L8 11.1l-3.9 2.2.9-4.3-3.3-3 4.4-.5z"/>',
 };
 

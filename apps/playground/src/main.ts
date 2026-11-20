@@ -12,6 +12,7 @@ import {
   type KCommand,
   type KDialog,
   type KDrawer,
+  type KList,
   type KNav,
   type KPagination,
   type KScrollbar,
@@ -19,6 +20,9 @@ import {
   type KTable,
   type KTile,
   type KTileGroup,
+  type KTree,
+  type KTreeItem,
+  type KUpload,
   type MarkerEventDetail,
   type ScrollbarVariant,
   type TileReorderDetail,
@@ -33,7 +37,7 @@ import {
   type ElevationLevel,
   type KSurface,
 } from '@kerno/effects';
-import type { KSelect, KSlider, KSwitch } from '@kerno/primitives';
+import type { KInput, KSelect, KSlider, KSwitch } from '@kerno/primitives';
 import { applyTheme, createTheme, darkTheme, type BuiltInThemeName } from '@kerno/tokens';
 
 // ---------------------------------------------------------------------------
@@ -541,14 +545,14 @@ table.data = [
   },
   {
     pkg: '@kerno/primitives',
-    layer: 'Atomic Controls, Avatar, Slider & Icons',
-    components: 11,
+    layer: 'Atomic Controls, Textarea, NumberInput, Avatar & Icons',
+    components: 13,
     status: 'Ready',
   },
   {
     pkg: '@kerno/components',
-    layer: 'Overlays, Feedback, Navigation, Tiles & Data Display',
-    components: 21,
+    layer: 'Overlays, Feedback, Data Entry, Tree, List & Data Display',
+    components: 26,
     status: 'Ready',
   },
 ];
@@ -773,3 +777,162 @@ if (demoPagination) {
     renderPaginatedItems(page, pageSize);
   });
 }
+
+// ---------------------------------------------------------------------------
+// Section 10: Advanced Data Entry Lab
+// ---------------------------------------------------------------------------
+const dataEntryForm = document.querySelector<HTMLFormElement>('#data-entry-form');
+const dataEntryOutput = document.querySelector<HTMLOutputElement>('#data-entry-output');
+const demoUpload = document.querySelector<KUpload>('#demo-upload');
+
+dataEntryForm?.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const fd = new FormData(dataEntryForm);
+  const summary: Record<string, unknown> = {};
+  for (const [k, v] of fd.entries()) {
+    const val = v instanceof File ? `File(${v.name}, ${v.size}B)` : v;
+    if (k in summary) {
+      const prev = summary[k];
+      summary[k] = Array.isArray(prev) ? [...prev, val] : [prev, val];
+    } else {
+      summary[k] = val;
+    }
+  }
+  if (dataEntryOutput) dataEntryOutput.textContent = JSON.stringify(summary);
+});
+
+dataEntryForm?.addEventListener('reset', () => {
+  if (dataEntryOutput) dataEntryOutput.textContent = 'Data entry form reset.';
+});
+
+demoUpload?.addEventListener('k-upload-reject', (event) => {
+  const { file, reason } = (event as CustomEvent<{ file: File; reason: string }>).detail;
+  toast.warning('File Rejected', {
+    ...currentToastOpts(),
+    description: `${file.name} rejected (${reason}).`,
+  });
+});
+
+document.querySelector('#simulate-upload-btn')?.addEventListener('click', () => {
+  if (!demoUpload) return;
+  const sample = new File(
+    ['# Kerno Release Manifest\nAll Wave 2 modules verified.\n'],
+    `kerno-report-${demoUpload.files.length + 1}.md`,
+    { type: 'text/markdown' },
+  );
+  const [entry] = demoUpload.addFiles([sample]);
+  if (!entry) return;
+  let pct = 20;
+  demoUpload.setFileProgress(entry.id, pct);
+  const timer = setInterval(() => {
+    pct += 25;
+    if (pct >= 100) {
+      clearInterval(timer);
+      demoUpload.setFileStatus(entry.id, 'done');
+    } else {
+      demoUpload.setFileProgress(entry.id, pct);
+    }
+  }, 180);
+});
+
+// ---------------------------------------------------------------------------
+// Section 11: Tree, List & Enhanced Table
+// ---------------------------------------------------------------------------
+const demoTree = document.querySelector<KTree>('#demo-tree');
+const treeOut = document.querySelector<HTMLOutputElement>('#tree-output');
+const treeCheckableToggle = document.querySelector<KSwitch>('#tree-checkable-toggle');
+
+treeCheckableToggle?.addEventListener('change', () => {
+  if (demoTree) demoTree.checkable = treeCheckableToggle.checked;
+});
+
+demoTree?.addEventListener('k-tree-check', (event) => {
+  const { checkedValues } = (event as CustomEvent<{ checkedValues: string[] }>).detail;
+  if (treeOut) treeOut.textContent = `Checked: ${checkedValues.join(', ') || 'none'}`;
+});
+
+demoTree?.addEventListener('k-tree-select', (event) => {
+  const { selectedValues } = (event as CustomEvent<{ selectedValues: string[] }>).detail;
+  if (treeOut) treeOut.textContent = `Selected: ${selectedValues.join(', ') || 'none'}`;
+});
+
+demoTree?.addEventListener('k-tree-load', (event) => {
+  const { item } = (event as CustomEvent<{ value: string; item: KTreeItem }>).detail;
+  setTimeout(() => {
+    const childA = document.createElement('k-tree-item');
+    childA.setAttribute('value', 'plugin-acrylic');
+    childA.setAttribute('label', 'plugin-acrylic-presets');
+    const childB = document.createElement('k-tree-item');
+    childB.setAttribute('value', 'plugin-icons');
+    childB.setAttribute('label', 'plugin-mdl2-icons');
+    item.append(childA, childB);
+    item.loading = false;
+    item.lazy = false;
+    if (treeOut) treeOut.textContent = 'Loaded 2 remote plugin nodes.';
+  }, 350);
+});
+
+const demoList = document.querySelector<KList>('#demo-list');
+const listOut = document.querySelector<HTMLOutputElement>('#list-output');
+const listMultiToggle = document.querySelector<KSwitch>('#list-multi-toggle');
+
+listMultiToggle?.addEventListener('change', () => {
+  if (demoList) demoList.selection = listMultiToggle.checked ? 'multiple' : 'single';
+});
+
+demoList?.addEventListener('k-list-select', (event) => {
+  const { selectedValues } = (event as CustomEvent<{ selectedValues: string[] }>).detail;
+  if (listOut) listOut.textContent = `Selected: ${selectedValues.join(', ') || 'none'}`;
+});
+
+interface CatalogRow extends Record<string, unknown> {
+  id: string;
+  tag: string;
+  category: string;
+  form: string;
+}
+
+const enhancedTable = document.querySelector<KTable<CatalogRow>>('#enhanced-table');
+const tableFilterInput = document.querySelector<KInput>('#table-filter-input');
+const tableSelOut = document.querySelector<HTMLOutputElement>('#table-selection-output');
+
+if (enhancedTable) {
+  enhancedTable.columns = [
+    { key: 'tag', title: 'Tag', sortable: true },
+    { key: 'category', title: 'Category', sortable: true },
+    {
+      key: 'form',
+      title: 'Form Associated',
+      render: (val) => {
+        const badge = document.createElement('k-badge');
+        badge.setAttribute('variant', val === 'Yes' ? 'accent' : 'neutral');
+        badge.textContent = String(val);
+        return badge;
+      },
+    },
+  ];
+  enhancedTable.data = [
+    { id: 'textarea', tag: '<k-textarea>', category: 'Data Entry', form: 'Yes' },
+    { id: 'number', tag: '<k-number-input>', category: 'Data Entry', form: 'Yes' },
+    { id: 'autocomplete', tag: '<k-autocomplete>', category: 'Data Entry', form: 'Yes' },
+    { id: 'datepicker', tag: '<k-date-picker>', category: 'Data Entry', form: 'Yes' },
+    { id: 'upload', tag: '<k-upload>', category: 'Data Entry', form: 'Yes' },
+    { id: 'tree', tag: '<k-tree>', category: 'Data Display', form: 'No' },
+    { id: 'list', tag: '<k-list>', category: 'Data Display', form: 'No' },
+    { id: 'command', tag: '<k-command>', category: 'Overlay', form: 'No' },
+  ];
+
+  enhancedTable.addEventListener('k-selection-change', (event) => {
+    const { selectedKeys } = (event as CustomEvent<{ selectedKeys: string[] }>).detail;
+    if (tableSelOut) {
+      tableSelOut.textContent = `Selected rows (${selectedKeys.length}): ${selectedKeys.join(', ') || 'none'}`;
+    }
+  });
+}
+
+tableFilterInput?.addEventListener('input', () => {
+  if (enhancedTable) enhancedTable.filter = tableFilterInput.value;
+});
+tableFilterInput?.addEventListener('k-clear', () => {
+  if (enhancedTable) enhancedTable.filter = '';
+});

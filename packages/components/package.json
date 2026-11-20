@@ -230,6 +230,56 @@
       "source": "./src/pagination/define.ts",
       "default": "./dist/pagination/define.js"
     },
+    "./autocomplete": {
+      "types": "./dist/autocomplete/index.d.ts",
+      "source": "./src/autocomplete/index.ts",
+      "default": "./dist/autocomplete/index.js"
+    },
+    "./autocomplete/define": {
+      "types": "./dist/autocomplete/define.d.ts",
+      "source": "./src/autocomplete/define.ts",
+      "default": "./dist/autocomplete/define.js"
+    },
+    "./date-picker": {
+      "types": "./dist/date-picker/index.d.ts",
+      "source": "./src/date-picker/index.ts",
+      "default": "./dist/date-picker/index.js"
+    },
+    "./date-picker/define": {
+      "types": "./dist/date-picker/define.d.ts",
+      "source": "./src/date-picker/define.ts",
+      "default": "./dist/date-picker/define.js"
+    },
+    "./upload": {
+      "types": "./dist/upload/index.d.ts",
+      "source": "./src/upload/index.ts",
+      "default": "./dist/upload/index.js"
+    },
+    "./upload/define": {
+      "types": "./dist/upload/define.d.ts",
+      "source": "./src/upload/define.ts",
+      "default": "./dist/upload/define.js"
+    },
+    "./tree": {
+      "types": "./dist/tree/index.d.ts",
+      "source": "./src/tree/index.ts",
+      "default": "./dist/tree/index.js"
+    },
+    "./tree/define": {
+      "types": "./dist/tree/define.d.ts",
+      "source": "./src/tree/define.ts",
+      "default": "./dist/tree/define.js"
+    },
+    "./list": {
+      "types": "./dist/list/index.d.ts",
+      "source": "./src/list/index.ts",
+      "default": "./dist/list/index.js"
+    },
+    "./list/define": {
+      "types": "./dist/list/define.d.ts",
+      "source": "./src/list/define.ts",
+      "default": "./dist/list/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

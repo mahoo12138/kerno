@@ -19,3 +19,8 @@ import './command/define.js';
 import './accordion/define.js';
 import './breadcrumb/define.js';
 import './pagination/define.js';
+import './autocomplete/define.js';
+import './date-picker/define.js';
+import './upload/define.js';
+import './tree/define.js';
+import './list/define.js';

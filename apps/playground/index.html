@@ -73,6 +73,14 @@
               <k-icon slot="prefix" name="user"></k-icon>
               Structure &amp; Nav
             </k-nav-item>
+            <k-nav-item value="data-entry">
+              <k-icon slot="prefix" name="calendar"></k-icon>
+              Data Entry Lab
+            </k-nav-item>
+            <k-nav-item value="data-display">
+              <k-icon slot="prefix" name="file"></k-icon>
+              Tree, List &amp; Table
+            </k-nav-item>
           </k-nav>
         </div>
 
@@ -1632,6 +1640,230 @@
           </div>
         </section>
 
+        <!-- 10. Advanced Data Entry Lab -->
+        <section class="studio-section" id="sec-data-entry" data-marker-label="Data Entry Lab">
+          <div class="section-head">
+            <h2>Advanced Data Entry &amp; Form Association</h2>
+            <p>
+              Native <code>ElementInternals</code> form controls: auto-resizing Textarea,
+              precision-safe NumberInput, Top-Layer Acrylic Autocomplete &amp; Date/Range Picker,
+              and drag-and-drop Upload with file validation.
+            </p>
+          </div>
+
+          <div class="panel-box">
+            <form id="data-entry-form" style="display: grid; gap: 16px">
+              <div class="row" style="align-items: start; gap: 14px">
+                <k-form-field label="Component Search" help="Fuzzy filter or pick from options">
+                  <k-autocomplete
+                    id="demo-autocomplete"
+                    name="component"
+                    value="surface"
+                    clearable
+                    acrylic
+                    placeholder="Search Kerno modules..."
+                  >
+                    <k-option value="surface" description="Unified Canvas 2D renderer"
+                      >KSurface</k-option
+                    >
+                    <k-option value="date-picker" description="Single & range calendar"
+                      >KDatePicker</k-option
+                    >
+                    <k-option value="command" description="Cmd/Ctrl+K fuzzy palette"
+                      >KCommand</k-option
+                    >
+                    <k-option value="tree" description="Cascade checkable TreeView">KTree</k-option>
+                    <k-option value="tile-group" description="Draggable Start screen tiles"
+                      >KTileGroup</k-option
+                    >
+                    <k-option value="upload" description="Drag-and-drop file queue"
+                      >KUpload</k-option
+                    >
+                  </k-autocomplete>
+                </k-form-field>
+
+                <k-form-field label="Blur Radius" help="Step 0.5 · Range 0–48px">
+                  <k-number-input
+                    name="blur"
+                    value="24"
+                    min="0"
+                    max="48"
+                    step="0.5"
+                    precision="1"
+                    shape="chamfer"
+                  >
+                    <span slot="suffix">px</span>
+                  </k-number-input>
+                </k-form-field>
+
+                <k-form-field label="Release Date" help="Single date · Acrylic Top Layer">
+                  <k-date-picker
+                    name="releaseDate"
+                    value="2026-11-20"
+                    clearable
+                    acrylic
+                  ></k-date-picker>
+                </k-form-field>
+
+                <k-form-field label="Sprint Window" help="Date range with hover band preview">
+                  <k-date-picker
+                    name="sprintWindow"
+                    mode="range"
+                    start-value="2026-11-18"
+                    end-value="2026-11-26"
+                    clearable
+                    acrylic
+                    shape="chamfer"
+                  ></k-date-picker>
+                </k-form-field>
+              </div>
+
+              <k-form-field label="Release Notes" help="Auto-resize textarea with live counter">
+                <k-textarea
+                  name="notes"
+                  value="Wave 2 completes advanced Data Entry and Data Display with zero third-party runtime dependencies."
+                  maxlength="200"
+                  auto-resize
+                  show-count
+                  rows="2"
+                ></k-textarea>
+              </k-form-field>
+
+              <k-form-field label="Attachments" help="Drop files or click Simulate Upload">
+                <k-upload
+                  id="demo-upload"
+                  name="attachments"
+                  accept=".png,.svg,.md,.txt,.json"
+                  multiple
+                  max-files="4"
+                  max-size="2097152"
+                ></k-upload>
+              </k-form-field>
+
+              <div class="row">
+                <k-button type="submit" variant="accent">Submit Data Entry Form</k-button>
+                <k-button type="button" id="simulate-upload-btn">Simulate File Upload</k-button>
+                <k-button type="reset">Reset</k-button>
+              </div>
+              <output id="data-entry-output">Edit fields and submit to inspect FormData.</output>
+            </form>
+          </div>
+        </section>
+
+        <!-- 11. Complex Data Display: Tree, List & Enhanced Table -->
+        <section
+          class="studio-section"
+          id="sec-data-display"
+          data-marker-label="Tree, List & Table"
+        >
+          <div class="section-head">
+            <h2>Complex Data Display: Tree, List &amp; Enhanced Table</h2>
+            <p>
+              WAI-ARIA TreeView with parent/child cascade checkboxes and lazy loading, selectable
+              Fluent 1 ListView, and multi-select filterable Data Table.
+            </p>
+          </div>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+              gap: 16px;
+            "
+          >
+            <div class="panel-box">
+              <div class="row" style="justify-content: space-between">
+                <span class="control-group-title">Cascade Checkable Tree (&lt;k-tree&gt;)</span>
+                <k-switch id="tree-checkable-toggle" checked>Checkable</k-switch>
+              </div>
+              <k-tree id="demo-tree" checkable label="Workspace packages">
+                <k-tree-item value="packages" label="packages" expanded>
+                  <k-tree-item value="tokens" label="@kerno/tokens" checked></k-tree-item>
+                  <k-tree-item value="core" label="@kerno/core" checked></k-tree-item>
+                  <k-tree-item value="effects" label="@kerno/effects" expanded>
+                    <k-tree-item value="shape" label="shape (Parametric Solver)"></k-tree-item>
+                    <k-tree-item value="surface" label="surface (Canvas 2D)"></k-tree-item>
+                  </k-tree-item>
+                  <k-tree-item value="primitives" label="@kerno/primitives"></k-tree-item>
+                  <k-tree-item value="components" label="@kerno/components"></k-tree-item>
+                </k-tree-item>
+                <k-tree-item
+                  id="demo-tree-lazy"
+                  value="plugins"
+                  label="remote-plugins (Lazy Load)"
+                  lazy
+                ></k-tree-item>
+              </k-tree>
+              <output id="tree-output">Click checkboxes or expand remote-plugins.</output>
+            </div>
+
+            <div class="panel-box">
+              <div class="row" style="justify-content: space-between">
+                <span class="control-group-title">Selectable List (&lt;k-list&gt;)</span>
+                <k-switch id="list-multi-toggle">Multi-Select</k-switch>
+              </div>
+              <k-list id="demo-list" selection="single" label="Team members">
+                <k-list-item value="ada" selected>
+                  <k-avatar
+                    slot="prefix"
+                    size="sm"
+                    alt="Ada Lovelace"
+                    variant="accent"
+                    status="online"
+                  ></k-avatar>
+                  Ada Lovelace
+                  <span slot="description">Graphics &amp; Shape Geometry Lead</span>
+                  <k-badge slot="suffix" variant="accent">Maintainer</k-badge>
+                </k-list-item>
+                <k-list-item value="grace">
+                  <k-avatar slot="prefix" size="sm" alt="Grace Hopper" status="online"></k-avatar>
+                  Grace Hopper
+                  <span slot="description">Runtime &amp; Compiler Architecture</span>
+                  <k-badge slot="suffix" variant="success">Active</k-badge>
+                </k-list-item>
+                <k-list-item value="lin">
+                  <k-avatar
+                    slot="prefix"
+                    size="sm"
+                    alt="林徽因"
+                    variant="accent"
+                    status="away"
+                  ></k-avatar>
+                  林徽因
+                  <span slot="description">Fluent Material &amp; Typography System</span>
+                  <k-badge slot="suffix">Design</k-badge>
+                </k-list-item>
+                <k-list-item value="alan">
+                  <k-avatar slot="prefix" size="sm" alt="Alan Turing" status="busy"></k-avatar>
+                  Alan Turing
+                  <span slot="description">Accessibility &amp; Browser Test Harness</span>
+                  <k-badge slot="suffix" variant="warning">QA</k-badge>
+                </k-list-item>
+              </k-list>
+              <output id="list-output">Selected: ada</output>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <div class="row" style="justify-content: space-between">
+              <span class="control-group-title"
+                >Filterable &amp; Multi-Select Table (&lt;k-table selectable&gt;)</span
+              >
+              <k-input
+                id="table-filter-input"
+                size="sm"
+                clearable
+                placeholder="Filter components..."
+                style="min-width: 220px"
+              >
+                <k-icon slot="prefix" name="search"></k-icon>
+              </k-input>
+            </div>
+            <k-table id="enhanced-table" selectable striped sticky-header row-key="id"></k-table>
+            <output id="table-selection-output">Selected rows: 0</output>
+          </div>
+        </section>
+
         <k-drawer id="demo-drawer" placement="right" size="md" label="Surface Inspector" acrylic>
           <div style="display: grid; gap: 14px">
             <p style="margin: 0">
@@ -1692,6 +1924,17 @@
             <k-command-item value="jump:sec-structure" keywords="avatar breadcrumb accordion page">
               <k-icon slot="prefix" name="chevron-right"></k-icon>
               Structure &amp; Nav
+            </k-command-item>
+            <k-command-item
+              value="jump:sec-data-entry"
+              keywords="textarea number autocomplete date picker calendar upload"
+            >
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Data Entry Lab
+            </k-command-item>
+            <k-command-item value="jump:sec-data-display" keywords="tree list table filter select">
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Tree, List &amp; Table
             </k-command-item>
           </k-command-group>
           <k-command-group heading="Quick Actions">
