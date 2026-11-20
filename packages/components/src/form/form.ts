@@ -24,6 +24,7 @@ export interface FormSubmitDetail {
 interface ValidatableControl extends HTMLElement {
   name?: string;
   value?: unknown;
+  values?: readonly unknown[];
   checked?: boolean;
   disabled?: boolean;
   isDisabled?: boolean;
@@ -132,6 +133,15 @@ export class KForm extends KernoElement {
         const list = ctrl.files.map((entry: { file: File }) => entry.file);
         if (list.length > 0) {
           for (const f of list) appendValue(name, f);
+        }
+        continue;
+      }
+
+      const multiValues = 'values' in ctrl ? ctrl.values : undefined;
+      if (Array.isArray(multiValues)) {
+        if (multiValues.length > 0) {
+          values[name] = [...multiValues];
+          for (const v of multiValues) formData.append(name, String(v));
         }
         continue;
       }

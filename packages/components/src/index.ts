@@ -28,3 +28,6 @@ export * from './time-picker/index.js';
 export * from './cascader/index.js';
 export * from './form/index.js';
 export * from './data-grid/index.js';
+export * from './segmented-control/index.js';
+export * from './tags-input/index.js';
+export * from './multi-select/index.js';

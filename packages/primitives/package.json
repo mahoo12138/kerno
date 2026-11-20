@@ -150,6 +150,26 @@
       "source": "./src/number-input/define.ts",
       "default": "./dist/number-input/define.js"
     },
+    "./pin-input": {
+      "types": "./dist/pin-input/index.d.ts",
+      "source": "./src/pin-input/index.ts",
+      "default": "./dist/pin-input/index.js"
+    },
+    "./pin-input/define": {
+      "types": "./dist/pin-input/define.d.ts",
+      "source": "./src/pin-input/define.ts",
+      "default": "./dist/pin-input/define.js"
+    },
+    "./rating": {
+      "types": "./dist/rating/index.d.ts",
+      "source": "./src/rating/index.ts",
+      "default": "./dist/rating/index.js"
+    },
+    "./rating/define": {
+      "types": "./dist/rating/define.d.ts",
+      "source": "./src/rating/define.ts",
+      "default": "./dist/rating/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

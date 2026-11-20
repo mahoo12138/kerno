@@ -12,3 +12,5 @@ import './slider/define.js';
 import './avatar/define.js';
 import './textarea/define.js';
 import './number-input/define.js';
+import './pin-input/define.js';
+import './rating/define.js';

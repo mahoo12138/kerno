@@ -89,6 +89,10 @@
               <k-icon slot="prefix" name="info"></k-icon>
               Virtualized DataGrid
             </k-nav-item>
+            <k-nav-item value="mantine-inputs">
+              <k-icon slot="prefix" name="star"></k-icon>
+              Mantine Inputs Lab
+            </k-nav-item>
           </k-nav>
         </div>
 
@@ -2037,6 +2041,133 @@
           </div>
         </section>
 
+        <!-- 14. Mantine-Inspired Input & Selection Lab -->
+        <section class="studio-section" id="sec-mantine-inputs" data-marker-label="Mantine Inputs">
+          <div class="section-head">
+            <h2>Mantine-Inspired Inputs &amp; Multi-Select Lab</h2>
+            <p>
+              Sliding-indicator <code>&lt;k-segmented-control&gt;</code>, OTP
+              <code>&lt;k-pin-input&gt;</code>, fractional <code>&lt;k-rating&gt;</code>, free-form
+              <code>&lt;k-tags-input&gt;</code>, and searchable
+              <code>&lt;k-multi-select&gt;</code> — all FormAssociated and Fluent 1 native.
+            </p>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel-box">
+              <span class="control-group-title"
+                >Segmented Control (&lt;k-segmented-control&gt;)</span
+              >
+              <div style="display: grid; gap: 12px">
+                <k-segmented-control id="demo-segmented" value="preview" full-width>
+                  <k-option value="preview">Preview</k-option>
+                  <k-option value="code">Source Code</k-option>
+                  <k-option value="tokens">Tokens</k-option>
+                  <k-option value="a11y">A11y Audit</k-option>
+                </k-segmented-control>
+                <div class="row" style="align-items: center; justify-content: space-between">
+                  <k-segmented-control
+                    id="demo-segmented-surface"
+                    variant="surface"
+                    size="sm"
+                    value="day"
+                  >
+                    <k-option value="day">Day</k-option>
+                    <k-option value="week">Week</k-option>
+                    <k-option value="month">Month</k-option>
+                  </k-segmented-control>
+                  <k-switch id="segmented-vertical-toggle" size="sm">Vertical</k-switch>
+                </div>
+              </div>
+              <output id="segmented-output">Mode: preview · Range: day</output>
+            </div>
+
+            <div class="panel-box">
+              <div class="row" style="justify-content: space-between">
+                <span class="control-group-title">OTP / PIN &amp; Fractional Rating</span>
+                <k-switch id="pin-mask-toggle" size="sm">Mask PIN</k-switch>
+              </div>
+              <div style="display: grid; gap: 14px">
+                <k-form-field
+                  label="Two-Factor Verification Code"
+                  help="Type 6 digits or paste e.g. 482910"
+                >
+                  <k-pin-input
+                    id="demo-pin-input"
+                    length="6"
+                    one-time-code
+                    label="2FA Code"
+                  ></k-pin-input>
+                </k-form-field>
+                <div class="row" style="justify-content: space-between; align-items: center">
+                  <k-form-field label="Experience Rating (Half-Star)">
+                    <k-rating
+                      id="demo-rating"
+                      count="5"
+                      fractions="2"
+                      value="4.5"
+                      size="lg"
+                    ></k-rating>
+                  </k-form-field>
+                  <k-badge id="rating-badge" variant="accent" pill>4.5 / 5</k-badge>
+                </div>
+              </div>
+              <output id="pin-rating-output">PIN: — · Rating: 4.5 / 5</output>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel-box">
+              <span class="control-group-title">Tags Input (&lt;k-tags-input&gt;)</span>
+              <k-form-field
+                label="Architecture Keywords (Max 6)"
+                help="Press Enter or comma to add tags, Backspace to pop, or pick suggestions"
+              >
+                <k-tags-input
+                  id="demo-tags-input"
+                  value="Fluent 1,Acrylic,Top Layer"
+                  max-tags="6"
+                  clearable
+                  acrylic
+                  placeholder="Add keyword..."
+                ></k-tags-input>
+              </k-form-field>
+              <output id="tags-output">Tags (3): Fluent 1, Acrylic, Top Layer</output>
+            </div>
+
+            <div class="panel-box">
+              <div class="row" style="justify-content: space-between">
+                <span class="control-group-title"
+                  >Searchable Multi-Select (&lt;k-multi-select&gt;)</span
+                >
+                <k-switch id="ms-hide-picked-toggle" size="sm">Hide Picked</k-switch>
+              </div>
+              <k-form-field
+                label="Target Deployment Targets (Max 4)"
+                help="Type to filter options; selected chips remain removable inline"
+              >
+                <k-multi-select
+                  id="demo-multi-select"
+                  value="web-components,tokens"
+                  max-values="4"
+                  clearable
+                  acrylic
+                  placeholder="Pick targets..."
+                >
+                  <k-option value="web-components">Web Components</k-option>
+                  <k-option value="tokens">Design Tokens</k-option>
+                  <k-option value="acrylic">Acrylic Glass</k-option>
+                  <k-option value="top-layer">Native Top Layer</k-option>
+                  <k-option value="virtual-grid">Virtual DataGrid</k-option>
+                  <k-option value="a11y">WAI-ARIA Keyboard</k-option>
+                  <k-option value="ssr" disabled>SSR Streaming (Planned)</k-option>
+                </k-multi-select>
+              </k-form-field>
+              <output id="multiselect-output">Picked (2): web-components, tokens</output>
+            </div>
+          </div>
+        </section>
+
         <k-drawer id="demo-drawer" placement="right" size="md" label="Surface Inspector" acrylic>
           <div style="display: grid; gap: 14px">
             <p style="margin: 0">
@@ -2122,6 +2253,13 @@
             >
               <k-icon slot="prefix" name="chevron-right"></k-icon>
               Virtualized DataGrid (10K)
+            </k-command-item>
+            <k-command-item
+              value="jump:sec-mantine-inputs"
+              keywords="mantine segmented pin otp rating stars tags multiselect"
+            >
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Mantine Inputs Lab
             </k-command-item>
           </k-command-group>
           <k-command-group heading="Quick Actions">

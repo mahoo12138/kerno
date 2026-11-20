@@ -28,3 +28,6 @@ import './time-picker/define.js';
 import './cascader/define.js';
 import './form/define.js';
 import './data-grid/define.js';
+import './segmented-control/define.js';
+import './tags-input/define.js';
+import './multi-select/define.js';

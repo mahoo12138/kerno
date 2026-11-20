@@ -320,6 +320,36 @@
       "source": "./src/data-grid/define.ts",
       "default": "./dist/data-grid/define.js"
     },
+    "./segmented-control": {
+      "types": "./dist/segmented-control/index.d.ts",
+      "source": "./src/segmented-control/index.ts",
+      "default": "./dist/segmented-control/index.js"
+    },
+    "./segmented-control/define": {
+      "types": "./dist/segmented-control/define.d.ts",
+      "source": "./src/segmented-control/define.ts",
+      "default": "./dist/segmented-control/define.js"
+    },
+    "./tags-input": {
+      "types": "./dist/tags-input/index.d.ts",
+      "source": "./src/tags-input/index.ts",
+      "default": "./dist/tags-input/index.js"
+    },
+    "./tags-input/define": {
+      "types": "./dist/tags-input/define.d.ts",
+      "source": "./src/tags-input/define.ts",
+      "default": "./dist/tags-input/define.js"
+    },
+    "./multi-select": {
+      "types": "./dist/multi-select/index.d.ts",
+      "source": "./src/multi-select/index.ts",
+      "default": "./dist/multi-select/index.js"
+    },
+    "./multi-select/define": {
+      "types": "./dist/multi-select/define.d.ts",
+      "source": "./src/multi-select/define.ts",
+      "default": "./dist/multi-select/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

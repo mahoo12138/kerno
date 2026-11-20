@@ -21,11 +21,14 @@ import {
   type KDrawer,
   type KForm,
   type KList,
+  type KMultiSelect,
   type KNav,
   type KPagination,
   type KScrollbar,
   type KScrollView,
+  type KSegmentedControl,
   type KTable,
+  type KTagsInput,
   type KTile,
   type KTileGroup,
   type KTimePicker,
@@ -46,7 +49,7 @@ import {
   type ElevationLevel,
   type KSurface,
 } from '@kerno/effects';
-import type { KInput, KSelect, KSlider, KSwitch } from '@kerno/primitives';
+import type { KInput, KPinInput, KRating, KSelect, KSlider, KSwitch } from '@kerno/primitives';
 import { applyTheme, createTheme, darkTheme, type BuiltInThemeName } from '@kerno/tokens';
 
 // ---------------------------------------------------------------------------
@@ -554,14 +557,14 @@ table.data = [
   },
   {
     pkg: '@kerno/primitives',
-    layer: 'Atomic Controls, Textarea, NumberInput, Avatar & Icons',
-    components: 13,
+    layer: 'Atomic Controls, Textarea, NumberInput, PinInput, Rating & Avatar',
+    components: 15,
     status: 'Ready',
   },
   {
     pkg: '@kerno/components',
-    layer: 'Overlays, Feedback, Pickers, Form, Tree, List & DataGrid',
-    components: 30,
+    layer: 'Overlays, Feedback, Pickers, MultiSelect, Tags, Form & DataGrid',
+    components: 33,
     status: 'Ready',
   },
 ];
@@ -1232,4 +1235,87 @@ gridFilterInput?.addEventListener('input', () => {
 });
 gridFilterInput?.addEventListener('k-clear', () => {
   if (demoDataGrid) demoDataGrid.filter = '';
+});
+
+// ---------------------------------------------------------------------------
+// Section 14: Mantine-Inspired Inputs & Multi-Select Lab
+// ---------------------------------------------------------------------------
+const demoSegmented = document.querySelector<KSegmentedControl>('#demo-segmented');
+const demoSegmentedSurface = document.querySelector<KSegmentedControl>('#demo-segmented-surface');
+const segmentedVertToggle = document.querySelector<KSwitch>('#segmented-vertical-toggle');
+const segmentedOut = document.querySelector<HTMLOutputElement>('#segmented-output');
+
+const syncSegmentedOut = (): void => {
+  if (segmentedOut) {
+    segmentedOut.textContent = `Mode: ${demoSegmented?.value || '—'} · Range: ${demoSegmentedSurface?.value || '—'}`;
+  }
+};
+demoSegmented?.addEventListener('k-change', syncSegmentedOut);
+demoSegmentedSurface?.addEventListener('k-change', syncSegmentedOut);
+segmentedVertToggle?.addEventListener('change', () => {
+  if (demoSegmented) {
+    demoSegmented.orientation = segmentedVertToggle.checked ? 'vertical' : 'horizontal';
+  }
+});
+
+const demoPin = document.querySelector<KPinInput>('#demo-pin-input');
+const pinMaskToggle = document.querySelector<KSwitch>('#pin-mask-toggle');
+const demoRating = document.querySelector<KRating>('#demo-rating');
+const ratingBadge = document.querySelector<HTMLElement>('#rating-badge');
+const pinRatingOut = document.querySelector<HTMLOutputElement>('#pin-rating-output');
+
+const syncPinRatingOut = (): void => {
+  if (ratingBadge && demoRating)
+    ratingBadge.textContent = `${demoRating.value} / ${demoRating.count}`;
+  if (pinRatingOut) {
+    pinRatingOut.textContent = `PIN: ${demoPin?.value || '—'} · Rating: ${demoRating?.value ?? 0} / ${demoRating?.count ?? 5}`;
+  }
+};
+demoPin?.addEventListener('input', syncPinRatingOut);
+demoPin?.addEventListener('k-complete', (event) => {
+  const { value } = (event as CustomEvent<{ value: string }>).detail;
+  toast.success('2FA Verified', {
+    ...currentToastOpts(),
+    description: `One-time code ${value} accepted.`,
+  });
+});
+pinMaskToggle?.addEventListener('change', () => {
+  if (demoPin) demoPin.mask = pinMaskToggle.checked;
+});
+demoRating?.addEventListener('k-rating-change', syncPinRatingOut);
+
+const demoTags = document.querySelector<KTagsInput>('#demo-tags-input');
+const tagsOut = document.querySelector<HTMLOutputElement>('#tags-output');
+if (demoTags) {
+  demoTags.suggestions = [
+    'Web Components',
+    'Shadow DOM',
+    'Zero Deps',
+    'Fluent 1',
+    'Acrylic',
+    'Top Layer',
+    'Reveal Highlight',
+    'ElementInternals',
+    'WAI-ARIA',
+  ];
+  demoTags.addEventListener('k-tags-change', (event) => {
+    const { values } = (event as CustomEvent<{ values: string[] }>).detail;
+    if (tagsOut) {
+      tagsOut.textContent = `Tags (${values.length}): ${values.join(', ') || 'none'}`;
+    }
+  });
+}
+
+const demoMultiSelect = document.querySelector<KMultiSelect>('#demo-multi-select');
+const msHidePickedToggle = document.querySelector<KSwitch>('#ms-hide-picked-toggle');
+const msOut = document.querySelector<HTMLOutputElement>('#multiselect-output');
+
+msHidePickedToggle?.addEventListener('change', () => {
+  if (demoMultiSelect) demoMultiSelect.hidePickedOptions = msHidePickedToggle.checked;
+});
+demoMultiSelect?.addEventListener('k-multi-select-change', (event) => {
+  const { values } = (event as CustomEvent<{ values: string[] }>).detail;
+  if (msOut) {
+    msOut.textContent = `Picked (${values.length}): ${values.join(', ') || 'none'}`;
+  }
 });

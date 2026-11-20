@@ -13,3 +13,5 @@ export * from './slider/index.js';
 export * from './avatar/index.js';
 export * from './textarea/index.js';
 export * from './number-input/index.js';
+export * from './pin-input/index.js';
+export * from './rating/index.js';
