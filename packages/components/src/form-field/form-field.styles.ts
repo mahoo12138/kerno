@@ -6,6 +6,8 @@ export const formFieldStyles = css`
     display: flex;
     flex-direction: column;
     gap: 6px;
+    min-width: 0;
+    max-width: 100%;
     font-family: ${token('font.family.sans')};
   }
 

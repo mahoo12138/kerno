@@ -24,3 +24,7 @@ import './date-picker/define.js';
 import './upload/define.js';
 import './tree/define.js';
 import './list/define.js';
+import './time-picker/define.js';
+import './cascader/define.js';
+import './form/define.js';
+import './data-grid/define.js';

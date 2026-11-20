@@ -81,6 +81,14 @@
               <k-icon slot="prefix" name="file"></k-icon>
               Tree, List &amp; Table
             </k-nav-item>
+            <k-nav-item value="form-pickers">
+              <k-icon slot="prefix" name="clock"></k-icon>
+              Time, Cascader &amp; Form
+            </k-nav-item>
+            <k-nav-item value="data-grid">
+              <k-icon slot="prefix" name="info"></k-icon>
+              Virtualized DataGrid
+            </k-nav-item>
           </k-nav>
         </div>
 
@@ -1864,6 +1872,171 @@
           </div>
         </section>
 
+        <!-- 12. Time Picker, Cascader & Orchestrated Form -->
+        <section class="studio-section" id="sec-form-pickers" data-marker-label="Form & Pickers">
+          <div class="section-head">
+            <h2>Time Picker, Cascader &amp; Orchestrated Form</h2>
+            <p>
+              Form-associated <code>&lt;k-time-picker&gt;</code> (24h / 12h AM-PM, optional seconds,
+              <code>min</code>/<code>max</code> bounds) and multi-column
+              <code>&lt;k-cascader&gt;</code> in Acrylic Top-Layer popups, coordinated by
+              <code>&lt;k-form&gt;</code> with clickable validation summaries and loading locks.
+            </p>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel-box">
+              <span class="control-group-title">Time Pickers (&lt;k-time-picker&gt;)</span>
+              <div class="grid-2">
+                <k-form-field
+                  label="24h Window (08:00–20:00)"
+                  help="5-minute step with min/max bounds"
+                >
+                  <k-time-picker
+                    id="demo-time-24"
+                    value="09:30"
+                    min="08:00"
+                    max="20:00"
+                    minute-step="5"
+                    clearable
+                    acrylic
+                  ></k-time-picker>
+                </k-form-field>
+                <k-form-field label="12h + Seconds" help="AM/PM column & seconds precision">
+                  <k-time-picker
+                    id="demo-time-12"
+                    value="14:45:30"
+                    use-12-hours
+                    show-seconds
+                    clearable
+                    acrylic
+                  ></k-time-picker>
+                </k-form-field>
+              </div>
+              <output id="time-picker-output">24h: 09:30 · 12h: 14:45:30</output>
+            </div>
+
+            <div class="panel-box">
+              <div class="row" style="justify-content: space-between">
+                <span class="control-group-title">Multi-Column Cascader (&lt;k-cascader&gt;)</span>
+                <div class="row">
+                  <k-switch id="cascader-hover-toggle" size="sm">Hover Expand</k-switch>
+                  <k-switch id="cascader-branch-toggle" size="sm">Select Branch</k-switch>
+                </div>
+              </div>
+              <k-form-field
+                label="Deployment Region"
+                help="Region → Cloud Zone → Production Cluster"
+              >
+                <k-cascader
+                  id="demo-cascader"
+                  value="apac/tokyo/edge-a"
+                  placeholder="Select target cluster..."
+                  clearable
+                  acrylic
+                ></k-cascader>
+              </k-form-field>
+              <output id="cascader-output">Path: apac/tokyo/edge-a</output>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <div class="row" style="justify-content: space-between">
+              <span class="control-group-title"
+                >Orchestrated Deployment Form (&lt;k-form layout="grid"&gt;)</span
+              >
+              <k-switch id="kform-loading-toggle" size="sm">Loading Lock</k-switch>
+            </div>
+            <k-form id="orchestrated-form" layout="grid" label="Deployment schedule">
+              <k-form-field
+                label="Release Tag"
+                required
+                help="Leave blank and submit to test summary"
+              >
+                <k-input
+                  id="kform-release"
+                  name="release"
+                  required
+                  placeholder="e.g. v5.3.0-rc1"
+                  clearable
+                ></k-input>
+              </k-form-field>
+              <k-form-field label="Maintenance Time" required>
+                <k-time-picker
+                  id="kform-time"
+                  name="window"
+                  value="02:00"
+                  minute-step="15"
+                  required
+                  acrylic
+                ></k-time-picker>
+              </k-form-field>
+              <k-form-field label="Target Cluster" required>
+                <k-cascader
+                  id="kform-cascader"
+                  name="cluster"
+                  placeholder="Choose cluster..."
+                  required
+                  clearable
+                  acrylic
+                ></k-cascader>
+              </k-form-field>
+              <k-form-field label="Rollout Policy">
+                <k-checkbox name="canary" value="enabled" checked
+                  >Enable progressive 10% canary rollout</k-checkbox
+                >
+              </k-form-field>
+              <k-button slot="actions" type="reset">Reset</k-button>
+              <k-button slot="actions" type="submit" variant="accent">Schedule Release</k-button>
+            </k-form>
+            <output id="kform-output"
+              >Click "Schedule Release" while empty to see clickable error summary.</output
+            >
+          </div>
+        </section>
+
+        <!-- 13. High-Performance Virtualized DataGrid -->
+        <section class="studio-section" id="sec-data-grid" data-marker-label="DataGrid (10K)">
+          <div class="section-head">
+            <h2>Virtualized DataGrid (10,000+ Rows)</h2>
+            <p>
+              <code>&lt;k-data-grid&gt;</code> renders only the visible viewport window (~20 DOM
+              rows) while scrolling 10,000 records at 60fps — complete with pointer-draggable column
+              resizing, sorting, live global filtering, and multi-row selection.
+            </p>
+          </div>
+
+          <div class="panel-box">
+            <div class="row" style="justify-content: space-between; flex-wrap: wrap">
+              <div class="row" id="datagrid-scale-buttons">
+                <k-button size="sm" data-grid-rows="1000">1,000 Rows</k-button>
+                <k-button size="sm" variant="accent" data-grid-rows="10000">10,000 Rows</k-button>
+              </div>
+              <k-input
+                id="grid-filter-input"
+                size="sm"
+                clearable
+                placeholder="Filter 10,000 telemetry rows..."
+                style="min-width: 260px"
+              >
+                <k-icon slot="prefix" name="search"></k-icon>
+              </k-input>
+            </div>
+            <k-data-grid
+              id="demo-data-grid"
+              selectable
+              striped
+              show-footer
+              row-key="id"
+              style="--k-data-grid-height: 400px"
+            ></k-data-grid>
+            <output id="datagrid-output"
+              >Drag column edges to resize · Click column headers to sort · Scroll 10,000 rows
+              smoothly.</output
+            >
+          </div>
+        </section>
+
         <k-drawer id="demo-drawer" placement="right" size="md" label="Surface Inspector" acrylic>
           <div style="display: grid; gap: 14px">
             <p style="margin: 0">
@@ -1935,6 +2108,20 @@
             <k-command-item value="jump:sec-data-display" keywords="tree list table filter select">
               <k-icon slot="prefix" name="chevron-right"></k-icon>
               Tree, List &amp; Table
+            </k-command-item>
+            <k-command-item
+              value="jump:sec-form-pickers"
+              keywords="time picker clock cascader form validation summary"
+            >
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Time, Cascader &amp; Form
+            </k-command-item>
+            <k-command-item
+              value="jump:sec-data-grid"
+              keywords="datagrid virtual scroll 10000 rows resize sort"
+            >
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Virtualized DataGrid (10K)
             </k-command-item>
           </k-command-group>
           <k-command-group heading="Quick Actions">

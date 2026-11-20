@@ -6,12 +6,20 @@ import '@kerno/primitives/define';
 import '@kerno/components/define';
 import {
   toast,
+  type CascaderOption,
+  type DataGridRowClickDetail,
+  type DataGridSelectionDetail,
   type DrawerPlacement,
+  type FormSubmitDetail,
+  type FormValidationError,
   type KAccordion,
   type KAlert,
+  type KCascader,
   type KCommand,
+  type KDataGrid,
   type KDialog,
   type KDrawer,
+  type KForm,
   type KList,
   type KNav,
   type KPagination,
@@ -20,6 +28,7 @@ import {
   type KTable,
   type KTile,
   type KTileGroup,
+  type KTimePicker,
   type KTree,
   type KTreeItem,
   type KUpload,
@@ -551,8 +560,8 @@ table.data = [
   },
   {
     pkg: '@kerno/components',
-    layer: 'Overlays, Feedback, Data Entry, Tree, List & Data Display',
-    components: 26,
+    layer: 'Overlays, Feedback, Pickers, Form, Tree, List & DataGrid',
+    components: 30,
     status: 'Ready',
   },
 ];
@@ -935,4 +944,292 @@ tableFilterInput?.addEventListener('input', () => {
 });
 tableFilterInput?.addEventListener('k-clear', () => {
   if (enhancedTable) enhancedTable.filter = '';
+});
+
+// ---------------------------------------------------------------------------
+// Section 12: Time Picker, Cascader & Orchestrated Form
+// ---------------------------------------------------------------------------
+const demoTime24 = document.querySelector<KTimePicker>('#demo-time-24');
+const demoTime12 = document.querySelector<KTimePicker>('#demo-time-12');
+const timePickerOut = document.querySelector<HTMLOutputElement>('#time-picker-output');
+
+const syncTimeOut = (): void => {
+  if (timePickerOut) {
+    timePickerOut.textContent = `24h: ${demoTime24?.value || '—'} · 12h: ${demoTime12?.value || '—'}`;
+  }
+};
+demoTime24?.addEventListener('k-time-change', syncTimeOut);
+demoTime12?.addEventListener('k-time-change', syncTimeOut);
+
+const CLUSTER_TREE: readonly CascaderOption[] = [
+  {
+    value: 'apac',
+    label: 'Asia Pacific',
+    children: [
+      {
+        value: 'tokyo',
+        label: 'Tokyo (ap-northeast-1)',
+        children: [
+          { value: 'edge-a', label: 'edge-a · Primary' },
+          { value: 'edge-b', label: 'edge-b · Failover' },
+        ],
+      },
+      {
+        value: 'singapore',
+        label: 'Singapore (ap-southeast-1)',
+        children: [
+          { value: 'core-1', label: 'core-1 · Compute' },
+          { value: 'core-2', label: 'core-2 · Analytics' },
+        ],
+      },
+      {
+        value: 'hangzhou',
+        label: 'Hangzhou (cn-east-1)',
+        children: [
+          { value: 'mesh-1', label: 'mesh-1 · Gateway' },
+          { value: 'mesh-2', label: 'mesh-2 · Vault', disabled: true },
+        ],
+      },
+    ],
+  },
+  {
+    value: 'americas',
+    label: 'Americas',
+    children: [
+      {
+        value: 'us-west',
+        label: 'Oregon (us-west-2)',
+        children: [
+          { value: 'prod-a', label: 'prod-a · Primary' },
+          { value: 'prod-b', label: 'prod-b · Staging' },
+        ],
+      },
+      {
+        value: 'us-east',
+        label: 'Virginia (us-east-1)',
+        children: [
+          { value: 'core-east', label: 'core-east · Global' },
+          { value: 'canary', label: 'canary · Lab' },
+        ],
+      },
+    ],
+  },
+  {
+    value: 'emea',
+    label: 'Europe & EMEA',
+    children: [
+      {
+        value: 'frankfurt',
+        label: 'Frankfurt (eu-central-1)',
+        children: [
+          { value: 'eu-prod', label: 'eu-prod · Sovereign' },
+          { value: 'eu-dr', label: 'eu-dr · Cold Standby' },
+        ],
+      },
+    ],
+  },
+];
+
+const demoCascader = document.querySelector<KCascader>('#demo-cascader');
+const cascaderOut = document.querySelector<HTMLOutputElement>('#cascader-output');
+const cascaderHoverToggle = document.querySelector<KSwitch>('#cascader-hover-toggle');
+const cascaderBranchToggle = document.querySelector<KSwitch>('#cascader-branch-toggle');
+
+if (demoCascader) {
+  demoCascader.options = CLUSTER_TREE;
+  demoCascader.addEventListener('k-cascader-change', (event) => {
+    const { value, options } = (event as CustomEvent<{ value: string; options: CascaderOption[] }>)
+      .detail;
+    if (cascaderOut) {
+      cascaderOut.textContent = value
+        ? `Path: ${value} (${options.map((o) => o.label).join(' → ')})`
+        : 'Cleared.';
+    }
+  });
+}
+
+cascaderHoverToggle?.addEventListener('change', () => {
+  if (demoCascader) demoCascader.expandTrigger = cascaderHoverToggle.checked ? 'hover' : 'click';
+});
+cascaderBranchToggle?.addEventListener('change', () => {
+  if (demoCascader) demoCascader.changeOnSelect = cascaderBranchToggle.checked;
+});
+
+const orchestratedForm = document.querySelector<KForm>('#orchestrated-form');
+const kformCascader = document.querySelector<KCascader>('#kform-cascader');
+const kformLoadingToggle = document.querySelector<KSwitch>('#kform-loading-toggle');
+const kformOut = document.querySelector<HTMLOutputElement>('#kform-output');
+
+if (kformCascader) {
+  kformCascader.options = CLUSTER_TREE;
+}
+
+kformLoadingToggle?.addEventListener('change', () => {
+  if (orchestratedForm) orchestratedForm.loading = kformLoadingToggle.checked;
+});
+
+orchestratedForm?.addEventListener('k-submit', (event) => {
+  const { values } = (event as CustomEvent<FormSubmitDetail>).detail;
+  if (kformOut) kformOut.textContent = `Scheduled: ${JSON.stringify(values)}`;
+  toast.success('Release Scheduled', {
+    ...currentToastOpts(),
+    description: `${String(values.release)} → ${String(values.cluster)} at ${String(values.window)}`,
+  });
+});
+
+orchestratedForm?.addEventListener('k-invalid', (event) => {
+  const { errors } = (event as CustomEvent<{ errors: FormValidationError[] }>).detail;
+  if (kformOut) {
+    kformOut.textContent = `Validation blocked (${errors.length} error${errors.length === 1 ? '' : 's'}): ${errors.map((e) => e.label).join(', ')}`;
+  }
+});
+
+orchestratedForm?.addEventListener('k-reset', () => {
+  if (kformOut) kformOut.textContent = 'Deployment form reset.';
+});
+
+// ---------------------------------------------------------------------------
+// Section 13: High-Performance Virtualized DataGrid (10,000 Rows)
+// ---------------------------------------------------------------------------
+interface TelemetryRow extends Record<string, unknown> {
+  id: string;
+  service: string;
+  region: string;
+  latency: number;
+  status: 'Healthy' | 'Degraded' | 'Warning';
+  owner: string;
+}
+
+const SERVICES = [
+  'auth-gateway',
+  'surface-compositor',
+  'acrylic-pipeline',
+  'token-compiler',
+  'telemetry-ingest',
+  'search-indexer',
+  'edge-router',
+  'billing-ledger',
+  'session-vault',
+  'media-transcoder',
+] as const;
+const REGIONS = [
+  'ap-northeast-1',
+  'ap-southeast-1',
+  'us-west-2',
+  'us-east-1',
+  'eu-central-1',
+] as const;
+const OWNERS = ['Ada L.', 'Grace H.', '林徽因', 'Alan T.', 'Donald K.', 'Barbara L.'] as const;
+
+function generateTelemetryRows(count: number): TelemetryRow[] {
+  const rows: TelemetryRow[] = new Array(count);
+  for (let i = 0; i < count; i++) {
+    const latency = 8 + ((i * 37) % 240);
+    const status: TelemetryRow['status'] =
+      latency > 200 ? 'Warning' : latency > 140 ? 'Degraded' : 'Healthy';
+    rows[i] = {
+      id: `SVC-${String(i + 1).padStart(5, '0')}`,
+      service: `${SERVICES[i % SERVICES.length]}-${String((i % 24) + 1).padStart(2, '0')}`,
+      region: REGIONS[(i * 3) % REGIONS.length]!,
+      latency,
+      status,
+      owner: OWNERS[(i * 7) % OWNERS.length]!,
+    };
+  }
+  return rows;
+}
+
+const demoDataGrid = document.querySelector<KDataGrid<TelemetryRow>>('#demo-data-grid');
+const gridFilterInput = document.querySelector<KInput>('#grid-filter-input');
+const datagridOut = document.querySelector<HTMLOutputElement>('#datagrid-output');
+const scaleButtons = document.querySelectorAll<HTMLElement>('#datagrid-scale-buttons k-button');
+
+if (demoDataGrid) {
+  demoDataGrid.columns = [
+    { key: 'id', title: 'Node ID', width: 120, minWidth: 96, sortable: true, resizable: true },
+    {
+      key: 'service',
+      title: 'Service',
+      width: 210,
+      minWidth: 140,
+      sortable: true,
+      resizable: true,
+    },
+    { key: 'region', title: 'Region', width: 150, minWidth: 110, sortable: true, resizable: true },
+    {
+      key: 'latency',
+      title: 'P95 (ms)',
+      width: 110,
+      minWidth: 85,
+      align: 'right',
+      sortable: true,
+      resizable: true,
+      render: (value) => `${String(value)} ms`,
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      width: 120,
+      minWidth: 96,
+      sortable: true,
+      resizable: true,
+      render: (value) => {
+        const badge = document.createElement('k-badge');
+        const variant =
+          value === 'Healthy' ? 'success' : value === 'Degraded' ? 'warning' : 'danger';
+        badge.setAttribute('variant', variant);
+        badge.setAttribute('pill', '');
+        badge.textContent = String(value);
+        return badge;
+      },
+    },
+    { key: 'owner', title: 'Owner', minWidth: 110, sortable: true, resizable: true },
+  ];
+  demoDataGrid.data = generateTelemetryRows(10_000);
+
+  demoDataGrid.addEventListener('k-selection-change', (event) => {
+    const { selectedKeys } = (event as CustomEvent<DataGridSelectionDetail<TelemetryRow>>).detail;
+    if (datagridOut) {
+      const preview = selectedKeys.slice(0, 4).join(', ');
+      datagridOut.textContent =
+        selectedKeys.length > 0
+          ? `Selected ${selectedKeys.length} row(s): ${preview}${selectedKeys.length > 4 ? '…' : ''}`
+          : 'Selection cleared.';
+    }
+  });
+
+  demoDataGrid.addEventListener('k-row-click', (event) => {
+    const { row } = (event as CustomEvent<DataGridRowClickDetail<TelemetryRow>>).detail;
+    if (datagridOut) {
+      datagridOut.textContent = `Focused ${row.id} · ${row.service} (${row.region}, ${row.latency} ms)`;
+    }
+  });
+
+  demoDataGrid.addEventListener('k-column-resize', (event) => {
+    const { key, width } = (event as CustomEvent<{ key: string; width: number }>).detail;
+    if (datagridOut) {
+      datagridOut.textContent = `Resized column "${key}" to ${width}px.`;
+    }
+  });
+}
+
+scaleButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const count = Number(btn.dataset.gridRows ?? 10_000);
+    scaleButtons.forEach((b) => b.setAttribute('variant', b === btn ? 'accent' : 'standard'));
+    if (demoDataGrid) {
+      demoDataGrid.selectedKeys = [];
+      demoDataGrid.data = generateTelemetryRows(count);
+    }
+    if (datagridOut) {
+      datagridOut.textContent = `Loaded ${count.toLocaleString()} virtualized telemetry rows.`;
+    }
+  });
+});
+
+gridFilterInput?.addEventListener('input', () => {
+  if (demoDataGrid) demoDataGrid.filter = gridFilterInput.value;
+});
+gridFilterInput?.addEventListener('k-clear', () => {
+  if (demoDataGrid) demoDataGrid.filter = '';
 });

@@ -24,3 +24,7 @@ export * from './date-picker/index.js';
 export * from './upload/index.js';
 export * from './tree/index.js';
 export * from './list/index.js';
+export * from './time-picker/index.js';
+export * from './cascader/index.js';
+export * from './form/index.js';
+export * from './data-grid/index.js';

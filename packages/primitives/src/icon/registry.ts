@@ -44,6 +44,8 @@ const BUILTIN_ICONS: Readonly<Record<string, string>> = {
     '<circle cx="3.5" cy="8" r="1.25" fill="currentColor"/><circle cx="8" cy="8" r="1.25" fill="currentColor"/><circle cx="12.5" cy="8" r="1.25" fill="currentColor"/>',
   calendar:
     '<rect x="2.2" y="3.5" width="11.6" height="10.3" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M5.2 2v2.4M10.8 2v2.4M2.5 6.8h11"/>',
+  clock:
+    '<circle cx="8" cy="8" r="5.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M8 4.6V8l2.5 1.5"/>',
   upload:
     '<path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M8 10.8V2.8M4.8 5.8L8 2.6l3.2 3.2M2.5 11.2v1.6a1 1 0 001 1h9a1 1 0 001-1v-1.6"/>',
   file: '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" d="M4 2.2h5.2L12.5 5.5v8.3H4V2.2z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" d="M9 2.2v3.5h3.5"/>',
