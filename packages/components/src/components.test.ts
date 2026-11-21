@@ -64,6 +64,26 @@ describe('<k-dialog>', () => {
     expect(onClose).toHaveBeenCalledOnce();
     expect(document.activeElement).toBe(openBtn);
   });
+
+  it('respects cancelable k-request-close to prevent dismissing modal dialog', async () => {
+    document.body.innerHTML = `<k-dialog label="Unsaved Changes" open><p>Save?</p></k-dialog>`;
+    const dialog = document.querySelector('k-dialog') as KDialog;
+    await dialog.updateComplete;
+
+    let block = true;
+    dialog.addEventListener('k-request-close', (e) => {
+      if (block) e.preventDefault();
+    });
+
+    await userEvent.keyboard('{Escape}');
+    await dialog.updateComplete;
+    expect(dialog.open).toBe(true);
+
+    block = false;
+    await userEvent.keyboard('{Escape}');
+    await dialog.updateComplete;
+    expect(dialog.open).toBe(false);
+  });
 });
 
 describe('<k-popover>', () => {
@@ -246,6 +266,23 @@ describe('Phase 5 Data Display & Form Field (<k-card>, <k-progress>, <k-skeleton
     ).toBe('40');
     expect(skeleton.getAttribute('aria-busy')).toBe('true');
     expect(empty.shadowRoot!.querySelector('.title')!.textContent).toBe('No deployments');
+
+    // Progress indeterminate omits aria-valuenow; overflow clamps to 100%
+    progress.value = 120;
+    await progress.updateComplete;
+    expect(progress.percentage).toBe(100);
+    progress.indeterminate = true;
+    await progress.updateComplete;
+    expect(
+      progress.shadowRoot!.querySelector('[role="progressbar"]')!.hasAttribute('aria-valuenow'),
+    ).toBe(false);
+
+    // Skeleton variants and effect=none reflect cleanly
+    skeleton.variant = 'circular';
+    skeleton.effect = 'none';
+    await skeleton.updateComplete;
+    expect(skeleton.getAttribute('variant')).toBe('circular');
+    expect(skeleton.getAttribute('effect')).toBe('none');
   });
 
   it('sorts <k-table> columns and emits k-sort-change', async () => {

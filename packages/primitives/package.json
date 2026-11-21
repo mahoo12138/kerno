@@ -1,7 +1,29 @@
 {
   "name": "@kerno/primitives",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Kerno primitive controls.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mahoo12138/kerno.git",
+    "directory": "packages/primitives"
+  },
+  "homepage": "https://github.com/mahoo12138/kerno#readme",
+  "bugs": {
+    "url": "https://github.com/mahoo12138/kerno/issues"
+  },
+  "keywords": [
+    "kerno",
+    "web-components",
+    "primitives",
+    "fluent",
+    "form-controls",
+    "a11y"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "sideEffects": [
     "./dist/define.js",
@@ -214,7 +236,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.ts"
   ],
   "scripts": {
     "build": "tsc -b"

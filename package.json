@@ -17,6 +17,12 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "size": "node scripts/analyze-size.mjs",
+    "size:check": "node scripts/analyze-size.mjs --check",
+    "release:verify": "node scripts/release.mjs verify",
+    "release:version": "node scripts/release.mjs version",
+    "release:publish": "node scripts/release.mjs publish",
+    "release:dry-run": "node scripts/release.mjs publish --dry-run",
     "check": "pnpm build && pnpm typecheck && pnpm lint && pnpm format:check && pnpm test"
   },
   "devDependencies": {

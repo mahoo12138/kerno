@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Build, Test, Size & Tarball Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build, Typecheck, Lint, Format & Browser Tests
+        run: pnpm check
+
+      - name: Build Playground
+        run: pnpm --filter @kerno/playground build
+
+      - name: Bundle Size Analysis & Budget Gate
+        run: pnpm size:check
+
+      - name: Verify Publish Tarballs & Exports
+        run: pnpm release:verify -- --skip-check
+
+      - name: Upload Bundle Size Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-size-report
+          path: |
+            reports/bundle-size.md
+            reports/bundle-size.json
+          retention-days: 14

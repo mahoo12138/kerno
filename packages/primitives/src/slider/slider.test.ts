@@ -39,4 +39,22 @@ describe('<k-slider>', () => {
     expect(slider.value).toBe(24);
     expect(new FormData(form).get('blur')).toBe('24');
   });
+
+  it('omits disabled slider from FormData and syncs disabled state to native range', async () => {
+    document.body.innerHTML = `
+      <form>
+        <k-slider name="opacity" min="0" max="1" step="0.1" value="0.5" disabled></k-slider>
+      </form>
+    `;
+    const form = document.querySelector('form')!;
+    const slider = form.querySelector('k-slider') as KSlider;
+    await slider.updateComplete;
+
+    expect(slider.shadowRoot!.querySelector('input')!.disabled).toBe(true);
+    expect(new FormData(form).get('opacity')).toBeNull();
+
+    slider.disabled = false;
+    await slider.updateComplete;
+    expect(new FormData(form).get('opacity')).toBe('0.5');
+  });
 });

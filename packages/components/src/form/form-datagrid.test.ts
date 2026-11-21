@@ -62,6 +62,45 @@ describe('<k-form>', () => {
     await Promise.all([form.updateComplete, input.updateComplete]);
     expect(input.value).toBe('');
   });
+
+  it('locks descendant controls during loading, supports novalidate, and focuses field from summary', async () => {
+    document.body.innerHTML = `
+      <k-form>
+        <k-form-field label="Owner">
+          <k-input name="owner" required></k-input>
+        </k-form-field>
+        <k-button slot="actions" type="submit">Save</k-button>
+      </k-form>
+    `;
+    const form = document.querySelector('k-form') as KForm;
+    const input = form.querySelector('k-input')!;
+    await Promise.all([form.updateComplete, input.updateComplete]);
+
+    // Loading locks controls and prevents submit
+    form.loading = true;
+    await form.updateComplete;
+    expect(input.disabled).toBe(true);
+    expect(form.submit()).toBe(false);
+
+    form.loading = false;
+    await form.updateComplete;
+    expect(input.disabled).toBe(false);
+
+    // Summary error link focuses offending input
+    expect(form.submit()).toBe(false);
+    await form.updateComplete;
+    const summaryBtn = form.shadowRoot!.querySelector<HTMLButtonElement>('.summary-btn')!;
+    summaryBtn.click();
+    expect(document.activeElement).toBe(input);
+
+    // novalidate bypasses validation
+    const onSubmit = vi.fn();
+    form.addEventListener('k-submit', onSubmit);
+    form.novalidate = true;
+    await form.updateComplete;
+    expect(form.submit()).toBe(true);
+    expect(onSubmit).toHaveBeenCalledOnce();
+  });
 });
 
 describe('<k-data-grid>', () => {
@@ -111,5 +150,19 @@ describe('<k-data-grid>', () => {
     expect(grid.shadowRoot!.querySelector('.header .check-btn')!.getAttribute('aria-checked')).toBe(
       'mixed',
     );
+
+    // Sorting toggles asc -> desc -> null; empty filter shows empty-text
+    const idHeader = grid.shadowRoot!.querySelector<HTMLElement>('.header .th.sortable')!;
+    idHeader.click();
+    await grid.updateComplete;
+    expect(grid.sortKey).toBe('id');
+    expect(grid.sortDirection).toBe('asc');
+    idHeader.click();
+    await grid.updateComplete;
+    expect(grid.sortDirection).toBe('desc');
+
+    grid.filter = 'nonexistent-service-xyz';
+    await grid.updateComplete;
+    expect(grid.shadowRoot!.querySelector<HTMLElement>('.empty')!.hidden).toBe(false);
   });
 });

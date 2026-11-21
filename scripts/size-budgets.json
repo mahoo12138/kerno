@@ -1,0 +1,27 @@
+{
+  "$comment": "Strict gzip size budgets (bytes) enforced by `pnpm size:check` (~20-25% headroom over v0.1.0 baseline).",
+  "packages": {
+    "@kerno/tokens": 5120,
+    "@kerno/tokens/tokens.css": 3072,
+    "@kerno/tokens/base.css": 1024,
+    "@kerno/core": 7168,
+    "@kerno/effects": 28672,
+    "@kerno/primitives": 40960,
+    "@kerno/components": 138240
+  },
+  "standalone": {
+    "@kerno/primitives/button": 23552,
+    "@kerno/primitives/input": 26624,
+    "@kerno/components/dialog": 12288,
+    "@kerno/components/date-picker": 32768,
+    "@kerno/components/data-grid": 12288,
+    "@kerno/components/color-picker": 32768
+  },
+  "maxComponentGzipBytes": 9216,
+  "components": {
+    "@kerno/effects/surface": 23552,
+    "@kerno/components/tile": 19456,
+    "@kerno/components/scrollbar": 19456,
+    "@kerno/effects/shape": 17408
+  }
+}

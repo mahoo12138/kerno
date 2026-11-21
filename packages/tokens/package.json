@@ -1,7 +1,28 @@
 {
   "name": "@kerno/tokens",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Kerno design tokens and theming.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mahoo12138/kerno.git",
+    "directory": "packages/tokens"
+  },
+  "homepage": "https://github.com/mahoo12138/kerno#readme",
+  "bugs": {
+    "url": "https://github.com/mahoo12138/kerno/issues"
+  },
+  "keywords": [
+    "kerno",
+    "design-tokens",
+    "css-variables",
+    "fluent",
+    "theming"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -18,7 +39,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.ts"
   ],
   "scripts": {
     "build": "tsc -b && node scripts/build-css.mjs"

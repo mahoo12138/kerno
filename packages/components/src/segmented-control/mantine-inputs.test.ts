@@ -55,6 +55,19 @@ describe('<k-segmented-control>', () => {
     await seg.updateComplete;
     expect(seg.value).toBe('preview');
   });
+
+  it('supports JS data array and vertical arrow key navigation', async () => {
+    document.body.innerHTML = `<k-segmented-control orientation="vertical"></k-segmented-control>`;
+    const seg = document.querySelector('k-segmented-control') as KSegmentedControl;
+    seg.data = ['Alpha', { value: 'beta', label: 'Beta' }, 'Gamma'];
+    await seg.updateComplete;
+
+    expect(seg.value).toBe('Alpha');
+    const btns = [...seg.shadowRoot!.querySelectorAll<HTMLButtonElement>('.segment')];
+    btns[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await seg.updateComplete;
+    expect(seg.value).toBe('beta');
+  });
 });
 
 describe('<k-tags-input>', () => {
@@ -137,5 +150,16 @@ describe('<k-multi-select>', () => {
     const { values, formData } = kform.getValues();
     expect(values.frameworks).toEqual(['ts', 'wc']);
     expect(formData.getAll('frameworks')).toEqual(['ts', 'wc']);
+
+    // hide-picked-options removes selected items from dropdown; Backspace pops last pill
+    ms.hidePickedOptions = true;
+    await ms.updateComplete;
+    expect(opts()).toHaveLength(1);
+    expect(opts()[0]!.dataset.value).toBe('css');
+
+    const search = ms.shadowRoot!.querySelector<HTMLInputElement>('.search')!;
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
+    await ms.updateComplete;
+    expect(ms.values).toEqual(['ts']);
   });
 });

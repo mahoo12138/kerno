@@ -83,6 +83,31 @@ describe('<k-time-picker>', () => {
     const minColAfter = tp.shadowRoot!.querySelector<HTMLElement>('.col[aria-label="Min"]')!;
     expect(minColAfter.scrollTop).toBe(savedTop);
   });
+
+  it('supports 12h AM/PM switching, seconds column, Now button, and clearable', async () => {
+    document.body.innerHTML = `<k-time-picker value="14:05:30" use-12-hours show-seconds clearable></k-time-picker>`;
+    const tp = document.querySelector('k-time-picker') as KTimePicker;
+    await tp.updateComplete;
+
+    expect(tp.shadowRoot!.querySelector('.display')!.textContent).toBe('02:05:30 PM');
+
+    tp.open = true;
+    await tp.updateComplete;
+    expect(tp.shadowRoot!.querySelectorAll('.col')).toHaveLength(4);
+
+    // Switch PM -> AM
+    const periodBtns = [
+      ...tp.shadowRoot!.querySelectorAll<HTMLButtonElement>('.col[aria-label="Period"] .cell'),
+    ];
+    periodBtns[0]!.click();
+    await tp.updateComplete;
+    expect(tp.value).toBe('02:05:30');
+
+    // Clear button resets value to empty
+    tp.shadowRoot!.querySelector<HTMLElement>('.clear-btn')!.click();
+    await tp.updateComplete;
+    expect(tp.value).toBe('');
+  });
 });
 
 describe('<k-cascader>', () => {
@@ -178,5 +203,22 @@ describe('<k-cascader>', () => {
     await cas.updateComplete;
 
     expect(cas.getBoundingClientRect().width).toBeLessThanOrEqual(220.5);
+  });
+
+  it('commits non-leaf nodes when change-on-select is enabled and clears cleanly', async () => {
+    document.body.innerHTML = `<k-cascader change-on-select clearable></k-cascader>`;
+    const cas = document.querySelector('k-cascader') as KCascader;
+    cas.options = REGIONS;
+    await cas.updateComplete;
+
+    cas.open = true;
+    await cas.updateComplete;
+    cas.shadowRoot!.querySelector<HTMLButtonElement>('.item[data-value="cn"]')!.click();
+    await cas.updateComplete;
+    expect(cas.value).toBe('cn');
+
+    cas.shadowRoot!.querySelector<HTMLElement>('.clear-btn')!.click();
+    await cas.updateComplete;
+    expect(cas.value).toBe('');
   });
 });

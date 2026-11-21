@@ -127,5 +127,18 @@ describe('<k-hover-card>, <k-loading-overlay>, <k-spoiler>, and <k-copy-button>'
     await copyBtn.updateComplete;
     expect(copyBtn.copied).toBe(true);
     expect(onCopy).toHaveBeenCalledWith('pnpm add @kerno/components');
+
+    // Auto-resets copied state after timeout
+    await new Promise((r) => setTimeout(r, 340));
+    await copyBtn.updateComplete;
+    expect(copyBtn.copied).toBe(false);
+
+    // Short spoiler hides toggle button automatically
+    const shortSpoiler = document.createElement('k-spoiler') as KSpoiler;
+    shortSpoiler.maxHeight = 200;
+    shortSpoiler.innerHTML = '<div style="height:24px">Short</div>';
+    document.body.append(shortSpoiler);
+    await shortSpoiler.updateComplete;
+    expect(shortSpoiler.shadowRoot!.querySelector<HTMLButtonElement>('.toggle')!.hidden).toBe(true);
   });
 });

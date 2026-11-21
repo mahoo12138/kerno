@@ -48,6 +48,30 @@ describe('<k-stepper>', () => {
     expect(steps.every((s) => s.hidden)).toBe(true);
     expect(stepper.shadowRoot!.querySelector<HTMLDivElement>('.completed')!.hidden).toBe(false);
   });
+
+  it('locks future steps when allow-next-steps-select=false and honors cancelable k-step-click', async () => {
+    document.body.innerHTML = `
+      <k-stepper active="0">
+        <k-stepper-step label="One" loading>1</k-stepper-step>
+        <k-stepper-step label="Two">2</k-stepper-step>
+      </k-stepper>
+    `;
+    const stepper = document.querySelector('k-stepper') as KStepper;
+    stepper.allowNextStepsSelect = false;
+    await stepper.updateComplete;
+
+    const btns = [...stepper.shadowRoot!.querySelectorAll<HTMLButtonElement>('.step-btn')];
+    expect(btns[0]!.querySelector('svg.spin')).not.toBeNull();
+    expect(btns[1]!.disabled).toBe(true);
+
+    // Unlock next steps but cancel via k-step-click preventDefault
+    stepper.allowNextStepsSelect = true;
+    await stepper.updateComplete;
+    stepper.addEventListener('k-step-click', (e) => e.preventDefault());
+    stepper.shadowRoot!.querySelectorAll<HTMLButtonElement>('.step-btn')[1]!.click();
+    await stepper.updateComplete;
+    expect(stepper.active).toBe(0);
+  });
 });
 
 describe('<k-timeline>', () => {
@@ -92,5 +116,13 @@ describe('<k-ring-progress>', () => {
     );
     segs[1]!.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
     expect(hovered).toHaveBeenCalledWith(1);
+
+    // Single value fallback & overflow clamping
+    ring.sections = [];
+    ring.value = 60;
+    ring.roundCaps = true;
+    await ring.updateComplete;
+    const singleSeg = ring.shadowRoot!.querySelector<SVGCircleElement>('.segment')!;
+    expect(singleSeg.getAttribute('stroke-linecap')).toBe('round');
   });
 });

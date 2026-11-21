@@ -54,4 +54,33 @@ describe('<k-range-slider>', () => {
     await rs.updateComplete;
     expect(rs.values).toEqual([25, 40]);
   });
+
+  it('renders labeled marks, respects Home/End/PageUp/PageDown, and guards readonly/disabled', async () => {
+    document.body.innerHTML = `<k-range-slider min="0" max="100" step="5" value="20,80"></k-range-slider>`;
+    const rs = document.querySelector('k-range-slider') as KRangeSlider;
+    rs.marks = [
+      { value: 0, label: 'Min' },
+      { value: 50, label: 'Mid' },
+      { value: 100, label: 'Max' },
+    ];
+    await rs.updateComplete;
+
+    const marks = rs.shadowRoot!.querySelectorAll('.mark');
+    expect(marks).toHaveLength(3);
+    expect(marks[1]!.textContent).toBe('Mid');
+
+    const startThumb = rs.shadowRoot!.querySelector<HTMLDivElement>('.thumb-start')!;
+    const endThumb = rs.shadowRoot!.querySelector<HTMLDivElement>('.thumb-end')!;
+
+    startThumb.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    endThumb.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    await rs.updateComplete;
+    expect(rs.values).toEqual([0, 100]);
+
+    rs.readonly = true;
+    await rs.updateComplete;
+    startThumb.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageUp', bubbles: true }));
+    await rs.updateComplete;
+    expect(rs.values).toEqual([0, 100]);
+  });
 });

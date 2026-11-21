@@ -117,4 +117,22 @@ describe('<k-rating>', () => {
     await rating.updateComplete;
     expect(rating.value).toBe(3.5);
   });
+
+  it('supports highlight-selected-only and readonly/disabled guards', async () => {
+    document.body.innerHTML = `<k-rating count="5" value="3" highlight-selected-only readonly></k-rating>`;
+    const rating = document.querySelector('k-rating') as KRating;
+    await rating.updateComplete;
+
+    const fills = [...rating.shadowRoot!.querySelectorAll<SVGSVGElement>('.star-fill')];
+    expect(fills[0]!.style.clipPath).toContain('100');
+    expect(fills[2]!.style.clipPath).toContain('0');
+
+    // Readonly ignores clicks and keyboard stepping
+    rating.shadowRoot!.querySelector<HTMLSpanElement>('.star')!.click();
+    rating
+      .shadowRoot!.querySelector<HTMLDivElement>('.track')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await rating.updateComplete;
+    expect(rating.value).toBe(3);
+  });
 });
