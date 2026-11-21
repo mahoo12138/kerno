@@ -14,3 +14,6 @@ import './textarea/define.js';
 import './number-input/define.js';
 import './pin-input/define.js';
 import './rating/define.js';
+import './kbd/define.js';
+import './indicator/define.js';
+import './chip/define.js';

@@ -15,3 +15,6 @@ export * from './textarea/index.js';
 export * from './number-input/index.js';
 export * from './pin-input/index.js';
 export * from './rating/index.js';
+export * from './kbd/index.js';
+export * from './indicator/index.js';
+export * from './chip/index.js';

@@ -93,6 +93,10 @@
               <k-icon slot="prefix" name="star"></k-icon>
               Mantine Inputs Lab
             </k-nav-item>
+            <k-nav-item value="workflows-metrics">
+              <k-icon slot="prefix" name="check"></k-icon>
+              Workflows &amp; Metrics
+            </k-nav-item>
           </k-nav>
         </div>
 
@@ -2168,6 +2172,182 @@
           </div>
         </section>
 
+        <!-- 15. Workflows, Timeline, RingProgress, Chips & Indicators -->
+        <section
+          class="studio-section"
+          id="sec-workflows-metrics"
+          data-marker-label="Workflows & Metrics"
+        >
+          <div class="section-head">
+            <h2>Workflows, Timeline &amp; Visual Metrics</h2>
+            <p>
+              Multi-step <code>&lt;k-stepper&gt;</code> wizard, chronological
+              <code>&lt;k-timeline&gt;</code>, multi-segment SVG
+              <code>&lt;k-ring-progress&gt;</code>, selectable <code>&lt;k-chip-group&gt;</code>,
+              pulsing <code>&lt;k-indicator&gt;</code>, and semantic <code>&lt;k-kbd&gt;</code>.
+            </p>
+          </div>
+
+          <div class="panel-box">
+            <div class="row" style="justify-content: space-between; flex-wrap: wrap">
+              <span class="control-group-title">Release Wizard (&lt;k-stepper&gt;)</span>
+              <div class="row">
+                <k-switch id="stepper-vertical-toggle" size="sm">Vertical</k-switch>
+                <k-button id="stepper-prev-btn" size="sm">Back</k-button>
+                <k-button id="stepper-next-btn" size="sm" variant="accent">Next Step</k-button>
+              </div>
+            </div>
+            <k-stepper id="demo-stepper" active="1" label="Release deployment wizard">
+              <k-stepper-step label="Build &amp; Lint" description="TypeScript &amp; checks">
+                <k-alert variant="info" title="Artifacts Verified"
+                  >All 54 packages built cleanly with zero lint or type diagnostics.</k-alert
+                >
+              </k-stepper-step>
+              <k-stepper-step label="Canary Rollout" description="10% traffic split" icon="clock">
+                <k-alert variant="warning" title="Observing P95 Telemetry"
+                  >Canary nodes in ap-northeast-1 are serving 10% live requests with 0 error
+                  spikes.</k-alert
+                >
+              </k-stepper-step>
+              <k-stepper-step label="Global Cutover" description="Promote to 100%">
+                <k-alert variant="neutral" title="Ready for Global Promotion"
+                  >Click Next Step to complete rollout across all production regions.</k-alert
+                >
+              </k-stepper-step>
+              <div slot="completed">
+                <k-alert variant="success" title="Release v6.2 Shipped Globally"
+                  >All regions promoted and health checks verified.</k-alert
+                >
+              </div>
+            </k-stepper>
+            <output id="stepper-output">Active step: 2 / 3 (Canary Rollout)</output>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel-box">
+              <div class="row" style="justify-content: space-between">
+                <span class="control-group-title">Deployment Log (&lt;k-timeline&gt;)</span>
+                <div class="row">
+                  <k-button id="timeline-advance-btn" size="sm">Advance Active</k-button>
+                  <k-switch id="timeline-align-toggle" size="sm">Align Right</k-switch>
+                </div>
+              </div>
+              <k-timeline id="demo-timeline" active="2" bullet-size="24">
+                <k-timeline-item
+                  title="PR #418 Merged to main"
+                  timestamp="12:01:14 UTC"
+                  icon="check"
+                >
+                  Added Phase 6 Wave 2 components with full Chromium test coverage.
+                </k-timeline-item>
+                <k-timeline-item
+                  title="Token &amp; Bundle Compile"
+                  timestamp="12:02:05 UTC"
+                  icon="check"
+                >
+                  Generated zero-dep ESM bundles for 54 modules in 450ms.
+                </k-timeline-item>
+                <k-timeline-item
+                  title="Canary Verification"
+                  timestamp="12:04:42 UTC"
+                  icon="clock"
+                  line-variant="dashed"
+                >
+                  Streaming synthetic checks across Tokyo, Oregon, and Frankfurt.
+                </k-timeline-item>
+                <k-timeline-item title="Production Publish" timestamp="Pending" icon="star">
+                  Awaiting final approval to tag release and publish packages.
+                </k-timeline-item>
+              </k-timeline>
+            </div>
+
+            <div class="panel-box" style="display: grid; gap: 16px; align-content: start">
+              <div class="row" style="justify-content: space-between">
+                <span class="control-group-title"
+                  >Multi-Segment Ring (&lt;k-ring-progress&gt;)</span
+                >
+                <k-switch id="ring-round-toggle" size="sm">Round Caps</k-switch>
+              </div>
+              <div class="row" style="gap: 24px; align-items: center; flex-wrap: wrap">
+                <k-ring-progress id="demo-ring-progress" size="148" thickness="14">
+                  <strong style="font-size: 20px">84%</strong>
+                  <span style="font-size: 11px; color: var(--k-color-fg-tertiary)">Quota</span>
+                </k-ring-progress>
+                <div style="display: grid; gap: 6px; font-size: 12px">
+                  <div class="row" style="gap: 8px">
+                    <span
+                      style="width: 10px; height: 10px; background: #0d9488; display: inline-block"
+                    ></span>
+                    <span>Compute — 42%</span>
+                  </div>
+                  <div class="row" style="gap: 8px">
+                    <span
+                      style="width: 10px; height: 10px; background: #3b82f6; display: inline-block"
+                    ></span>
+                    <span>Storage — 26%</span>
+                  </div>
+                  <div class="row" style="gap: 8px">
+                    <span
+                      style="width: 10px; height: 10px; background: #f59e0b; display: inline-block"
+                    ></span>
+                    <span>Network — 16%</span>
+                  </div>
+                  <output id="ring-output">Hover any ring segment to inspect.</output>
+                </div>
+              </div>
+
+              <k-separator></k-separator>
+
+              <div class="row" style="justify-content: space-between">
+                <span class="control-group-title">Chips, Indicators &amp; Keycaps</span>
+                <div class="row">
+                  <k-switch id="chip-pill-toggle" size="sm">Pill</k-switch>
+                  <k-switch id="chip-multi-toggle" checked size="sm">Multi</k-switch>
+                </div>
+              </div>
+              <k-chip-group id="demo-chip-group" multiple variant="filled" value="fluent,tokens">
+                <k-chip value="fluent">Fluent 1</k-chip>
+                <k-chip value="tokens">Design Tokens</k-chip>
+                <k-chip value="acrylic">Acrylic</k-chip>
+                <k-chip value="top-layer">Top Layer</k-chip>
+              </k-chip-group>
+              <output id="chip-output">Selected chips: fluent, tokens</output>
+
+              <div
+                class="row"
+                style="gap: 20px; align-items: center; flex-wrap: wrap; padding-top: 4px"
+              >
+                <k-indicator label="9+" variant="danger" position="top-end" with-border processing>
+                  <k-avatar alt="Ada Lovelace" variant="accent"></k-avatar>
+                </k-indicator>
+                <k-indicator
+                  variant="success"
+                  size="11"
+                  position="bottom-end"
+                  offset="2"
+                  with-border
+                  processing
+                >
+                  <k-button size="sm">Live Sync</k-button>
+                </k-indicator>
+                <div
+                  class="row"
+                  style="gap: 4px; font-size: 12px; color: var(--k-color-fg-secondary)"
+                >
+                  <span>Palette:</span>
+                  <k-kbd>⌘</k-kbd>
+                  <span>+</span>
+                  <k-kbd>K</k-kbd>
+                  <span style="margin-inline-start: 8px">Nav:</span>
+                  <k-kbd>↑</k-kbd>
+                  <k-kbd>↓</k-kbd>
+                  <k-kbd>Enter</k-kbd>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <k-drawer id="demo-drawer" placement="right" size="md" label="Surface Inspector" acrylic>
           <div style="display: grid; gap: 14px">
             <p style="margin: 0">
@@ -2260,6 +2440,13 @@
             >
               <k-icon slot="prefix" name="chevron-right"></k-icon>
               Mantine Inputs Lab
+            </k-command-item>
+            <k-command-item
+              value="jump:sec-workflows-metrics"
+              keywords="stepper wizard timeline ring progress chip indicator kbd"
+            >
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Workflows &amp; Metrics
             </k-command-item>
           </k-command-group>
           <k-command-group heading="Quick Actions">

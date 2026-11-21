@@ -31,3 +31,6 @@ export * from './data-grid/index.js';
 export * from './segmented-control/index.js';
 export * from './tags-input/index.js';
 export * from './multi-select/index.js';
+export * from './stepper/index.js';
+export * from './timeline/index.js';
+export * from './ring-progress/index.js';

@@ -24,18 +24,22 @@ import {
   type KMultiSelect,
   type KNav,
   type KPagination,
+  type KRingProgress,
   type KScrollbar,
   type KScrollView,
   type KSegmentedControl,
+  type KStepper,
   type KTable,
   type KTagsInput,
   type KTile,
   type KTileGroup,
+  type KTimeline,
   type KTimePicker,
   type KTree,
   type KTreeItem,
   type KUpload,
   type MarkerEventDetail,
+  type RingSectionHoverDetail,
   type ScrollbarVariant,
   type TileReorderDetail,
   type ToastPlacement,
@@ -49,7 +53,15 @@ import {
   type ElevationLevel,
   type KSurface,
 } from '@kerno/effects';
-import type { KInput, KPinInput, KRating, KSelect, KSlider, KSwitch } from '@kerno/primitives';
+import type {
+  KChipGroup,
+  KInput,
+  KPinInput,
+  KRating,
+  KSelect,
+  KSlider,
+  KSwitch,
+} from '@kerno/primitives';
 import { applyTheme, createTheme, darkTheme, type BuiltInThemeName } from '@kerno/tokens';
 
 // ---------------------------------------------------------------------------
@@ -557,14 +569,14 @@ table.data = [
   },
   {
     pkg: '@kerno/primitives',
-    layer: 'Atomic Controls, Textarea, NumberInput, PinInput, Rating & Avatar',
-    components: 15,
+    layer: 'Atomic Controls, PinInput, Rating, Chip, Indicator, Kbd & Avatar',
+    components: 18,
     status: 'Ready',
   },
   {
     pkg: '@kerno/components',
-    layer: 'Overlays, Feedback, Pickers, MultiSelect, Tags, Form & DataGrid',
-    components: 33,
+    layer: 'Overlays, Pickers, Stepper, Timeline, RingProgress, Form & DataGrid',
+    components: 36,
     status: 'Ready',
   },
 ];
@@ -1318,4 +1330,87 @@ demoMultiSelect?.addEventListener('k-multi-select-change', (event) => {
   if (msOut) {
     msOut.textContent = `Picked (${values.length}): ${values.join(', ') || 'none'}`;
   }
+});
+
+// ---------------------------------------------------------------------------
+// Section 15: Workflows, Timeline, RingProgress, Chips & Indicators
+// ---------------------------------------------------------------------------
+const demoStepper = document.querySelector<KStepper>('#demo-stepper');
+const stepperOut = document.querySelector<HTMLOutputElement>('#stepper-output');
+const stepperVertToggle = document.querySelector<KSwitch>('#stepper-vertical-toggle');
+const STEP_NAMES = ['Build & Lint', 'Canary Rollout', 'Global Cutover'] as const;
+
+const syncStepperOut = (): void => {
+  if (!demoStepper || !stepperOut) return;
+  const idx = demoStepper.active;
+  stepperOut.textContent =
+    idx >= STEP_NAMES.length
+      ? 'Workflow complete — all 3 stages shipped!'
+      : `Active step: ${idx + 1} / ${STEP_NAMES.length} (${STEP_NAMES[idx]})`;
+};
+
+document.querySelector('#stepper-prev-btn')?.addEventListener('click', () => {
+  if (!demoStepper) return;
+  demoStepper.active = Math.max(0, demoStepper.active - 1);
+  syncStepperOut();
+});
+document.querySelector('#stepper-next-btn')?.addEventListener('click', () => {
+  if (!demoStepper) return;
+  demoStepper.active = Math.min(STEP_NAMES.length, demoStepper.active + 1);
+  syncStepperOut();
+});
+demoStepper?.addEventListener('k-step-change', syncStepperOut);
+stepperVertToggle?.addEventListener('change', () => {
+  if (demoStepper) {
+    demoStepper.orientation = stepperVertToggle.checked ? 'vertical' : 'horizontal';
+  }
+});
+
+const demoTimeline = document.querySelector<KTimeline>('#demo-timeline');
+const timelineAlignToggle = document.querySelector<KSwitch>('#timeline-align-toggle');
+document.querySelector('#timeline-advance-btn')?.addEventListener('click', () => {
+  if (!demoTimeline) return;
+  demoTimeline.active = demoTimeline.active >= 3 ? 0 : demoTimeline.active + 1;
+});
+timelineAlignToggle?.addEventListener('change', () => {
+  if (demoTimeline) demoTimeline.align = timelineAlignToggle.checked ? 'right' : 'left';
+});
+
+const demoRing = document.querySelector<KRingProgress>('#demo-ring-progress');
+const ringRoundToggle = document.querySelector<KSwitch>('#ring-round-toggle');
+const ringOut = document.querySelector<HTMLOutputElement>('#ring-output');
+
+if (demoRing) {
+  demoRing.sections = [
+    { value: 42, color: '#0d9488', label: 'Compute' },
+    { value: 26, color: '#3b82f6', label: 'Storage' },
+    { value: 16, color: '#f59e0b', label: 'Network' },
+  ];
+  demoRing.addEventListener('k-section-hover', (event) => {
+    const { section } = (event as CustomEvent<RingSectionHoverDetail>).detail;
+    if (ringOut) {
+      ringOut.textContent = section
+        ? `${section.label}: ${section.value}% of cluster quota`
+        : 'Hover any ring segment to inspect.';
+    }
+  });
+}
+ringRoundToggle?.addEventListener('change', () => {
+  if (demoRing) demoRing.roundCaps = ringRoundToggle.checked;
+});
+
+const demoChipGroup = document.querySelector<KChipGroup>('#demo-chip-group');
+const chipPillToggle = document.querySelector<KSwitch>('#chip-pill-toggle');
+const chipMultiToggle = document.querySelector<KSwitch>('#chip-multi-toggle');
+const chipOut = document.querySelector<HTMLOutputElement>('#chip-output');
+
+chipPillToggle?.addEventListener('change', () => {
+  if (demoChipGroup) demoChipGroup.pill = chipPillToggle.checked;
+});
+chipMultiToggle?.addEventListener('change', () => {
+  if (demoChipGroup) demoChipGroup.multiple = chipMultiToggle.checked;
+});
+demoChipGroup?.addEventListener('k-chip-change', (event) => {
+  const { values } = (event as CustomEvent<{ values: string[] }>).detail;
+  if (chipOut) chipOut.textContent = `Selected chips: ${values.join(', ') || 'none'}`;
 });

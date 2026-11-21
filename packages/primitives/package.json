@@ -170,6 +170,36 @@
       "source": "./src/rating/define.ts",
       "default": "./dist/rating/define.js"
     },
+    "./kbd": {
+      "types": "./dist/kbd/index.d.ts",
+      "source": "./src/kbd/index.ts",
+      "default": "./dist/kbd/index.js"
+    },
+    "./kbd/define": {
+      "types": "./dist/kbd/define.d.ts",
+      "source": "./src/kbd/define.ts",
+      "default": "./dist/kbd/define.js"
+    },
+    "./indicator": {
+      "types": "./dist/indicator/index.d.ts",
+      "source": "./src/indicator/index.ts",
+      "default": "./dist/indicator/index.js"
+    },
+    "./indicator/define": {
+      "types": "./dist/indicator/define.d.ts",
+      "source": "./src/indicator/define.ts",
+      "default": "./dist/indicator/define.js"
+    },
+    "./chip": {
+      "types": "./dist/chip/index.d.ts",
+      "source": "./src/chip/index.ts",
+      "default": "./dist/chip/index.js"
+    },
+    "./chip/define": {
+      "types": "./dist/chip/define.d.ts",
+      "source": "./src/chip/define.ts",
+      "default": "./dist/chip/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

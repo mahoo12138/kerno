@@ -350,6 +350,36 @@
       "source": "./src/multi-select/define.ts",
       "default": "./dist/multi-select/define.js"
     },
+    "./stepper": {
+      "types": "./dist/stepper/index.d.ts",
+      "source": "./src/stepper/index.ts",
+      "default": "./dist/stepper/index.js"
+    },
+    "./stepper/define": {
+      "types": "./dist/stepper/define.d.ts",
+      "source": "./src/stepper/define.ts",
+      "default": "./dist/stepper/define.js"
+    },
+    "./timeline": {
+      "types": "./dist/timeline/index.d.ts",
+      "source": "./src/timeline/index.ts",
+      "default": "./dist/timeline/index.js"
+    },
+    "./timeline/define": {
+      "types": "./dist/timeline/define.d.ts",
+      "source": "./src/timeline/define.ts",
+      "default": "./dist/timeline/define.js"
+    },
+    "./ring-progress": {
+      "types": "./dist/ring-progress/index.d.ts",
+      "source": "./src/ring-progress/index.ts",
+      "default": "./dist/ring-progress/index.js"
+    },
+    "./ring-progress/define": {
+      "types": "./dist/ring-progress/define.d.ts",
+      "source": "./src/ring-progress/define.ts",
+      "default": "./dist/ring-progress/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

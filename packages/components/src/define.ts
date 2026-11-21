@@ -31,3 +31,6 @@ import './data-grid/define.js';
 import './segmented-control/define.js';
 import './tags-input/define.js';
 import './multi-select/define.js';
+import './stepper/define.js';
+import './timeline/define.js';
+import './ring-progress/define.js';
