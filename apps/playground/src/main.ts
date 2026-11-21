@@ -7,6 +7,8 @@ import '@kerno/components/define';
 import {
   toast,
   type CascaderOption,
+  type ColorChangeDetail,
+  type ColorFormat,
   type DataGridRowClickDetail,
   type DataGridSelectionDetail,
   type DrawerPlacement,
@@ -15,12 +17,16 @@ import {
   type KAccordion,
   type KAlert,
   type KCascader,
+  type KColorInput,
+  type KColorPicker,
   type KCommand,
+  type KCopyButton,
   type KDataGrid,
   type KDialog,
   type KDrawer,
   type KForm,
   type KList,
+  type KLoadingOverlay,
   type KMultiSelect,
   type KNav,
   type KPagination,
@@ -57,6 +63,7 @@ import type {
   KChipGroup,
   KInput,
   KPinInput,
+  KRangeSlider,
   KRating,
   KSelect,
   KSlider,
@@ -569,14 +576,14 @@ table.data = [
   },
   {
     pkg: '@kerno/primitives',
-    layer: 'Atomic Controls, PinInput, Rating, Chip, Indicator, Kbd & Avatar',
-    components: 18,
+    layer: 'Atomic Controls, PinInput, Rating, Chip, RangeSlider, Indicator & Kbd',
+    components: 19,
     status: 'Ready',
   },
   {
     pkg: '@kerno/components',
-    layer: 'Overlays, Pickers, Stepper, Timeline, RingProgress, Form & DataGrid',
-    components: 36,
+    layer: 'Overlays, Pickers, ColorPicker, Stepper, Timeline, Form & DataGrid',
+    components: 41,
     status: 'Ready',
   },
 ];
@@ -1413,4 +1420,103 @@ chipMultiToggle?.addEventListener('change', () => {
 demoChipGroup?.addEventListener('k-chip-change', (event) => {
   const { values } = (event as CustomEvent<{ values: string[] }>).detail;
   if (chipOut) chipOut.textContent = `Selected chips: ${values.join(', ') || 'none'}`;
+});
+
+// ---------------------------------------------------------------------------
+// Section 16: Color Picker, Range Slider & Interactive Utilities
+// ---------------------------------------------------------------------------
+const COLOR_SWATCHES = [
+  '#0d9488',
+  '#0078d4',
+  '#3b82f6',
+  '#6366f1',
+  '#8b5cf6',
+  '#ec4899',
+  '#ef4444',
+  '#f59e0b',
+  '#10b981',
+  '#64748b',
+];
+
+const demoColorPicker = document.querySelector<KColorPicker>('#demo-color-picker');
+const demoColorInput = document.querySelector<KColorInput>('#demo-color-input');
+const colorFormatSeg = document.querySelector<KSegmentedControl>('#color-format-seg');
+const colorPreviewBox = document.querySelector<HTMLElement>('#color-live-preview');
+const colorReadout = document.querySelector<HTMLElement>('#color-live-readout');
+
+const applyColorPreview = (detail: ColorChangeDetail): void => {
+  if (colorPreviewBox && detail.rgba) {
+    colorPreviewBox.style.borderLeftColor = detail.rgba;
+  }
+  if (colorReadout) {
+    colorReadout.textContent = detail.value || 'Cleared';
+  }
+};
+
+if (demoColorPicker) {
+  demoColorPicker.swatches = COLOR_SWATCHES;
+  demoColorPicker.addEventListener('k-color-change', (e) => {
+    const detail = (e as CustomEvent<ColorChangeDetail>).detail;
+    if (demoColorInput && demoColorInput.value !== detail.value) {
+      demoColorInput.value = detail.value;
+    }
+    applyColorPreview(detail);
+  });
+}
+
+if (demoColorInput) {
+  demoColorInput.swatches = COLOR_SWATCHES;
+  demoColorInput.addEventListener('k-color-change', (e) => {
+    const detail = (e as CustomEvent<ColorChangeDetail>).detail;
+    if (demoColorPicker && detail.value && demoColorPicker.value !== detail.value) {
+      demoColorPicker.value = detail.value;
+    }
+    applyColorPreview(detail);
+  });
+}
+
+colorFormatSeg?.addEventListener('k-change', () => {
+  const fmt = (colorFormatSeg.value || 'hex') as ColorFormat;
+  if (demoColorPicker) demoColorPicker.format = fmt;
+  if (demoColorInput) demoColorInput.format = fmt;
+  void demoColorPicker?.updateComplete.then(() => {
+    if (colorReadout && demoColorPicker) colorReadout.textContent = demoColorPicker.value;
+  });
+});
+
+const rangeLatency = document.querySelector<KRangeSlider>('#demo-range-latency');
+const rangeBudget = document.querySelector<KRangeSlider>('#demo-range-budget');
+const rangeOut = document.querySelector<HTMLOutputElement>('#range-output');
+
+if (rangeLatency) {
+  rangeLatency.marks = [
+    { value: 0, label: '0ms' },
+    { value: 100, label: '100' },
+    { value: 250, label: '250' },
+    { value: 400, label: '400' },
+    { value: 500, label: '500ms' },
+  ];
+}
+
+const syncRangeOut = (): void => {
+  if (!rangeOut) return;
+  const [l0, l1] = rangeLatency?.values ?? [0, 0];
+  const [b0, b1] = rangeBudget?.values ?? [0, 0];
+  rangeOut.textContent = `SLA: ${l0}ms – ${l1}ms · Budget: ${b0}% – ${b1}%`;
+};
+rangeLatency?.addEventListener('k-range-change', syncRangeOut);
+rangeBudget?.addEventListener('k-range-change', syncRangeOut);
+
+const demoCopyBtn = document.querySelector<KCopyButton>('#demo-copy-btn');
+demoCopyBtn?.addEventListener('k-copy', () => {
+  toast.info('Copied to Clipboard', {
+    ...currentToastOpts(),
+    description: demoCopyBtn.value,
+  });
+});
+
+const overlayToggle = document.querySelector<KSwitch>('#overlay-visible-toggle');
+const demoOverlay = document.querySelector<KLoadingOverlay>('#demo-loading-overlay');
+overlayToggle?.addEventListener('change', () => {
+  if (demoOverlay) demoOverlay.visible = overlayToggle.checked;
 });

@@ -380,6 +380,56 @@
       "source": "./src/ring-progress/define.ts",
       "default": "./dist/ring-progress/define.js"
     },
+    "./color-picker": {
+      "types": "./dist/color-picker/index.d.ts",
+      "source": "./src/color-picker/index.ts",
+      "default": "./dist/color-picker/index.js"
+    },
+    "./color-picker/define": {
+      "types": "./dist/color-picker/define.d.ts",
+      "source": "./src/color-picker/define.ts",
+      "default": "./dist/color-picker/define.js"
+    },
+    "./hover-card": {
+      "types": "./dist/hover-card/index.d.ts",
+      "source": "./src/hover-card/index.ts",
+      "default": "./dist/hover-card/index.js"
+    },
+    "./hover-card/define": {
+      "types": "./dist/hover-card/define.d.ts",
+      "source": "./src/hover-card/define.ts",
+      "default": "./dist/hover-card/define.js"
+    },
+    "./loading-overlay": {
+      "types": "./dist/loading-overlay/index.d.ts",
+      "source": "./src/loading-overlay/index.ts",
+      "default": "./dist/loading-overlay/index.js"
+    },
+    "./loading-overlay/define": {
+      "types": "./dist/loading-overlay/define.d.ts",
+      "source": "./src/loading-overlay/define.ts",
+      "default": "./dist/loading-overlay/define.js"
+    },
+    "./spoiler": {
+      "types": "./dist/spoiler/index.d.ts",
+      "source": "./src/spoiler/index.ts",
+      "default": "./dist/spoiler/index.js"
+    },
+    "./spoiler/define": {
+      "types": "./dist/spoiler/define.d.ts",
+      "source": "./src/spoiler/define.ts",
+      "default": "./dist/spoiler/define.js"
+    },
+    "./copy-button": {
+      "types": "./dist/copy-button/index.d.ts",
+      "source": "./src/copy-button/index.ts",
+      "default": "./dist/copy-button/index.js"
+    },
+    "./copy-button/define": {
+      "types": "./dist/copy-button/define.d.ts",
+      "source": "./src/copy-button/define.ts",
+      "default": "./dist/copy-button/define.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

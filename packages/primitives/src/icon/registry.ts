@@ -51,6 +51,9 @@ const BUILTIN_ICONS: Readonly<Record<string, string>> = {
   file: '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" d="M4 2.2h5.2L12.5 5.5v8.3H4V2.2z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" d="M9 2.2v3.5h3.5"/>',
   trash:
     '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.8 4.4h10.4M6 4.4V3h4v1.4M4.5 4.4l.6 8.8h5.8l.6-8.8"/>',
+  copy: '<rect x="5.5" y="5.5" width="8" height="8.5" rx="0.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M10.5 5.5V3a.8.8 0 00-.8-.8H3a.8.8 0 00-.8.8v7.2a.8.8 0 00.8.8h2.5"/>',
+  pipette:
+    '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M10.6 2.6l2.8 2.8-1.6 1.6-2.8-2.8 1.6-1.6zM9.2 4.4l2.4 2.4-5.4 5.4-3.2.8.8-3.2 5.4-5.4z"/>',
   star: '<path fill="currentColor" d="M8 1.5l1.9 4 4.4.5-3.3 3 .9 4.3L8 11.1l-3.9 2.2.9-4.3-3.3-3 4.4-.5z"/>',
 };
 

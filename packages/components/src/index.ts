@@ -34,3 +34,8 @@ export * from './multi-select/index.js';
 export * from './stepper/index.js';
 export * from './timeline/index.js';
 export * from './ring-progress/index.js';
+export * from './color-picker/index.js';
+export * from './hover-card/index.js';
+export * from './loading-overlay/index.js';
+export * from './spoiler/index.js';
+export * from './copy-button/index.js';

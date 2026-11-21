@@ -97,6 +97,10 @@
               <k-icon slot="prefix" name="check"></k-icon>
               Workflows &amp; Metrics
             </k-nav-item>
+            <k-nav-item value="color-utilities">
+              <k-icon slot="prefix" name="pipette"></k-icon>
+              Color, Range &amp; Utils
+            </k-nav-item>
           </k-nav>
         </div>
 
@@ -2348,6 +2352,222 @@
           </div>
         </section>
 
+        <!-- 16. Color Picker, Range Slider & Interactive Utilities -->
+        <section class="studio-section" id="sec-color-utilities" data-marker-label="Color & Utils">
+          <div class="section-head">
+            <h2>Color Picker, Range Slider &amp; Interactive Utilities</h2>
+            <p>
+              Zero-dependency HSVA <code>&lt;k-color-picker&gt;</code> &amp;
+              <code>&lt;k-color-input&gt;</code>, dual-thumb <code>&lt;k-range-slider&gt;</code>,
+              interactive Top-Layer <code>&lt;k-hover-card&gt;</code>, scoped Acrylic
+              <code>&lt;k-loading-overlay&gt;</code>, collapsible <code>&lt;k-spoiler&gt;</code>,
+              and clipboard <code>&lt;k-copy-button&gt;</code>.
+            </p>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel-box">
+              <div class="row" style="justify-content: space-between; flex-wrap: wrap">
+                <span class="control-group-title"
+                  >Color Picker &amp; Color Input (&lt;k-color-picker&gt;)</span
+                >
+                <k-segmented-control id="color-format-seg" size="sm" value="hex">
+                  <k-option value="hex">HEX</k-option>
+                  <k-option value="rgba">RGBA</k-option>
+                  <k-option value="hsla">HSLA</k-option>
+                </k-segmented-control>
+              </div>
+              <div class="row" style="gap: 18px; align-items: flex-start; flex-wrap: wrap">
+                <k-color-picker id="demo-color-picker" value="#0d9488"></k-color-picker>
+                <div style="display: grid; gap: 12px; flex: 1 1 200px; min-width: 190px">
+                  <k-form-field
+                    label="Accent Token Input"
+                    help="Type any HEX/RGB/HSL or open Acrylic popover"
+                  >
+                    <k-color-input
+                      id="demo-color-input"
+                      value="#0d9488"
+                      clearable
+                      acrylic
+                    ></k-color-input>
+                  </k-form-field>
+                  <div
+                    id="color-live-preview"
+                    style="
+                      padding: 12px 14px;
+                      border: 1px solid var(--k-color-stroke-default);
+                      border-left: 4px solid #0d9488;
+                      background: var(--k-color-bg-layer-alt);
+                      font-size: 12px;
+                    "
+                  >
+                    <strong>Live Swatch Preview</strong>
+                    <div
+                      id="color-live-readout"
+                      style="font-family: var(--k-font-family-mono); margin-top: 4px"
+                    >
+                      #0d9488
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-box" style="display: grid; gap: 16px; align-content: start">
+              <span class="control-group-title"
+                >Dual-Thumb Range Slider (&lt;k-range-slider&gt;)</span
+              >
+              <k-range-slider
+                id="demo-range-latency"
+                label="Latency SLA Window (min gap 30ms)"
+                min="0"
+                max="500"
+                step="10"
+                min-range="30"
+                value="60,240"
+                unit="ms"
+                show-value
+              ></k-range-slider>
+              <k-range-slider
+                id="demo-range-budget"
+                label="Compute Budget Allocation"
+                min="0"
+                max="100"
+                step="5"
+                min-range="10"
+                value="25,75"
+                unit="%"
+                show-value
+              ></k-range-slider>
+              <output id="range-output">SLA: 60ms – 240ms · Budget: 25% – 75%</output>
+
+              <k-separator></k-separator>
+
+              <div
+                class="row"
+                style="justify-content: space-between; align-items: center; flex-wrap: wrap"
+              >
+                <span class="control-group-title">Clipboard Copy (&lt;k-copy-button&gt;)</span>
+                <k-copy-button
+                  id="demo-copy-btn"
+                  value="pnpm add @kerno/components @kerno/primitives @kerno/tokens"
+                  variant="accent"
+                  size="sm"
+                  label="Copy Install"
+                  copied-label="Copied!"
+                ></k-copy-button>
+              </div>
+              <code
+                style="
+                  display: block;
+                  padding: 10px 12px;
+                  background: var(--k-color-bg-layer-alt);
+                  border: 1px solid var(--k-color-stroke-default);
+                  font-family: var(--k-font-family-mono);
+                  font-size: 12px;
+                  overflow-x: auto;
+                "
+                >pnpm add @kerno/components @kerno/primitives @kerno/tokens</code
+              >
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel-box" style="display: grid; gap: 14px; align-content: start">
+              <span class="control-group-title">Interactive HoverCard &amp; Spoiler</span>
+              <div class="row" style="gap: 12px; align-items: center; flex-wrap: wrap">
+                <span style="font-size: 13px; color: var(--k-color-fg-secondary)">Maintainer:</span>
+                <k-hover-card id="demo-hover-card" placement="top-start" acrylic open-delay="120">
+                  <k-button slot="trigger" size="sm">
+                    <k-icon slot="prefix" name="user"></k-icon>
+                    @ada-lovelace
+                  </k-button>
+                  <div style="display: grid; gap: 10px">
+                    <div class="row" style="gap: 10px; align-items: center">
+                      <k-avatar alt="Ada Lovelace" variant="accent" status="online"></k-avatar>
+                      <div>
+                        <div style="font-weight: 600">Ada Lovelace</div>
+                        <div style="font-size: 12px; color: var(--k-color-fg-tertiary)">
+                          Principal Geometry Architect
+                        </div>
+                      </div>
+                    </div>
+                    <p style="margin: 0; font-size: 12px; color: var(--k-color-fg-secondary)">
+                      Designed Kerno's parametric corner solver, Acrylic surface pipeline, and 60fps
+                      virtualized DataGrid.
+                    </p>
+                    <div class="row" style="justify-content: space-between; font-size: 11px">
+                      <k-badge variant="accent">60 Modules</k-badge>
+                      <k-badge variant="success" pill>Zero Runtime Deps</k-badge>
+                    </div>
+                  </div>
+                </k-hover-card>
+                <span style="font-size: 12px; color: var(--k-color-fg-tertiary)"
+                  >(Hover button — card stays interactive)</span
+                >
+              </div>
+
+              <k-separator></k-separator>
+
+              <k-spoiler
+                id="demo-spoiler"
+                max-height="68"
+                show-label="Read full architecture note"
+                hide-label="Collapse note"
+              >
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 13px;
+                    line-height: 1.65;
+                    color: var(--k-color-fg-secondary);
+                  "
+                >
+                  Kerno compiles 60 modular Web Components across five layered packages without a
+                  single third-party runtime dependency. Every overlay promotes cleanly into the
+                  browser's native Top Layer via Popover API, avoiding z-index stacking wars while
+                  preserving backdrop-filter Acrylic vibrancy. Every form input extends
+                  <code>FormAssociatedElement</code> so native <code>FormData</code>, constraint
+                  validation, and <code>&lt;k-form&gt;</code> orchestration work identically across
+                  shadow roots and frameworks.
+                </p>
+              </k-spoiler>
+            </div>
+
+            <div class="panel-box" style="display: grid; gap: 12px; align-content: start">
+              <div class="row" style="justify-content: space-between">
+                <span class="control-group-title"
+                  >Scoped Loading Overlay (&lt;k-loading-overlay&gt;)</span
+                >
+                <k-switch id="overlay-visible-toggle" checked size="sm">Visible</k-switch>
+              </div>
+              <div
+                style="
+                  position: relative;
+                  padding: 16px;
+                  border: 1px solid var(--k-color-stroke-default);
+                  background: var(--k-color-bg-layer-alt);
+                  display: grid;
+                  gap: 10px;
+                "
+              >
+                <k-loading-overlay
+                  id="demo-loading-overlay"
+                  visible
+                  acrylic
+                  label="Refreshing cluster metrics..."
+                ></k-loading-overlay>
+                <k-form-field label="Cluster Endpoint">
+                  <k-input value="https://api.kerno.dev/v6/telemetry"></k-input>
+                </k-form-field>
+                <div class="row" style="justify-content: flex-end">
+                  <k-button size="sm" variant="accent">Save Endpoint</k-button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <k-drawer id="demo-drawer" placement="right" size="md" label="Surface Inspector" acrylic>
           <div style="display: grid; gap: 14px">
             <p style="margin: 0">
@@ -2447,6 +2667,13 @@
             >
               <k-icon slot="prefix" name="chevron-right"></k-icon>
               Workflows &amp; Metrics
+            </k-command-item>
+            <k-command-item
+              value="jump:sec-color-utilities"
+              keywords="color picker input range slider hover card loading overlay spoiler copy"
+            >
+              <k-icon slot="prefix" name="chevron-right"></k-icon>
+              Color, Range &amp; Utils
             </k-command-item>
           </k-command-group>
           <k-command-group heading="Quick Actions">

@@ -18,3 +18,4 @@ export * from './rating/index.js';
 export * from './kbd/index.js';
 export * from './indicator/index.js';
 export * from './chip/index.js';
+export * from './range-slider/index.js';

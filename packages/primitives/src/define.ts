@@ -17,3 +17,4 @@ import './rating/define.js';
 import './kbd/define.js';
 import './indicator/define.js';
 import './chip/define.js';
+import './range-slider/define.js';

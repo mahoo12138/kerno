@@ -34,3 +34,8 @@ import './multi-select/define.js';
 import './stepper/define.js';
 import './timeline/define.js';
 import './ring-progress/define.js';
+import './color-picker/define.js';
+import './hover-card/define.js';
+import './loading-overlay/define.js';
+import './spoiler/define.js';
+import './copy-button/define.js';
