@@ -61,14 +61,32 @@ async function bundleEntry(entryPath, { externalizeWorkspace = true } = {}) {
   });
 
   const outputs = Array.isArray(result) ? result : [result];
-  let combined = '';
+  const chunks = new Map();
   for (const out of outputs) {
     if (!('output' in out)) continue;
     for (const chunk of out.output) {
-      if (chunk.type === 'chunk') combined += chunk.code;
+      if (chunk.type === 'chunk') chunks.set(chunk.fileName, chunk);
     }
   }
-  return measureBuffer(Buffer.from(combined, 'utf8'));
+
+  // Initial footprint: entry chunks plus everything they import statically. Chunks only
+  // reachable through a dynamic `import()` load on demand and are reported as `lazyGzip`.
+  const eager = new Set();
+  const queue = [...chunks.values()].filter((c) => c.isEntry).map((c) => c.fileName);
+  while (queue.length > 0) {
+    const fileName = queue.pop();
+    if (eager.has(fileName) || !chunks.has(fileName)) continue;
+    eager.add(fileName);
+    queue.push(...chunks.get(fileName).imports);
+  }
+  let eagerCode = '';
+  let lazyCode = '';
+  for (const [fileName, chunk] of chunks) {
+    if (eager.has(fileName)) eagerCode += chunk.code;
+    else lazyCode += chunk.code;
+  }
+  const lazyGzip = lazyCode ? measureBuffer(Buffer.from(lazyCode, 'utf8')).gzip : 0;
+  return { ...measureBuffer(Buffer.from(eagerCode, 'utf8')), lazyGzip };
 }
 
 async function runBatched(items, concurrency, worker) {
@@ -206,11 +224,11 @@ async function main() {
     '',
     '## Standalone Single-Component Footprint (All Deps Bundled)',
     '',
-    '| Entry | Raw | Gzip | Brotli | Gzip Budget | Status |',
-    '| --- | ---: | ---: | ---: | ---: | :---: |',
+    '| Entry | Raw | Gzip | Brotli | Lazy Gzip | Gzip Budget | Status |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | :---: |',
     ...standaloneResults.map(
       (r) =>
-        `| \`${r.name}\` | ${formatKb(r.raw)} | **${formatKb(r.gzip)}** | ${formatKb(r.brotli)} | ${r.budget ? formatKb(r.budget) : '—'} | ${r.pass ? '✅' : '❌'} |`,
+        `| \`${r.name}\` | ${formatKb(r.raw)} | **${formatKb(r.gzip)}** | ${formatKb(r.brotli)} | ${r.lazyGzip ? formatKb(r.lazyGzip) : '—'} | ${r.budget ? formatKb(r.budget) : '—'} | ${r.pass ? '✅' : '❌'} |`,
     ),
   ];
 
@@ -272,6 +290,7 @@ async function main() {
       Raw: formatKb(r.raw),
       Gzip: formatKb(r.gzip),
       Brotli: formatKb(r.brotli),
+      Lazy: r.lazyGzip ? formatKb(r.lazyGzip) : '—',
       Budget: r.budget ? formatKb(r.budget) : '—',
       Status: r.pass ? 'PASS' : 'FAIL',
     })),

@@ -4,7 +4,7 @@
     "@kerno/tokens": 5120,
     "@kerno/tokens/tokens.css": 3072,
     "@kerno/tokens/base.css": 1024,
-    "@kerno/core": 7168,
+    "@kerno/core": 10240,
     "@kerno/effects": 28672,
     "@kerno/primitives": 40960,
     "@kerno/components": 138240
