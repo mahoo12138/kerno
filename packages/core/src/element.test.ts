@@ -201,3 +201,80 @@ describe('focus utilities', () => {
     expect(getActiveElement()?.id).toBe('inner-1');
   });
 });
+
+describe('update scheduling', () => {
+  it('keeps requestUpdate() calls made during update() and updated()', async () => {
+    const name = tag('follow-up');
+    class FollowUp extends KernoElement {
+      external = 0;
+      rendered = -1;
+      cycles = 0;
+
+      protected override update(): void {
+        this.cycles++;
+        this.rendered = this.external;
+        // Non-reactive data changed while rendering: ask for another pass.
+        if (this.external === 1) {
+          this.external = 2;
+          this.requestUpdate();
+        }
+      }
+
+      protected override updated(): void {
+        if (this.external === 2 && this.rendered === 2) {
+          this.external = 3;
+          this.requestUpdate();
+        }
+      }
+    }
+    define(name, FollowUp);
+
+    const el = mount<FollowUp>(`<${name}></${name}>`);
+    await el.updateComplete;
+    const initialCycles = el.cycles;
+
+    el.external = 1;
+    el.requestUpdate();
+    await el.updateComplete;
+
+    // Previously the cycle requested from update() was dropped and `rendered` stayed 1.
+    expect(el.rendered).toBe(3);
+    expect(el.cycles).toBe(initialCycles + 3);
+  });
+});
+
+describe('initial render', () => {
+  it('stamps the template even when the shadow root already holds nodes', async () => {
+    const name = tag('prefilled');
+    class Prefilled extends KernoElement {
+      static override template = '<span class="stamped"></span>';
+
+      constructor() {
+        super();
+        // What the `<style>` fallback does where constructable stylesheets are unsupported.
+        this.renderRoot.append(document.createElement('style'));
+      }
+    }
+    define(name, Prefilled);
+
+    const el = mount<Prefilled>(`<${name}></${name}>`);
+    await el.updateComplete;
+    expect(el.renderRoot.querySelector('.stamped')).not.toBeNull();
+  });
+
+  it('reuses a declarative shadow root instead of stamping the template', async () => {
+    const name = tag('hydrated');
+    class Hydrated extends KernoElement {
+      static override template = '<span class="stamped"></span>';
+    }
+    define(name, Hydrated);
+
+    document.body.setHTMLUnsafe(`
+      <${name}><template shadowrootmode="open"><span class="ssr"></span></template></${name}>
+    `);
+    const el = document.body.querySelector(name) as Hydrated;
+    await el.updateComplete;
+    expect(el.renderRoot.querySelector('.ssr')).not.toBeNull();
+    expect(el.renderRoot.querySelector('.stamped')).toBeNull();
+  });
+});

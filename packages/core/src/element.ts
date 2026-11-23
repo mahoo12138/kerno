@@ -75,13 +75,17 @@ export abstract class KernoElement extends HTMLElementBase implements ReactiveCo
   #controllers = new Set<ReactiveController>();
   #reflectingAttribute: string | null = null;
   #updateDone: { promise: Promise<void>; resolve: () => void } | null = null;
+  /** The shadow root came from declarative shadow DOM (SSR) and already holds the markup. */
+  #hydrated = false;
 
   constructor() {
     super();
     const ctor = this.constructor as typeof KernoElement;
     this.internals = this.attachInternals();
     // Reuse a declarative shadow root rendered on the server, if any.
-    this.renderRoot = this.internals.shadowRoot ?? this.attachShadow(ctor.shadowRootOptions);
+    const declarative = this.internals.shadowRoot;
+    this.#hydrated = declarative !== null;
+    this.renderRoot = declarative ?? this.attachShadow(ctor.shadowRootOptions);
     adoptStyles(this.renderRoot, ctor.styles);
     this.requestUpdate();
   }
@@ -179,7 +183,10 @@ export abstract class KernoElement extends HTMLElementBase implements ReactiveCo
 
   #setUp(): void {
     this.#isSetUp = true;
-    if (!this.renderRoot.hasChildNodes()) {
+    // Stamp the template unless the markup came from the server. Don't test for child
+    // nodes: where constructable stylesheets are unsupported, the fallback `<style>`
+    // elements are already in the root at this point.
+    if (!this.#hydrated) {
       const content = this.render();
       if (content) this.renderRoot.append(content);
     }
@@ -203,12 +210,16 @@ export abstract class KernoElement extends HTMLElementBase implements ReactiveCo
     // The first update waits for connection so the DOM is in place.
     if (!this.#hasUpdated && !this.#isSetUp) return;
 
+    let committed = false;
     try {
       this.willUpdate(this.#changed);
       // Changes made in willUpdate are folded into this cycle.
       const changed = this.#changed;
       this.#changed = new Map();
+      // From here on, any `requestUpdate()` — with or without a property name —
+      // schedules a fresh cycle instead of being folded into (or lost from) this one.
       this.#updatePending = false;
+      committed = true;
 
       for (const c of this.#controllers) c.hostUpdate?.();
       this.#reflect(changed);
@@ -219,10 +230,16 @@ export abstract class KernoElement extends HTMLElementBase implements ReactiveCo
       }
       for (const c of this.#controllers) c.hostUpdated?.();
       this.updated(changed);
+    } catch (error) {
+      // A throwing `willUpdate` must not leave the element stuck as pending.
+      if (!committed) {
+        this.#changed = new Map();
+        this.#updatePending = false;
+      }
+      throw error;
     } finally {
-      this.#updatePending = false;
-      if (this.#changed.size > 0) this.requestUpdate();
-      else {
+      // Settle `updateComplete` only once no follow-up cycle has been queued.
+      if (!this.#updatePending) {
         this.#updateDone?.resolve();
         this.#updateDone = null;
       }

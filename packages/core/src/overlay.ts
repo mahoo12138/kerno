@@ -1,4 +1,5 @@
 import { isServer } from './env.js';
+import { isComposing } from './events.js';
 import { getActiveElement, getTabbableElements } from './focus.js';
 
 export type Placement =
@@ -119,9 +120,35 @@ export function computeFloatingPosition(
   };
 }
 
+interface Positioner {
+  measure(): FloatingCoords;
+  apply(coords: FloatingCoords): void;
+}
+
+const pendingPositioners = new Set<Positioner>();
+let positionFrame: number | null = null;
+
+/** Repositions every scheduled overlay: all reads first, then all writes (one layout pass). */
+function flushPositions(): void {
+  positionFrame = null;
+  const batch = [...pendingPositioners];
+  pendingPositioners.clear();
+  const coords = batch.map((p) => p.measure());
+  batch.forEach((p, i) => p.apply(coords[i]!));
+}
+
+function schedulePosition(positioner: Positioner): void {
+  pendingPositioners.add(positioner);
+  positionFrame ??= requestAnimationFrame(flushPositions);
+}
+
 /**
  * Positions `floating` (`position: fixed`) relative to `anchor` and keeps it
- * synchronized on scroll/resize until the returned cleanup function is called.
+ * synchronized until the returned cleanup function is called.
+ *
+ * Scroll and resize updates are coalesced into one animation frame shared by
+ * every open overlay, so several overlays or nested scrollers never force a
+ * layout per event. Size changes (ResizeObserver) apply immediately.
  */
 export function autoPosition(
   anchor: Element,
@@ -131,37 +158,49 @@ export function autoPosition(
 ): () => void {
   if (isServer) return () => {};
 
-  const update = (): void => {
-    const a = anchor.getBoundingClientRect();
-    const f = floating.getBoundingClientRect();
-    const coords = computeFloatingPosition(
-      { x: a.left, y: a.top, width: a.width, height: a.height },
-      { width: f.width || floating.offsetWidth, height: f.height || floating.offsetHeight },
-      { width: window.innerWidth, height: window.innerHeight },
-      options,
-    );
-    floating.style.position = 'fixed';
-    floating.style.left = `${coords.x}px`;
-    floating.style.top = `${coords.y}px`;
-    floating.dataset.placement = coords.placement;
-    onUpdate?.(coords);
+  const positioner: Positioner = {
+    measure() {
+      const a = anchor.getBoundingClientRect();
+      const f = floating.getBoundingClientRect();
+      return computeFloatingPosition(
+        { x: a.left, y: a.top, width: a.width, height: a.height },
+        { width: f.width || floating.offsetWidth, height: f.height || floating.offsetHeight },
+        { width: window.innerWidth, height: window.innerHeight },
+        options,
+      );
+    },
+    apply(coords) {
+      floating.style.position = 'fixed';
+      floating.style.left = `${coords.x}px`;
+      floating.style.top = `${coords.y}px`;
+      floating.dataset.placement = coords.placement;
+      onUpdate?.(coords);
+    },
   };
+  const update = (): void => positioner.apply(positioner.measure());
+  const schedule = (): void => schedulePosition(positioner);
 
   update();
-  window.addEventListener('resize', update, { passive: true });
-  window.addEventListener('scroll', update, { capture: true, passive: true });
+  window.addEventListener('resize', schedule, { passive: true });
+  window.addEventListener('scroll', schedule, { capture: true, passive: true });
 
   let ro: ResizeObserver | null = null;
   if (typeof ResizeObserver === 'function') {
+    // Observations arrive once per frame, after layout: apply them right away.
     ro = new ResizeObserver(update);
     ro.observe(anchor);
     ro.observe(floating);
   }
 
   return () => {
-    window.removeEventListener('resize', update);
-    window.removeEventListener('scroll', update, { capture: true });
+    window.removeEventListener('resize', schedule);
+    window.removeEventListener('scroll', schedule, { capture: true });
     ro?.disconnect();
+    pendingPositioners.delete(positioner);
+    if (pendingPositioners.size === 0 && positionFrame !== null) {
+      cancelAnimationFrame(positionFrame);
+      positionFrame = null;
+    }
   };
 }
 
@@ -235,7 +274,8 @@ interface ActiveOverlay extends OverlayConfig {
 class OverlayManager {
   #stack: ActiveOverlay[] = [];
   #listening = false;
-  #savedOverflow: string | null = null;
+  /** Inline styles replaced while page scrolling is locked; `null` when unlocked. */
+  #scrollLock: { overflow: string; paddingRight: string } | null = null;
 
   get stack(): readonly OverlayConfig[] {
     return this.#stack;
@@ -328,23 +368,47 @@ class OverlayManager {
   #syncScrollLock(): void {
     if (isServer) return;
     const shouldLock = this.#stack.some((e) => e.lockScroll);
-    if (shouldLock && this.#savedOverflow === null) {
-      this.#savedOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-    } else if (!shouldLock && this.#savedOverflow !== null) {
-      document.body.style.overflow = this.#savedOverflow;
-      this.#savedOverflow = null;
+    if (shouldLock && !this.#scrollLock) this.#lockScroll();
+    else if (!shouldLock && this.#scrollLock) this.#unlockScroll();
+  }
+
+  #lockScroll(): void {
+    const { body, documentElement: root } = document;
+    if (!body) return;
+    // Hiding the page scrollbar widens the viewport; pad the body so content doesn't shift.
+    // With `scrollbar-gutter: stable` the gutter stays reserved and nothing shifts.
+    const gutter = getComputedStyle(root).getPropertyValue('scrollbar-gutter');
+    const gap = gutter.includes('stable') ? 0 : Math.max(0, window.innerWidth - root.clientWidth);
+    this.#scrollLock = { overflow: body.style.overflow, paddingRight: body.style.paddingRight };
+    if (gap > 0) {
+      const padding = Number.parseFloat(getComputedStyle(body).paddingRight) || 0;
+      body.style.paddingRight = `${padding + gap}px`;
     }
+    // Lets fixed-position UI compensate too, e.g. `right: var(--k-scrollbar-width, 0px)`.
+    root.style.setProperty('--k-scrollbar-width', `${gap}px`);
+    body.style.overflow = 'hidden';
+  }
+
+  #unlockScroll(): void {
+    const saved = this.#scrollLock;
+    this.#scrollLock = null;
+    if (!saved) return;
+    document.body.style.overflow = saved.overflow;
+    document.body.style.paddingRight = saved.paddingRight;
+    document.documentElement.style.removeProperty('--k-scrollbar-width');
   }
 
   #onKeyDown = (event: KeyboardEvent): void => {
     const top = this.#stack[this.#stack.length - 1];
-    if (!top) return;
+    // Escape/Tab during IME composition belong to the input method, not the overlay.
+    if (!top || isComposing(event)) return;
 
-    if (event.key === 'Escape' && top.closeOnEscape !== false) {
+    if (event.key === 'Escape') {
+      // Only claim Escape when it closes something; otherwise the page should still see it.
+      if (top.closeOnEscape === false || !top.onRequestClose) return;
       event.preventDefault();
       event.stopPropagation();
-      top.onRequestClose?.('escape');
+      top.onRequestClose('escape');
       return;
     }
 
@@ -387,4 +451,17 @@ class OverlayManager {
   };
 }
 
-export const overlayManager = new OverlayManager();
+/**
+ * Versioned by the manager's protocol, not the package version: every copy of
+ * `@kerno/core` on a page (e.g. two Kerno versions in different bundles) shares
+ * one stack, so Escape closes one layer at a time and only one set of document
+ * listeners exists.
+ */
+const OVERLAY_MANAGER_KEY = Symbol.for('kerno.overlay-manager.v1');
+
+function sharedOverlayManager(): OverlayManager {
+  const registry = globalThis as unknown as Record<symbol, OverlayManager | undefined>;
+  return (registry[OVERLAY_MANAGER_KEY] ??= new OverlayManager());
+}
+
+export const overlayManager: OverlayManager = sharedOverlayManager();

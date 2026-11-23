@@ -16,8 +16,26 @@ export {
 } from './properties.js';
 export { css, unsafeCSS, adoptStyles, KernoCSS, type CSSInput, type CSSValue } from './styles.js';
 export { define } from './define.js';
-export { emit, type EmitOptions } from './events.js';
+export { emit, isComposing, type EmitOptions } from './events.js';
+export {
+  AriaForwardingController,
+  type AriaForwardingConfig,
+  type AriaForwardingHost,
+} from './aria.js';
 export { FormAssociatedElement } from './form.js';
+export {
+  LocalizeController,
+  en,
+  registerLocale,
+  resolveLang,
+  setLabels,
+  translate,
+  type KernoLocale,
+  type KernoMessages,
+  type LabelEntry,
+  type MessageArgs,
+  type MessageKey,
+} from './i18n.js';
 export { uniqueId, isTabbable, getTabbableElements, getActiveElement } from './focus.js';
 export {
   overlayManager,

@@ -1,5 +1,40 @@
 import { prop, state } from './decorators.js';
 import { KernoElement } from './element.js';
+import { LocalizeController } from './i18n.js';
+
+/** Input types that block implicit submission when a form has no submit button (HTML spec). */
+const BLOCKING_INPUT_TYPES = new Set([
+  'text',
+  'search',
+  'url',
+  'tel',
+  'email',
+  'password',
+  'date',
+  'month',
+  'week',
+  'time',
+  'datetime-local',
+  'number',
+]);
+
+function isSubmitButton(el: Element): el is HTMLElement {
+  if (el instanceof HTMLButtonElement) return el.type === 'submit';
+  if (el instanceof HTMLInputElement) return el.type === 'submit' || el.type === 'image';
+  const ctor = el.constructor as { formAssociated?: boolean };
+  return ctor.formAssociated === true && (el as Element & { type?: unknown }).type === 'submit';
+}
+
+function isDisabledSubmitButton(el: HTMLElement): boolean {
+  const maybe = el as HTMLElement & { isDisabled?: boolean; disabled?: boolean };
+  return Boolean(maybe.isDisabled) || Boolean(maybe.disabled) || el.matches(':disabled');
+}
+
+function blocksImplicitSubmission(el: Element): boolean {
+  if (el instanceof HTMLInputElement) return BLOCKING_INPUT_TYPES.has(el.type);
+  const ctor = el.constructor as { blocksImplicitSubmission?: boolean };
+  return ctor.blocksImplicitSubmission === true;
+}
 
 /**
  * Base for form-associated controls, built on `ElementInternals`.
@@ -12,6 +47,13 @@ import { KernoElement } from './element.js';
 export abstract class FormAssociatedElement extends KernoElement {
   static readonly formAssociated = true;
 
+  /**
+   * Whether the control counts as a "field that blocks implicit submission",
+   * like a native text `<input>`: a form without a submit button is only
+   * submitted by Enter when it has at most one such field.
+   */
+  static readonly blocksImplicitSubmission: boolean = false;
+
   @prop({ reflect: true }) accessor name = '';
   @prop({ type: Boolean, reflect: true }) accessor disabled = false;
   @prop({ type: Boolean, reflect: true }) accessor required = false;
@@ -20,6 +62,9 @@ export abstract class FormAssociatedElement extends KernoElement {
   @state() protected accessor formDisabled = false;
 
   #interacted = false;
+
+  /** Localized messages in the control's language (see `LocalizeController`). */
+  protected readonly localize = new LocalizeController(this);
 
   constructor() {
     super();
@@ -85,13 +130,36 @@ export abstract class FormAssociatedElement extends KernoElement {
   ): void {
     const hasError = Object.values(flags).some(Boolean);
     if (hasError) {
-      this.internals.setValidity(flags, message || 'Invalid value', anchor);
+      this.internals.setValidity(flags, message || this.localize.term('invalidValue'), anchor);
     } else {
       this.internals.setValidity({});
     }
     if (this.#interacted || !hasError) {
       this.toggleAttribute('data-user-invalid', hasError);
     }
+  }
+
+  /**
+   * Runs HTML implicit submission for the owning form — what pressing Enter in
+   * a native text field does. Activates the form's default (first) submit
+   * button unless it is disabled; without one, submits the form only when it
+   * has at most one field that blocks implicit submission.
+   *
+   * The browser never submits a form on Enter from an `<input>` inside a shadow
+   * root, so text-entry controls call this from their Enter handler.
+   */
+  protected submitImplicitly(): void {
+    const form = this.form;
+    if (!form) return;
+    let blockingFields = 0;
+    for (const el of form.elements) {
+      if (isSubmitButton(el)) {
+        if (!isDisabledSubmitButton(el)) el.click();
+        return;
+      }
+      if (blocksImplicitSubmission(el)) blockingFields++;
+    }
+    if (blockingFields <= 1) form.requestSubmit();
   }
 
   /** Called by the browser when the disabled state of an ancestor fieldset changes. */

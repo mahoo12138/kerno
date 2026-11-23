@@ -31,3 +31,16 @@ export function emit<T = undefined>(
     }),
   );
 }
+
+/**
+ * Whether a key event belongs to an IME composition (picking a Chinese,
+ * Japanese or Korean candidate). Key handlers must ignore such events: Enter
+ * confirms the candidate and Escape cancels it — neither is meant for the
+ * component.
+ *
+ * `keyCode === 229` covers Safari, which reports the confirming keydown after
+ * `compositionend` with `isComposing === false`.
+ */
+export function isComposing(event: KeyboardEvent): boolean {
+  return event.isComposing || event.keyCode === 229;
+}

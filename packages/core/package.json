@@ -31,6 +31,11 @@
       "source": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./locales/zh-CN": {
+      "types": "./dist/locales/zh-CN.d.ts",
+      "source": "./src/locales/zh-CN.ts",
+      "default": "./dist/locales/zh-CN.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

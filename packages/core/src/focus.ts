@@ -1,8 +1,14 @@
-let idCounter = 0;
+const ID_COUNTER_KEY = Symbol.for('kerno.unique-id.v1');
+
+/** Shared by every copy of `@kerno/core` on the page, so generated ids never collide. */
+function idCounter(): { value: number } {
+  const registry = globalThis as unknown as Record<symbol, { value: number } | undefined>;
+  return (registry[ID_COUNTER_KEY] ??= { value: 0 });
+}
 
 /** Document-unique id, e.g. for `aria-labelledby` wiring. */
 export function uniqueId(prefix = 'k'): string {
-  return `${prefix}-${(++idCounter).toString(36)}`;
+  return `${prefix}-${(++idCounter().value).toString(36)}`;
 }
 
 const FOCUSABLE = [

@@ -1,11 +1,13 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  autoPosition,
   computeFloatingPosition,
   enterTopLayer,
   exitTopLayer,
   overlayManager,
   supportsPopoverApi,
+  uniqueId,
 } from './index.js';
 
 afterEach(() => {
@@ -116,5 +118,96 @@ describe('overlayManager', () => {
       exitTopLayer(el);
       expect(el.matches(':popover-open')).toBe(false);
     }
+  });
+});
+
+describe('overlayManager hardening', () => {
+  it('lets Escape through when the top overlay does not close on it', () => {
+    document.body.innerHTML = '<div id="sticky"></div><div id="passive"></div>';
+    const seen: boolean[] = [];
+    const onKey = (event: KeyboardEvent): void => {
+      seen.push(event.defaultPrevented);
+    };
+    document.addEventListener('keydown', onKey);
+    const escape = (): void => {
+      const init = { key: 'Escape', bubbles: true, cancelable: true };
+      document.body.dispatchEvent(new KeyboardEvent('keydown', init));
+    };
+
+    const onSticky = vi.fn();
+    const sticky = document.getElementById('sticky')!;
+    overlayManager.add({
+      id: 'sticky',
+      content: sticky,
+      closeOnEscape: false,
+      onRequestClose: onSticky,
+    });
+    // No close handler at all: nothing to close, so Escape must not be swallowed.
+    overlayManager.add({ id: 'passive', content: document.getElementById('passive')! });
+    escape();
+    overlayManager.remove('passive', false);
+    escape();
+    document.removeEventListener('keydown', onKey);
+
+    expect(seen).toEqual([false, false]);
+    expect(onSticky).not.toHaveBeenCalled();
+  });
+
+  it('compensates for the scrollbar it hides and restores inline styles', () => {
+    document.body.innerHTML = '<div style="height: 3000px"></div><div id="panel"></div>';
+    document.body.style.paddingRight = '3px';
+    const root = document.documentElement;
+    const gap = window.innerWidth - root.clientWidth;
+
+    const panel = document.getElementById('panel')!;
+    overlayManager.add({ id: 'lock', content: panel, lockScroll: true });
+    expect(document.body.style.overflow).toBe('hidden');
+    expect(root.style.getPropertyValue('--k-scrollbar-width')).toBe(`${gap}px`);
+    if (gap > 0) expect(document.body.style.paddingRight).toBe(`${3 + gap}px`);
+
+    overlayManager.remove('lock', false);
+    expect(document.body.style.overflow).toBe('');
+    expect(document.body.style.paddingRight).toBe('3px');
+    expect(root.style.getPropertyValue('--k-scrollbar-width')).toBe('');
+    document.body.style.paddingRight = '';
+  });
+
+  it('is shared through globalThis with other copies of @kerno/core', () => {
+    expect(Reflect.get(globalThis, Symbol.for('kerno.overlay-manager.v1'))).toBe(overlayManager);
+    const id = uniqueId('shared');
+    expect(id).toMatch(/^shared-/);
+    const counter = Reflect.get(globalThis, Symbol.for('kerno.unique-id.v1')) as
+      { value: number } | undefined;
+    expect(counter).toEqual({ value: expect.any(Number) });
+    const before = counter!.value;
+    uniqueId('shared');
+    expect(counter!.value).toBe(before + 1);
+  });
+});
+
+describe('autoPosition', () => {
+  it('repositions after scrolling in the next animation frame', async () => {
+    document.body.innerHTML = `
+      <div id="scroller" style="height: 100px; overflow: auto">
+        <div style="height: 1000px; padding-top: 50px"><button id="anchor">Anchor</button></div>
+      </div>
+      <div id="floating" style="width: 40px; height: 20px"></div>
+    `;
+    const scroller = document.getElementById('scroller')!;
+    const anchor = document.getElementById('anchor')!;
+    const floating = document.getElementById('floating')!;
+    const options = { placement: 'bottom-start', offset: 0, flip: false, shift: false } as const;
+    const stop = autoPosition(anchor, floating, options);
+    const bottom = (): number => Math.round(anchor.getBoundingClientRect().bottom);
+    expect(Number.parseFloat(floating.style.top)).toBe(bottom());
+
+    const before = floating.style.top;
+    scroller.scrollTop = 30;
+    scroller.dispatchEvent(new Event('scroll'));
+    expect(floating.style.top).toBe(before);
+
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(Number.parseFloat(floating.style.top)).toBe(bottom());
+    stop();
   });
 });
