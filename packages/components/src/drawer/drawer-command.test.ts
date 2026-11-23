@@ -37,7 +37,7 @@ describe('<k-drawer>', () => {
     await drawer.updateComplete;
     expect(drawer.open).toBe(true);
     expect(onOpen).toHaveBeenCalledOnce();
-    expect(drawer.shadowRoot!.querySelector('.panel')!.getAttribute('aria-modal')).toBe('true');
+    expect(drawer.shadowRoot!.querySelector('dialog')!.matches(':modal')).toBe(true);
 
     // Prevent first Escape close
     let block = true;

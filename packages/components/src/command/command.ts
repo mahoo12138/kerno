@@ -1,16 +1,17 @@
 import {
+  AriaForwardingController,
   KernoElement,
+  LocalizeController,
   emit,
-  enterTopLayer,
-  exitTopLayer,
+  isComposing,
   isServer,
-  overlayManager,
   prop,
+  setLabels,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
-import { fadeIn, fadeOut, scaleIn, scaleOut, type MotionHandle } from '@kerno/effects/motion';
 import { getIcon } from '@kerno/primitives/icon';
+import { NativeDialogController } from '../dialog/native-dialog.js';
 import { commandGroupStyles, commandItemStyles, commandStyles } from './command.styles.js';
 
 export interface CommandSelectDetail {
@@ -210,19 +211,21 @@ export class KCommandGroup extends KernoElement {
 
 /**
  * Keyboard-first Command Palette (`Cmd/Ctrl + K`) with fuzzy filtering,
- * auto-hiding groups, Top-Layer modal presentation, optional Acrylic surface,
- * and inline embedding mode.
+ * auto-hiding groups, native modal `<dialog>` presentation, optional Acrylic
+ * surface, and inline embedding mode.
  *
  * @tag k-command
  *
  * @slot - `<k-command-group>` and `<k-command-item>` elements.
  *
- * @csspart backdrop - Modal backdrop (hidden when `inline`).
- * @csspart panel - Command palette surface (`role="dialog"` in modal mode).
+ * @csspart dialog - The native `<dialog>` hosting the palette in modal mode.
+ * @csspart panel - Command palette surface.
  * @csspart input - Search `<input role="combobox">`.
  * @csspart list - Scrollable listbox container.
  * @csspart empty - Empty search results message.
  * @csspart footer - Keyboard hint footer.
+ *
+ * @cssprop --k-command-backdrop-bg - Background of the modal backdrop (`::backdrop`).
  *
  * @fires k-command-select - Fired when a command item is selected (`{ value, item }`).
  * @fires k-open - Fired when the modal palette opens.
@@ -230,13 +233,14 @@ export class KCommandGroup extends KernoElement {
  */
 export class KCommand extends KernoElement {
   static override styles = commandStyles;
-  static override template = /* html */ `<div class="overlay"><div part="backdrop" class="backdrop" aria-hidden="true"></div><div part="panel" class="panel" tabindex="-1"><div class="search-row"><span class="search-icon" aria-hidden="true"></span><input part="input" class="search-input" type="text" role="combobox" aria-autocomplete="list" aria-expanded="true" autocomplete="off" spellcheck="false" /><span class="esc-hint" aria-hidden="true">Esc</span></div><div part="list" class="list" role="listbox"><slot></slot><div part="empty" class="empty" hidden></div></div><div part="footer" class="footer"><span class="footer-keys"><span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span><span><kbd>↵</kbd> Run</span></span><span class="footer-count"></span></div></div></div>`;
+  static override template = /* html */ `<dialog part="dialog" class="dialog"><div part="panel" class="panel"><div class="search-row"><span class="search-icon" aria-hidden="true"></span><input part="input" class="search-input" type="text" role="combobox" aria-autocomplete="list" aria-expanded="true" autocomplete="off" spellcheck="false" autofocus /><span class="esc-hint" aria-hidden="true">Esc</span></div><div part="list" class="list" role="listbox"><slot></slot><div part="empty" class="empty" hidden></div></div><div part="footer" class="footer"><span class="footer-keys"><span><kbd>↑</kbd><kbd>↓</kbd> <span class="navigate-hint">Navigate</span></span><span><kbd>↵</kbd> <span class="run-hint">Run</span></span></span><span class="footer-count"></span></div></div></dialog>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ type: Boolean, reflect: true }) accessor open = false;
-  /** Embeds the command palette directly in document flow without Top-Layer modal chrome. */
+  /** Embeds the command palette directly in document flow without modal chrome. */
   @prop({ type: Boolean, reflect: true }) accessor inline = false;
-  @prop({ reflect: true }) accessor placeholder = 'Type a command or search...';
-  @prop({ attribute: 'empty-text', reflect: true }) accessor emptyText = 'No matching commands.';
+  @prop({ reflect: true }) accessor placeholder = '';
+  @prop({ attribute: 'empty-text', reflect: true }) accessor emptyText = '';
   @prop({ reflect: true }) accessor value = '';
   /** Optional global keyboard shortcut that toggles the palette (e.g. `"mod+k"`). */
   @prop({ reflect: true }) accessor shortcut = '';
@@ -247,11 +251,9 @@ export class KCommand extends KernoElement {
   /** Custom filter/scorer function; defaults to built-in fuzzy subsequence matcher. */
   filter: CommandFilter = defaultCommandFilter;
 
-  readonly #overlayId = uniqueId('k-command');
   readonly #listId = uniqueId('k-command-list');
 
-  #overlay!: HTMLDivElement;
-  #backdrop!: HTMLDivElement;
+  #dialog!: HTMLDialogElement;
   #panel!: HTMLDivElement;
   #searchIcon!: HTMLSpanElement;
   #input!: HTMLInputElement;
@@ -260,11 +262,31 @@ export class KCommand extends KernoElement {
   #countEl!: HTMLSpanElement;
   #slot!: HTMLSlotElement;
 
-  #wasOpen = false;
-  #exitAnims: MotionHandle[] = [];
   #activeItem: KCommandItem | null = null;
   #parsedShortcut: ParsedShortcut | null = null;
   #shortcutListening = false;
+
+  readonly #native = new NativeDialogController(this, {
+    getDialog: () => this.#dialog,
+    closeOnEscape: () => true,
+    closeOnBackdrop: () => true,
+    onRequestClose: () => {
+      this.open = false;
+    },
+    onForcedClose: () => {
+      this.open = false;
+      this.#afterClose();
+    },
+  });
+
+  constructor() {
+    super();
+    // In modal mode the dialog is named by the placeholder, unless the host has its own name.
+    new AriaForwardingController(this, {
+      getTarget: () => (this.inline ? null : this.#dialog),
+      getFallbackLabel: () => this.#placeholder(),
+    });
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -274,10 +296,6 @@ export class KCommand extends KernoElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.#removeGlobalShortcut();
-    this.#cancelExit();
-    exitTopLayer(this.#overlay);
-    overlayManager.remove(this.#overlayId, false);
-    this.#wasOpen = false;
   }
 
   show(): void {
@@ -293,8 +311,7 @@ export class KCommand extends KernoElement {
   }
 
   protected override setup(): void {
-    this.#overlay = this.renderRoot.querySelector('.overlay') as HTMLDivElement;
-    this.#backdrop = this.renderRoot.querySelector('.backdrop') as HTMLDivElement;
+    this.#dialog = this.renderRoot.querySelector('.dialog') as HTMLDialogElement;
     this.#panel = this.renderRoot.querySelector('.panel') as HTMLDivElement;
     this.#searchIcon = this.renderRoot.querySelector('.search-icon') as HTMLSpanElement;
     this.#input = this.renderRoot.querySelector('.search-input') as HTMLInputElement;
@@ -334,51 +351,35 @@ export class KCommand extends KernoElement {
   }
 
   protected override update(changed: PropertyValues): void {
-    this.#input.placeholder = this.placeholder;
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [
+      ['.navigate-hint', this.#localize.term('navigateHint'), 'text'],
+      ['.run-hint', this.#localize.term('runHint'), 'text'],
+    ]);
+    this.#input.placeholder = this.#placeholder();
     if (this.#input.value !== this.value) {
       this.#input.value = this.value;
     }
-    this.#emptyEl.textContent = this.emptyText;
+    this.#emptyEl.textContent = this.emptyText || this.#localize.term('noCommands');
 
     if (changed.has('shortcut') || changed.has('inline')) {
       this.#syncGlobalShortcut();
     }
 
+    // Inline palettes live in the shadow root's flow; modal ones inside the <dialog>.
+    this.#input.autofocus = !this.inline;
+    const parent = this.inline ? this.renderRoot : this.#dialog;
+    if (this.#panel.parentNode !== parent) parent.append(this.#panel);
+
+    const transition = this.#native.sync(this.open && !this.inline ? 'modal' : null);
+
     if (this.inline) {
-      this.#panel.removeAttribute('role');
-      this.#panel.removeAttribute('aria-modal');
-      if (this.#wasOpen) {
-        this.#wasOpen = false;
-        overlayManager.remove(this.#overlayId, false);
-        exitTopLayer(this.#overlay);
-      }
       this.#applyFilter();
       return;
     }
 
-    this.#panel.setAttribute('role', 'dialog');
-    this.#panel.setAttribute('aria-modal', 'true');
-    this.#panel.setAttribute('aria-label', this.placeholder);
-
-    if (this.open && !this.#wasOpen) {
-      this.#wasOpen = true;
-      this.#cancelExit();
-      enterTopLayer(this.#overlay);
-      overlayManager.add({
-        id: this.#overlayId,
-        content: this.#panel,
-        trapFocus: true,
-        lockScroll: true,
-        restoreFocus: true,
-        closeOnEscape: true,
-        closeOnOutsideClick: true,
-        onRequestClose: () => {
-          this.open = false;
-        },
-      });
+    if (transition === 'opened') {
       this.#applyFilter();
-      fadeIn(this.#backdrop);
-      scaleIn(this.#panel);
       queueMicrotask(() => {
         if (this.open && this.isConnected) {
           this.#input.focus();
@@ -386,14 +387,23 @@ export class KCommand extends KernoElement {
         }
       });
       emit(this, 'k-open');
-    } else if (!this.open && this.#wasOpen) {
-      this.#wasOpen = false;
-      overlayManager.remove(this.#overlayId);
-      emit(this, 'k-close');
-      this.#playExit();
-    } else if (changed.has('value')) {
+    } else if (transition === 'closed') {
+      this.#afterClose();
+    } else if (changed.has('value') || (this.open && changed.size === 0)) {
       this.#applyFilter();
     }
+  }
+
+  #placeholder(): string {
+    return this.placeholder || this.#localize.term('commandPlaceholder');
+  }
+
+  #afterClose(): void {
+    emit(this, 'k-close');
+    // Clear the query once the exit transition has played, so the list doesn't jump mid-fade.
+    void this.#native.settled().then(() => {
+      if (!this.open) this.value = '';
+    });
   }
 
   #allItems(): KCommandItem[] {
@@ -425,7 +435,7 @@ export class KCommand extends KernoElement {
     }
 
     this.#emptyEl.hidden = visibleCount > 0;
-    this.#countEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'command' : 'commands'}`;
+    this.#countEl.textContent = this.#localize.term('commandCount', visibleCount);
 
     const enabled = this.#visibleEnabledItems();
     if (this.#activeItem && enabled.includes(this.#activeItem)) {
@@ -462,6 +472,7 @@ export class KCommand extends KernoElement {
   }
 
   #onInputKeyDown(event: KeyboardEvent): void {
+    if (isComposing(event)) return;
     const enabled = this.#visibleEnabledItems();
     if (enabled.length === 0) return;
 
@@ -489,28 +500,6 @@ export class KCommand extends KernoElement {
     }
   }
 
-  #playExit(): void {
-    this.#overlay.classList.add('closing');
-    const anims: MotionHandle[] = [
-      scaleOut(this.#panel, { duration: 'fast' }),
-      fadeOut(this.#backdrop, { duration: 'fast' }),
-    ];
-    this.#exitAnims = anims;
-    void Promise.all(anims.map((a) => a.finished)).then(() => {
-      if (this.open) return;
-      this.#overlay.classList.remove('closing');
-      exitTopLayer(this.#overlay);
-      this.#exitAnims = [];
-      this.value = '';
-    });
-  }
-
-  #cancelExit(): void {
-    for (const anim of this.#exitAnims) anim.cancel();
-    this.#exitAnims = [];
-    this.#overlay?.classList.remove('closing');
-  }
-
   #syncGlobalShortcut(): void {
     if (isServer) return;
     this.#parsedShortcut = !this.inline && this.shortcut ? parseShortcut(this.shortcut) : null;
@@ -529,7 +518,7 @@ export class KCommand extends KernoElement {
   }
 
   #onGlobalKeyDown = (event: KeyboardEvent): void => {
-    if (event.defaultPrevented || !this.#parsedShortcut) return;
+    if (event.defaultPrevented || isComposing(event) || !this.#parsedShortcut) return;
     if (!matchesShortcut(event, this.#parsedShortcut)) return;
     event.preventDefault();
     this.toggle();

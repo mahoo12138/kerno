@@ -1,6 +1,12 @@
 import { css } from '@kerno/core';
 import { token } from '@kerno/tokens';
 
+const enter = `${token('motion.duration.slow')} ${token('motion.easing.decelerate')}`;
+const fade = `${token('motion.duration.normal')} ${token('motion.easing.decelerate')}`;
+const exitDuration = token('motion.duration.normal');
+const exitEasing = token('motion.easing.accelerate');
+const border = `1px solid var(--k-drawer-border-color, ${token('color.stroke.control')})`;
+
 /**
  * Public customization surface for `<k-drawer>`:
  *
@@ -13,12 +19,37 @@ import { token } from '@kerno/tokens';
  * Styled after Windows 10 Fluent 1 SplitView / Flyout Panel:
  * - Edge-flush sharp `0px` geometry with `1px` crisp inner border
  * - Supports `right | left | top | bottom` placements & Acrylic glass
+ *
+ * The slide is a CSS transition on the native `<dialog>` (`@starting-style` +
+ * `transition-behavior: allow-discrete`); browsers without discrete
+ * transitions skip the exit slide.
  */
 export const drawerStyles = css`
   :host {
     --_size: 440px;
+    --_from: translate3d(100%, 0, 0);
 
     display: contents;
+  }
+
+  :host(:dir(rtl)) {
+    --_from: translate3d(-100%, 0, 0);
+  }
+
+  :host([placement='left']) {
+    --_from: translate3d(-100%, 0, 0);
+  }
+
+  :host([placement='left']:dir(rtl)) {
+    --_from: translate3d(100%, 0, 0);
+  }
+
+  :host([placement='top']) {
+    --_from: translate3d(0, -100%, 0);
+  }
+
+  :host([placement='bottom']) {
+    --_from: translate3d(0, 100%, 0);
   }
 
   :host([size='sm']) {
@@ -33,102 +64,95 @@ export const drawerStyles = css`
     --_size: 100%;
   }
 
-  :host(:not([open])) .overlay:not(.closing) {
-    display: none;
-  }
-
-  .overlay {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    max-width: none;
-    max-height: none;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    overflow: hidden;
-    z-index: ${token('zIndex.modal')};
-    display: flex;
-    box-sizing: border-box;
-  }
-
-  .overlay.closing {
-    pointer-events: none;
-  }
-
-  :host([placement='right']) .overlay,
-  :host(:not([placement])) .overlay {
-    justify-content: flex-end;
-    align-items: stretch;
-  }
-
-  :host([placement='left']) .overlay {
-    justify-content: flex-start;
-    align-items: stretch;
-  }
-
-  :host([placement='top']) .overlay {
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-  }
-
-  :host([placement='bottom']) .overlay {
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: stretch;
-  }
-
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    background: var(--k-drawer-backdrop-bg, rgba(0, 0, 0, 0.45));
-  }
-
-  :host(:not([modal])) .backdrop {
-    display: none;
-  }
-
   .panel {
-    position: relative;
-    z-index: 1;
+    position: fixed;
+    inset-block: 0;
+    inset-inline: auto 0;
+    z-index: ${token('zIndex.modal')};
     box-sizing: border-box;
-    display: flex;
     flex-direction: column;
     width: var(--k-drawer-size, var(--_size));
     max-width: 100vw;
     height: 100%;
+    max-height: 100vh;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-inline-start: ${border};
     border-radius: 0px;
-    border-inline-start: 1px solid var(--k-drawer-border-color, ${token('color.stroke.control')});
     background: var(--k-drawer-bg, ${token('color.bg.layer')});
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
     box-shadow: ${token('elevation.5')};
     overflow: hidden;
+    transform: none;
+    transition:
+      transform ${enter},
+      overlay ${enter} allow-discrete,
+      display ${enter} allow-discrete;
+  }
+
+  /* Author rules beat the UA rule dialog:not([open]), so state both states explicitly. */
+  .panel[open] {
+    display: flex;
+  }
+
+  .panel:not([open]) {
+    display: none;
+    transform: var(--_from);
+    transition-duration: ${exitDuration};
+    transition-timing-function: ${exitEasing};
+  }
+
+  @starting-style {
+    .panel[open] {
+      transform: var(--_from);
+    }
+  }
+
+  .panel::backdrop {
+    background: var(--k-drawer-backdrop-bg, ${token('color.backdrop')});
+    opacity: 1;
+    transition:
+      opacity ${fade},
+      overlay ${fade} allow-discrete,
+      display ${fade} allow-discrete;
+  }
+
+  .panel:not([open])::backdrop {
+    opacity: 0;
+    transition-duration: ${token('motion.duration.fast')};
+    transition-timing-function: ${exitEasing};
+  }
+
+  @starting-style {
+    .panel[open]::backdrop {
+      opacity: 0;
+    }
   }
 
   :host([placement='left']) .panel {
+    inset-inline: 0 auto;
     border-inline-start: none;
-    border-inline-end: 1px solid var(--k-drawer-border-color, ${token('color.stroke.control')});
+    border-inline-end: ${border};
   }
 
   :host([placement='top']) .panel,
   :host([placement='bottom']) .panel {
+    inset-inline: 0;
     width: 100%;
     height: var(--k-drawer-size, var(--_size));
-    max-height: 100vh;
     border-inline-start: none;
   }
 
   :host([placement='top']) .panel {
-    border-block-end: 1px solid var(--k-drawer-border-color, ${token('color.stroke.control')});
+    inset-block: 0 auto;
+    border-block-end: ${border};
   }
 
   :host([placement='bottom']) .panel {
-    border-block-start: 1px solid var(--k-drawer-border-color, ${token('color.stroke.control')});
+    inset-block: auto 0;
+    border-block-start: ${border};
   }
 
   :host([acrylic]) .panel {
@@ -169,6 +193,7 @@ export const drawerStyles = css`
     justify-content: center;
     width: 28px;
     height: 28px;
+    border-radius: ${token('shape.radius.control')};
     color: ${token('color.fg.secondary')};
     cursor: pointer;
     flex-shrink: 0;
@@ -218,5 +243,11 @@ export const drawerStyles = css`
 
   .footer:not(.has-content) {
     display: none;
+  }
+
+  @media (forced-colors: active) {
+    .panel {
+      border-color: CanvasText;
+    }
   }
 `;

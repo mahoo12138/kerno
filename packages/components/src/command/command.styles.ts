@@ -1,6 +1,10 @@
 import { css } from '@kerno/core';
 import { token } from '@kerno/tokens';
 
+const enter = `${token('motion.duration.normal')} ${token('motion.easing.decelerate')}`;
+const exitDuration = token('motion.duration.fast');
+const exitEasing = token('motion.easing.accelerate');
+
 /**
  * Public customization surface for `<k-command>`:
  *
@@ -23,52 +27,73 @@ export const commandStyles = css`
     display: block;
   }
 
-  :host(:not([inline]):not([open])) .overlay:not(.closing) {
-    display: none;
-  }
-
-  .overlay {
+  .dialog {
     position: fixed;
     inset: 0;
-    width: 100vw;
-    height: 100vh;
-    max-width: none;
+    z-index: ${token('zIndex.modal')};
+    box-sizing: border-box;
+    width: var(--k-command-width, 560px);
+    max-width: calc(100vw - 2 * ${token('spacing.lg')});
+    height: fit-content;
     max-height: none;
-    margin: 0;
+    margin: clamp(48px, 14vh, 140px) auto auto;
+    padding: 0;
     border: 0;
     background: transparent;
     color: inherit;
     overflow: visible;
-    z-index: ${token('zIndex.modal')};
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: clamp(48px, 14vh, 140px) ${token('spacing.lg')} ${token('spacing.xl')};
-    box-sizing: border-box;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity ${enter},
+      transform ${enter},
+      overlay ${enter} allow-discrete,
+      display ${enter} allow-discrete;
   }
 
-  :host([inline]) .overlay {
-    position: relative;
-    inset: auto;
-    width: auto;
-    height: auto;
-    padding: 0;
+  /* Author rules beat the UA rule dialog:not([open]), so state both states explicitly. */
+  .dialog[open] {
     display: block;
-    z-index: auto;
   }
 
-  .overlay.closing {
-    pointer-events: none;
-  }
-
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    background: var(--k-command-backdrop-bg, rgba(0, 0, 0, 0.48));
-  }
-
-  :host([inline]) .backdrop {
+  .dialog:not([open]) {
     display: none;
+    opacity: 0;
+    transform: scale(0.95);
+    transition-duration: ${exitDuration};
+    transition-timing-function: ${exitEasing};
+  }
+
+  @starting-style {
+    .dialog[open] {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+
+  .dialog::backdrop {
+    background: var(--k-command-backdrop-bg, ${token('color.backdrop')});
+    opacity: 1;
+    transition:
+      opacity ${enter},
+      overlay ${enter} allow-discrete,
+      display ${enter} allow-discrete;
+  }
+
+  .dialog:not([open])::backdrop {
+    opacity: 0;
+    transition-duration: ${exitDuration};
+    transition-timing-function: ${exitEasing};
+  }
+
+  @starting-style {
+    .dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  .dialog:focus {
+    outline: none;
   }
 
   .panel {
@@ -77,10 +102,9 @@ export const commandStyles = css`
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    width: var(--k-command-width, 560px);
-    max-width: 100%;
+    width: 100%;
     max-height: var(--k-command-max-height, min(460px, 70vh));
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.overlay')};
     border: 1px solid var(--k-command-border-color, ${token('color.stroke.control')});
     background: var(--k-command-bg, ${token('color.bg.layer')});
     color: ${token('color.fg.default')};
@@ -163,7 +187,7 @@ export const commandStyles = css`
     background: ${token('color.bg.layerAlt')};
     color: ${token('color.fg.tertiary')};
     font-family: ${token('font.family.mono')};
-    font-size: 11px;
+    font-size: ${token('font.size.2xs')};
     line-height: 1.3;
     flex-shrink: 0;
   }
@@ -213,7 +237,7 @@ export const commandStyles = css`
     border: 1px solid ${token('color.stroke.control')};
     background: ${token('color.bg.layer')};
     font-family: ${token('font.family.mono')};
-    font-size: 11px;
+    font-size: ${token('font.size.2xs')};
     color: ${token('color.fg.secondary')};
   }
 `;
@@ -230,7 +254,7 @@ export const commandGroupStyles = css`
   .heading {
     padding: 8px ${token('spacing.md')} 4px;
     font-family: ${token('font.family.sans')};
-    font-size: 11px;
+    font-size: ${token('font.size.2xs')};
     font-weight: ${token('font.weight.semibold')};
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -376,7 +400,7 @@ export const commandItemStyles = css`
     background: ${token('color.bg.layerAlt')};
     color: ${token('color.fg.secondary')};
     font-family: ${token('font.family.mono')};
-    font-size: 11px;
+    font-size: ${token('font.size.2xs')};
     line-height: 1.35;
   }
 `;

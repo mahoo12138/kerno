@@ -1,15 +1,14 @@
 import {
+  AriaForwardingController,
   KernoElement,
+  LocalizeController,
   emit,
-  enterTopLayer,
-  exitTopLayer,
-  overlayManager,
   prop,
-  uniqueId,
+  setLabels,
   type PropertyValues,
 } from '@kerno/core';
-import { animate, fadeIn, fadeOut, type MotionHandle } from '@kerno/effects/motion';
 import { getIcon } from '@kerno/primitives/icon';
+import { NativeDialogController } from '../dialog/native-dialog.js';
 import { drawerStyles } from './drawer.styles.js';
 
 export type DrawerPlacement = 'right' | 'left' | 'top' | 'bottom';
@@ -20,17 +19,13 @@ export interface DrawerRequestCloseDetail {
   source: DrawerCloseSource;
 }
 
-const ENTER_FROM: Record<DrawerPlacement, string> = {
-  right: 'translate3d(100%, 0, 0)',
-  left: 'translate3d(-100%, 0, 0)',
-  top: 'translate3d(0, -100%, 0)',
-  bottom: 'translate3d(0, 100%, 0)',
-};
-
 /**
- * Edge-anchored slide-over drawer coordinated by `overlayManager` and browser
- * Top Layer (`enterTopLayer`) with focus trapping, scroll locking, directional
- * motion, and optional Acrylic frosted glass.
+ * Edge-anchored slide-over drawer built on the native `<dialog>` element.
+ *
+ * Modal drawers open with `showModal()` (top layer, inert page, focus
+ * restored on close); `overlayManager` coordinates Escape with nested Kerno
+ * overlays and locks page scrolling. The slide motion is a CSS transition
+ * driven by motion tokens. `right` / `left` follow the writing direction.
  *
  * @tag k-drawer
  *
@@ -38,13 +33,18 @@ const ENTER_FROM: Record<DrawerPlacement, string> = {
  * @slot header - Optional rich header (overrides `label`).
  * @slot footer - Bottom action row.
  *
- * @csspart backdrop - Modal backdrop overlay.
- * @csspart panel - Slide-over panel (`role="dialog"`).
+ * @csspart panel - The native `<dialog>` element.
  * @csspart header - Header bar.
  * @csspart title - Heading element.
  * @csspart close-button - Dismiss button.
  * @csspart body - Scrollable body area.
  * @csspart footer - Footer container.
+ *
+ * @cssprop --k-drawer-size
+ * @cssprop --k-drawer-bg
+ * @cssprop --k-drawer-backdrop-bg - Background of the modal backdrop (`::backdrop`).
+ * @cssprop --k-drawer-padding
+ * @cssprop --k-drawer-border-color
  *
  * @fires k-open - Fired when the drawer opens.
  * @fires k-close - Fired when the drawer closes.
@@ -52,7 +52,8 @@ const ENTER_FROM: Record<DrawerPlacement, string> = {
  */
 export class KDrawer extends KernoElement {
   static override styles = drawerStyles;
-  static override template = /* html */ `<div class="overlay"><div part="backdrop" class="backdrop" aria-hidden="true"></div><div part="panel" class="panel" role="dialog" tabindex="-1"><header part="header" class="header"><h2 part="title" class="title"><slot name="header"></slot><span class="title-fallback"></span></h2><button part="close-button" class="close-btn" type="button" aria-label="Close"></button></header><div part="body" class="body"><slot></slot></div><footer part="footer" class="footer"><slot name="footer"></slot></footer></div></div>`;
+  static override template = /* html */ `<dialog part="panel" class="panel"><header part="header" class="header"><h2 part="title" class="title" id="title"><slot name="header"></slot><span class="title-fallback"></span></h2><button part="close-button" class="close-btn" type="button" aria-label="Close"></button></header><div part="body" class="body"><slot></slot></div><footer part="footer" class="footer"><slot name="footer"></slot></footer></dialog>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ type: Boolean, reflect: true }) accessor open = false;
   @prop({ reflect: true }) accessor placement: DrawerPlacement = 'right';
@@ -65,25 +66,28 @@ export class KDrawer extends KernoElement {
   @prop({ type: Boolean, attribute: 'close-on-backdrop', reflect: true })
   accessor closeOnBackdrop = true;
 
-  readonly #overlayId = uniqueId('k-drawer');
-  readonly #titleId = uniqueId('k-drawer-title');
-
-  #overlay!: HTMLDivElement;
-  #backdrop!: HTMLDivElement;
-  #panel!: HTMLDivElement;
-  #titleEl!: HTMLHeadingElement;
+  #panel!: HTMLDialogElement;
   #titleFallback!: HTMLSpanElement;
-  #closeBtn!: HTMLButtonElement;
   #headerSlot!: HTMLSlotElement;
-  #wasOpen = false;
-  #exitAnims: MotionHandle[] = [];
 
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this.#cancelExit();
-    exitTopLayer(this.#overlay);
-    overlayManager.remove(this.#overlayId, false);
-    this.#wasOpen = false;
+  readonly #native = new NativeDialogController(this, {
+    getDialog: () => this.#panel,
+    closeOnEscape: () => this.closeOnEscape,
+    closeOnBackdrop: () => this.closeOnBackdrop,
+    onRequestClose: (source) => this.#requestClose(source),
+    onForcedClose: () => {
+      this.open = false;
+      emit(this, 'k-close');
+    },
+  });
+
+  constructor() {
+    super();
+    // Host aria-label / aria-labelledby / aria-describedby override the visible title.
+    new AriaForwardingController(this, {
+      getTarget: () => this.#panel,
+      getInternalLabelId: () => (this.#hasTitle() ? 'title' : null),
+    });
   }
 
   show(): void {
@@ -95,22 +99,17 @@ export class KDrawer extends KernoElement {
   }
 
   protected override setup(): void {
-    this.#overlay = this.renderRoot.querySelector('.overlay') as HTMLDivElement;
-    this.#backdrop = this.renderRoot.querySelector('.backdrop') as HTMLDivElement;
-    this.#panel = this.renderRoot.querySelector('.panel') as HTMLDivElement;
-    this.#titleEl = this.renderRoot.querySelector('.title') as HTMLHeadingElement;
+    this.#panel = this.renderRoot.querySelector('.panel') as HTMLDialogElement;
     this.#titleFallback = this.renderRoot.querySelector('.title-fallback') as HTMLSpanElement;
-    this.#closeBtn = this.renderRoot.querySelector('.close-btn') as HTMLButtonElement;
     this.#headerSlot = this.renderRoot.querySelector('slot[name="header"]') as HTMLSlotElement;
+    const closeBtn = this.renderRoot.querySelector('.close-btn') as HTMLButtonElement;
 
-    this.#titleEl.id = this.#titleId;
-    this.#panel.setAttribute('aria-labelledby', this.#titleId);
-    this.#closeBtn.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true">${getIcon('close') ?? ''}</svg>`;
-
-    this.#closeBtn.addEventListener('click', () => this.#requestClose('close-button'));
+    closeBtn.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true">${getIcon('close') ?? ''}</svg>`;
+    closeBtn.addEventListener('click', () => this.#requestClose('close-button'));
 
     this.#headerSlot.addEventListener('slotchange', () => {
       this.#titleFallback.hidden = this.#headerSlot.assignedNodes().length > 0;
+      this.requestUpdate();
     });
 
     const footerSlot = this.renderRoot.querySelector('slot[name="footer"]') as HTMLSlotElement;
@@ -125,76 +124,17 @@ export class KDrawer extends KernoElement {
   }
 
   protected override update(_changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [['.close-btn', this.#localize.term('close')]]);
     this.#titleFallback.textContent = this.label;
-    this.#panel.setAttribute('aria-modal', this.modal ? 'true' : 'false');
-
-    if (this.open && !this.#wasOpen) {
-      this.#wasOpen = true;
-      this.#cancelExit();
-      enterTopLayer(this.#overlay);
-      overlayManager.add({
-        id: this.#overlayId,
-        content: this.#panel,
-        trapFocus: this.modal,
-        lockScroll: this.modal,
-        restoreFocus: true,
-        closeOnEscape: this.closeOnEscape,
-        closeOnOutsideClick: this.closeOnBackdrop,
-        onRequestClose: (reason) => {
-          this.#requestClose(reason === 'escape' ? 'escape' : 'backdrop');
-        },
-      });
-      if (this.modal) fadeIn(this.#backdrop);
-      this.#playEnter();
-      emit(this, 'k-open');
-    } else if (!this.open && this.#wasOpen) {
-      this.#wasOpen = false;
-      overlayManager.remove(this.#overlayId);
-      emit(this, 'k-close');
-      this.#playExit();
-    } else if (this.open && this.#wasOpen) {
-      overlayManager.update(this.#overlayId, {
-        trapFocus: this.modal,
-        lockScroll: this.modal,
-        closeOnEscape: this.closeOnEscape,
-        closeOnOutsideClick: this.closeOnBackdrop,
-      });
-    }
+    const transition = this.#native.sync(this.open ? (this.modal ? 'modal' : 'non-modal') : null);
+    if (transition === 'opened') emit(this, 'k-open');
+    else if (transition === 'closed') emit(this, 'k-close');
   }
 
-  #playEnter(): void {
-    const from = ENTER_FROM[this.placement] ?? ENTER_FROM.right;
-    animate(this.#panel, [{ transform: from }, { transform: 'translate3d(0, 0, 0)' }], {
-      id: 'drawer-slide',
-      duration: 'slow',
-      easing: 'decelerate',
-    });
-  }
-
-  #playExit(): void {
-    const to = ENTER_FROM[this.placement] ?? ENTER_FROM.right;
-    this.#overlay.classList.add('closing');
-    const anims: MotionHandle[] = [
-      animate(this.#panel, [{ transform: 'translate3d(0, 0, 0)' }, { transform: to }], {
-        id: 'drawer-slide',
-        duration: 'normal',
-        easing: 'accelerate',
-      }),
-    ];
-    if (this.modal) anims.push(fadeOut(this.#backdrop, { duration: 'fast' }));
-    this.#exitAnims = anims;
-    void Promise.all(anims.map((a) => a.finished)).then(() => {
-      if (this.open) return;
-      this.#overlay.classList.remove('closing');
-      exitTopLayer(this.#overlay);
-      this.#exitAnims = [];
-    });
-  }
-
-  #cancelExit(): void {
-    for (const anim of this.#exitAnims) anim.cancel();
-    this.#exitAnims = [];
-    this.#overlay?.classList.remove('closing');
+  #hasTitle(): boolean {
+    if (this.label.trim().length > 0) return true;
+    return (this.#headerSlot?.assignedNodes().length ?? 0) > 0;
   }
 
   #requestClose(source: DrawerCloseSource): void {

@@ -1,6 +1,10 @@
 import { css } from '@kerno/core';
 import { token } from '@kerno/tokens';
 
+const enter = `${token('motion.duration.normal')} ${token('motion.easing.decelerate')}`;
+const exitDuration = token('motion.duration.fast');
+const exitEasing = token('motion.easing.accelerate');
+
 /**
  * Public customization surface for `<k-dialog>`:
  *
@@ -10,66 +14,84 @@ import { token } from '@kerno/tokens';
  * --k-dialog-bg
  * --k-dialog-backdrop-bg
  * --k-dialog-padding
+ *
+ * Entry/exit motion uses CSS transitions on the native `<dialog>` and its
+ * `::backdrop` (`@starting-style` + `transition-behavior: allow-discrete`).
+ * Durations come from motion tokens, which `prefers-reduced-motion` collapses
+ * to 0. Browsers without discrete transitions simply skip the exit animation.
  */
 export const dialogStyles = css`
   :host {
     display: contents;
   }
 
-  :host(:not([open])) .overlay:not(.closing) {
-    display: none;
-  }
-
-  .overlay {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    max-width: none;
-    max-height: none;
-    margin: 0;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    overflow: visible;
-    z-index: ${token('zIndex.modal')};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: ${token('spacing.xl')};
-    box-sizing: border-box;
-  }
-
-  .overlay.closing {
-    pointer-events: none;
-  }
-
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    background: var(--k-dialog-backdrop-bg, rgba(0, 0, 0, 0.45));
-  }
-
-  :host(:not([modal])) .backdrop {
-    display: none;
-  }
-
   .panel {
-    position: relative;
-    z-index: 1;
+    position: fixed;
+    inset: 0;
+    z-index: ${token('zIndex.modal')};
     box-sizing: border-box;
-    display: flex;
     flex-direction: column;
     width: var(--k-dialog-width, 480px);
     max-width: var(--k-dialog-max-width, calc(100vw - 32px));
+    height: fit-content;
     max-height: calc(100vh - 48px);
-    border-radius: var(--k-dialog-radius, ${token('radius.lg')});
+    margin: auto;
+    padding: 0;
+    border-radius: var(--k-dialog-radius, ${token('shape.radius.overlay')});
     border: ${token('control.borderWidth')} solid ${token('color.stroke.default')};
     background: var(--k-dialog-bg, ${token('color.bg.layer')});
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
     box-shadow: ${token('elevation.5')};
     overflow: hidden;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity ${enter},
+      transform ${enter},
+      overlay ${enter} allow-discrete,
+      display ${enter} allow-discrete;
+  }
+
+  /* Author rules beat the UA rule dialog:not([open]), so state both states explicitly. */
+  .panel[open] {
+    display: flex;
+  }
+
+  .panel:not([open]) {
+    display: none;
+    opacity: 0;
+    transform: scale(0.95);
+    transition-duration: ${exitDuration};
+    transition-timing-function: ${exitEasing};
+  }
+
+  @starting-style {
+    .panel[open] {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+
+  .panel::backdrop {
+    background: var(--k-dialog-backdrop-bg, ${token('color.backdrop')});
+    opacity: 1;
+    transition:
+      opacity ${enter},
+      overlay ${enter} allow-discrete,
+      display ${enter} allow-discrete;
+  }
+
+  .panel:not([open])::backdrop {
+    opacity: 0;
+    transition-duration: ${exitDuration};
+    transition-timing-function: ${exitEasing};
+  }
+
+  @starting-style {
+    .panel[open]::backdrop {
+      opacity: 0;
+    }
   }
 
   :host([acrylic]) .panel {
@@ -108,7 +130,7 @@ export const dialogStyles = css`
     justify-content: center;
     width: 28px;
     height: 28px;
-    border-radius: ${token('radius.md')};
+    border-radius: ${token('shape.radius.control')};
     color: ${token('color.fg.secondary')};
     cursor: pointer;
     flex-shrink: 0;
@@ -150,5 +172,11 @@ export const dialogStyles = css`
 
   .footer:not(.has-content) {
     display: none;
+  }
+
+  @media (forced-colors: active) {
+    .panel {
+      border-color: CanvasText;
+    }
   }
 `;
