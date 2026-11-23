@@ -33,7 +33,7 @@ export const avatarStyles = css`
 
   :host([size='xs']) {
     --_size: 24px;
-    --_font-size: 0.6875rem;
+    --_font-size: ${token('font.size.2xs')};
     --_status-size: 7px;
   }
 
@@ -208,13 +208,13 @@ export const avatarGroupStyles = css`
 
   :host([size='xs']) {
     --_group-size: 24px;
-    --_group-font-size: 0.625rem;
+    --_group-font-size: ${token('font.size.3xs')};
     --k-avatar-size: 24px;
   }
 
   :host([size='sm']) {
     --_group-size: 28px;
-    --_group-font-size: 0.6875rem;
+    --_group-font-size: ${token('font.size.2xs')};
     --k-avatar-size: 28px;
   }
 

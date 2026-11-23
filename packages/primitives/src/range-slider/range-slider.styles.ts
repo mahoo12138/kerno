@@ -67,7 +67,7 @@ export const rangeSliderStyles = css`
     width: 100%;
     height: var(--_track-h);
     background: ${token('color.stroke.control')};
-    border-radius: 9999px;
+    border-radius: ${token('radius.full')};
   }
 
   .fill {
@@ -75,7 +75,7 @@ export const rangeSliderStyles = css`
     top: 0;
     bottom: 0;
     background: ${token('color.accent.default')};
-    border-radius: 9999px;
+    border-radius: ${token('radius.full')};
     pointer-events: none;
     transition: background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
@@ -91,7 +91,7 @@ export const rangeSliderStyles = css`
     box-sizing: border-box;
     width: var(--_thumb);
     height: var(--_thumb);
-    border-radius: 9999px;
+    border-radius: ${token('radius.full')};
     border: 2px solid ${token('color.accent.default')};
     background: ${token('color.bg.layer')};
     box-shadow: ${token('elevation.1')};
@@ -108,7 +108,7 @@ export const rangeSliderStyles = css`
     content: '';
     position: absolute;
     inset: 3px;
-    border-radius: 9999px;
+    border-radius: ${token('radius.full')};
     background: ${token('color.accent.default')};
     transition:
       transform ${token('motion.duration.fast')} ${token('motion.easing.standard')},
@@ -150,7 +150,7 @@ export const rangeSliderStyles = css`
     border: 1px solid ${token('color.stroke.control')};
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.mono')};
-    font-size: 11px;
+    font-size: ${token('font.size.2xs')};
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     pointer-events: none;
@@ -183,7 +183,7 @@ export const rangeSliderStyles = css`
     top: 0;
     transform: translateX(-50%);
     font-family: ${token('font.family.mono')};
-    font-size: 10px;
+    font-size: ${token('font.size.3xs')};
     color: ${token('color.fg.tertiary')};
     white-space: nowrap;
     user-select: none;

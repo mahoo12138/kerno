@@ -1,4 +1,11 @@
-import { FormAssociatedElement, emit, prop, type PropertyValues } from '@kerno/core';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  emit,
+  isComposing,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
 import { pinInputStyles } from './pin-input.styles.js';
 
 export type PinInputType = 'number' | 'alphanumeric';
@@ -34,13 +41,22 @@ export class KPinInput extends FormAssociatedElement {
   @prop({ reflect: true }) accessor placeholder = '○';
   @prop({ reflect: true }) accessor size: PinInputSize = 'md';
   @prop({ type: Boolean, reflect: true }) accessor readonly = false;
-  @prop({ reflect: true }) accessor label = 'Verification code';
+  @prop({ reflect: true }) accessor label = '';
 
   #group!: HTMLDivElement;
   #cells: HTMLInputElement[] = [];
   #chars: string[] = [];
   #defaultValue = '';
   #defaultCaptured = false;
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, {
+      getTarget: () => this.#group,
+      getFallbackLabel: () => this.label || this.localize.term('verificationCode'),
+    });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -70,7 +86,6 @@ export class KPinInput extends FormAssociatedElement {
 
   protected override update(changed: PropertyValues): void {
     const count = this.#normalizedLength();
-    this.#group.setAttribute('aria-label', this.label || 'Verification code');
 
     if (changed.has('length') || this.#cells.length !== count) {
       this.#rebuildCells(count);
@@ -79,6 +94,14 @@ export class KPinInput extends FormAssociatedElement {
     if (changed.has('value') || changed.has('type') || changed.has('length')) {
       this.#syncCharsFromValue();
     }
+
+    const pinLabel =
+      this.getAttribute('aria-label')?.trim() ||
+      this.label ||
+      this.localize.term('verificationCode');
+    this.#cells.forEach((cell, i) => {
+      cell.setAttribute('aria-label', this.localize.term('pinCharacter', pinLabel, i + 1, count));
+    });
 
     this.#syncCellDOM();
     this.#syncFormAndValidity();
@@ -109,13 +132,12 @@ export class KPinInput extends FormAssociatedElement {
       const input = document.createElement('input');
       input.className = 'cell';
       input.setAttribute('part', 'cell');
-      input.setAttribute('aria-label', `${this.label || 'PIN'} character ${i + 1} of ${count}`);
 
       input.addEventListener('focus', () => {
         input.select();
       });
 
-      input.addEventListener('input', () => {
+      const handleInput = (): void => {
         if (this.isDisabled || this.readonly) {
           input.value = this.#chars[i] ?? '';
           return;
@@ -143,10 +165,16 @@ export class KPinInput extends FormAssociatedElement {
         if (i + 1 < this.#cells.length) {
           this.#cells[i + 1]?.focus();
         }
+      };
+
+      input.addEventListener('input', (e) => {
+        // Don't sanitize or advance focus mid-composition; `compositionend` delivers committed text.
+        if (!(e as InputEvent).isComposing) handleInput();
       });
+      input.addEventListener('compositionend', handleInput);
 
       input.addEventListener('keydown', (e) => {
-        if (this.isDisabled) return;
+        if (this.isDisabled || isComposing(e)) return;
         if (e.key === 'Backspace') {
           if (this.readonly) return;
           e.preventDefault();
@@ -259,7 +287,7 @@ export class KPinInput extends FormAssociatedElement {
     if (this.required && this.value.length < count) {
       this.setValidity(
         { valueMissing: true },
-        `Please enter all ${count} characters.`,
+        this.localize.term('pinIncomplete', count),
         this.#cells[0],
       );
       return;

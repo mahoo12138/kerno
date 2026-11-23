@@ -23,7 +23,7 @@ export const checkboxStyles = css`
   :host {
     --_size: 20px;
     --_font-size: ${token('font.size.sm')};
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
 
     display: inline-flex;
     vertical-align: middle;

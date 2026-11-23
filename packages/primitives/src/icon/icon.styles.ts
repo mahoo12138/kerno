@@ -1,4 +1,5 @@
 import { css } from '@kerno/core';
+import { token } from '@kerno/tokens';
 
 /**
  * Public customization surface for `<k-icon>`:
@@ -59,7 +60,7 @@ export const iconStyles = css`
 
   :host([spin]) svg,
   :host([name='loader']) svg {
-    animation: k-icon-spin 0.85s linear infinite;
+    animation: k-icon-spin ${token('motion.loop.spin')} linear infinite;
   }
 
   @keyframes k-icon-spin {

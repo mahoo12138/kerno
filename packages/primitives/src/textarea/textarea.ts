@@ -1,5 +1,11 @@
-import { FormAssociatedElement, prop, type PropertyValues } from '@kerno/core';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { textareaStyles } from './textarea.styles.js';
 
 export type TextareaSize = 'sm' | 'md' | 'lg';
@@ -43,10 +49,16 @@ export class KTextarea extends FormAssociatedElement {
   #defaultValue = '';
   #defaultCaptured = false;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#base ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, { getTarget: () => this.#textarea });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -146,7 +158,8 @@ export class KTextarea extends FormAssociatedElement {
     this.#footer.hidden = false;
     const len = this.value.length;
     if (this.maxLength !== null && this.maxLength > 0) {
-      this.#countEl.textContent = `${len} / ${this.maxLength}`;
+      const max = String(this.maxLength);
+      this.#countEl.textContent = this.localize.term('characterCount', String(len), max);
       this.#countEl.classList.toggle('limit', len >= this.maxLength);
     } else {
       this.#countEl.textContent = `${len}`;

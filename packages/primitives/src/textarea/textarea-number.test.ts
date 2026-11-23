@@ -1,9 +1,13 @@
 import { userEvent } from 'vitest/browser';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { loadShapeOutline } from '@kerno/effects/shape/lazy';
 import './define.js';
 import '../number-input/define.js';
 import type { KTextarea } from './index.js';
 import type { KNumberInput } from '../number-input/index.js';
+
+// Shape outlines load on demand; preload so `shape` changes apply synchronously.
+beforeAll(() => loadShapeOutline());
 
 afterEach(() => {
   document.body.innerHTML = '';

@@ -1,5 +1,6 @@
-import { KernoElement, prop, state, type PropertyValues } from '@kerno/core';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import { KernoElement, LocalizeController, prop, state, type PropertyValues } from '@kerno/core';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '../icon/registry.js';
 import { avatarGroupStyles, avatarStyles } from './avatar.styles.js';
 
@@ -63,7 +64,7 @@ export class KAvatar extends KernoElement {
   #statusEl!: HTMLSpanElement;
   #slot!: HTMLSlotElement;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#frame ?? null,
     getKind: () => (this.shape === 'circle' ? 'rounded' : this.shape),
     fallbackRadius: 8,
@@ -164,6 +165,7 @@ export class KAvatar extends KernoElement {
 export class KAvatarGroup extends KernoElement {
   static override styles = avatarGroupStyles;
   static override template = /* html */ `<div part="base" class="base" role="group"><slot></slot><span part="overflow" class="overflow" hidden></span></div>`;
+  readonly #localize = new LocalizeController(this);
 
   /** Maximum number of visible avatars before collapsing the remainder into `+N` (`0` = unlimited). */
   @prop({ type: Number, reflect: true }) accessor max = 0;
@@ -200,7 +202,7 @@ export class KAvatarGroup extends KernoElement {
     if (hiddenCount > 0) {
       this.#overflowEl.hidden = false;
       this.#overflowEl.textContent = `+${hiddenCount}`;
-      this.#overflowEl.setAttribute('aria-label', `${hiddenCount} more`);
+      this.#overflowEl.setAttribute('aria-label', this.#localize.term('moreItems', hiddenCount));
     } else {
       this.#overflowEl.hidden = true;
       this.#overflowEl.textContent = '';

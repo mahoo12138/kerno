@@ -19,7 +19,7 @@ export const buttonStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
     --_bg: ${token('color.control.default')};
     --_bg-hover: ${token('color.control.hover')};
     --_bg-active: ${token('color.control.active')};
@@ -40,7 +40,7 @@ export const buttonStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {
@@ -98,7 +98,7 @@ export const buttonStyles = css`
     transition:
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
       border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
-      transform 80ms ${token('motion.easing.standard')},
+      transform ${token('motion.duration.fast')} ${token('motion.easing.standard')},
       color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
@@ -188,7 +188,7 @@ export const buttonStyles = css`
   .spinner svg {
     width: 1em;
     height: 1em;
-    animation: k-button-spin 0.85s linear infinite;
+    animation: k-button-spin ${token('motion.loop.spin')} linear infinite;
   }
 
   :host([loading]) .base {

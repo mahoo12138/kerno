@@ -1,4 +1,10 @@
-import { FormAssociatedElement, prop, state, type PropertyValues } from '@kerno/core';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  prop,
+  state,
+  type PropertyValues,
+} from '@kerno/core';
 import { radioGroupStyles, radioStyles } from './radio.styles.js';
 
 export type RadioSize = 'sm' | 'md' | 'lg';
@@ -26,7 +32,7 @@ const NEXT_KEYS = new Set(['ArrowRight', 'ArrowDown']);
 export class KRadio extends FormAssociatedElement {
   static override styles = radioStyles;
   static override shadowRootOptions: ShadowRootInit = { mode: 'open', delegatesFocus: true };
-  static override template = /* html */ `<div part="base" class="base"><button part="control" class="control" type="button" role="radio" aria-checked="false"><span part="indicator" class="indicator" aria-hidden="true"></span></button><span part="label" class="label"><slot></slot></span></div>`;
+  static override template = /* html */ `<div part="base" class="base"><button part="control" class="control" type="button" role="radio" aria-checked="false"><span part="indicator" class="indicator" aria-hidden="true"></span></button><span part="label" class="label" id="label"><slot></slot></span></div>`;
 
   @prop({ type: Boolean, reflect: true }) accessor checked = false;
   @prop() accessor value = 'on';
@@ -45,6 +51,12 @@ export class KRadio extends FormAssociatedElement {
     super();
     this.addEventListener('click', this.#onHostClick, { capture: true });
     this.addEventListener('keydown', this.#onKeyDown);
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, {
+      getTarget: () => this.#control,
+      // Name the control by its visible slotted label while it has content.
+      getInternalLabelId: () => this.renderRoot.querySelector('#label.has-content') && 'label',
+    });
   }
 
   override get isDisabled(): boolean {
@@ -95,6 +107,8 @@ export class KRadio extends FormAssociatedElement {
         .assignedNodes({ flatten: true })
         .some((n) => n.nodeType === Node.ELEMENT_NODE || (n.textContent?.trim().length ?? 0) > 0);
       slot.parentElement?.classList.toggle('has-content', hasText);
+      // Re-sync the forwarded accessible name now that the visible label changed.
+      this.requestUpdate();
     };
     slot.addEventListener('slotchange', syncSlot);
     syncSlot();
@@ -147,7 +161,7 @@ export class KRadio extends FormAssociatedElement {
       peer.setFormValue(peer.checked ? peer.value : null);
       peer.setValidity(
         { valueMissing: anyRequired && !anyChecked },
-        'Please select one of these options.',
+        this.localize.term('radioRequired'),
         peer.#control,
       );
     }
@@ -222,6 +236,12 @@ export class KRadioGroup extends FormAssociatedElement {
   #base!: HTMLDivElement;
   #defaultValue = '';
   #defaultCaptured = false;
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, { getTarget: () => this.#base });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -308,7 +328,7 @@ export class KRadioGroup extends FormAssociatedElement {
     this.setFormValue(hasSelection ? this.value : null);
     this.setValidity(
       { valueMissing: this.required && !hasSelection },
-      'Please select one of these options.',
+      this.localize.term('radioRequired'),
       radios[0] ?? this.#base,
     );
   }

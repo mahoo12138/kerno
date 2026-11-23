@@ -1,4 +1,11 @@
-import { FormAssociatedElement, emit, prop, state, type PropertyValues } from '@kerno/core';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  emit,
+  prop,
+  state,
+  type PropertyValues,
+} from '@kerno/core';
 import { ratingStyles } from './rating.styles.js';
 
 export type RatingSize = 'sm' | 'md' | 'lg';
@@ -37,7 +44,7 @@ export class KRating extends FormAssociatedElement {
   @prop({ type: Boolean, reflect: true }) accessor clearable = true;
   @prop({ type: Boolean, attribute: 'highlight-selected-only', reflect: true })
   accessor highlightSelectedOnly = false;
-  @prop({ reflect: true }) accessor label = 'Rating';
+  @prop({ reflect: true }) accessor label = '';
 
   @state() accessor #hoverValue: number | null = null;
 
@@ -45,6 +52,15 @@ export class KRating extends FormAssociatedElement {
   #stars: { el: HTMLSpanElement; fill: SVGSVGElement }[] = [];
   #defaultValue = 0;
   #defaultCaptured = false;
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, {
+      getTarget: () => this.#track,
+      getFallbackLabel: () => this.label || this.localize.term('rating'),
+    });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -98,10 +114,14 @@ export class KRating extends FormAssociatedElement {
 
     const active = this.#hoverValue ?? this.#clampedValue();
     this.#track.tabIndex = this.isDisabled || this.readonly ? -1 : 0;
-    this.#track.setAttribute('aria-label', this.label || 'Rating');
     this.#track.setAttribute('aria-valuemax', String(count));
     this.#track.setAttribute('aria-valuenow', String(this.#clampedValue()));
-    this.#track.setAttribute('aria-valuetext', `${this.#clampedValue()} out of ${count}`);
+    const valueText = this.localize.term(
+      'ratingValue',
+      String(this.#clampedValue()),
+      String(count),
+    );
+    this.#track.setAttribute('aria-valuetext', valueText);
     this.#track.setAttribute('aria-readonly', this.readonly ? 'true' : 'false');
     this.#track.setAttribute('aria-disabled', this.isDisabled ? 'true' : 'false');
 
@@ -202,7 +222,7 @@ export class KRating extends FormAssociatedElement {
       return;
     }
     if (this.required && val <= 0) {
-      this.setValidity({ valueMissing: true }, 'Please select a rating.', this.#track);
+      this.setValidity({ valueMissing: true }, this.localize.term('ratingRequired'), this.#track);
       return;
     }
     this.setValidity({});

@@ -166,7 +166,7 @@ export const switchStyles = css`
     background: var(--k-switch-thumb-bg, ${token('color.fg.secondary')});
     transform: translateX(0);
     transition:
-      transform 160ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      transform ${token('motion.duration.normal')} ${token('motion.easing.decelerate')},
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 

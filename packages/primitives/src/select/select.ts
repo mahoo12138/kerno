@@ -1,4 +1,5 @@
 import {
+  AriaForwardingController,
   FormAssociatedElement,
   KernoElement,
   enterTopLayer,
@@ -11,7 +12,8 @@ import {
   type PropertyValues,
 } from '@kerno/core';
 import { scaleIn, scaleOut, type MotionHandle } from '@kerno/effects/motion';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '../icon/registry.js';
 import { optionStyles, selectStyles } from './select.styles.js';
 
@@ -84,7 +86,7 @@ export class KSelect extends FormAssociatedElement {
   static override template = /* html */ `<button part="combobox" class="combobox" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false"><span part="display" class="display"></span><span class="arrow" aria-hidden="true"></span></button><div part="listbox" class="listbox" role="listbox"><slot></slot></div>`;
 
   @prop({ reflect: true }) accessor value = '';
-  @prop({ reflect: true }) accessor placeholder = 'Select…';
+  @prop({ reflect: true }) accessor placeholder = '';
   @prop({ reflect: true }) accessor size: SelectSize = 'md';
   @prop({ reflect: true }) accessor shape: SelectShape = 'rounded';
   @prop({ type: Boolean, reflect: true }) accessor open = false;
@@ -100,7 +102,7 @@ export class KSelect extends FormAssociatedElement {
   #stopPositioning: (() => void) | null = null;
   #wasOpen = false;
   #exitAnim: MotionHandle | null = null;
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#combobox ?? null,
     getKind: () => this.shape,
   });
@@ -109,6 +111,8 @@ export class KSelect extends FormAssociatedElement {
     super();
     this.addEventListener('click', this.#onOptionClick);
     this.addEventListener('keydown', this.#onKeyDown);
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, { getTarget: () => this.#combobox });
   }
 
   override connectedCallback(): void {
@@ -247,12 +251,22 @@ export class KSelect extends FormAssociatedElement {
       this.#listbox.style.top = `${Math.round(top)}px`;
     };
 
+    // Coalesce scroll/resize bursts into one layout read per frame.
+    let frame: number | null = null;
+    const schedule = (): void => {
+      frame ??= requestAnimationFrame(() => {
+        frame = null;
+        update();
+      });
+    };
+
     update();
-    window.addEventListener('resize', update, { passive: true });
-    window.addEventListener('scroll', update, { capture: true, passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    window.addEventListener('scroll', schedule, { capture: true, passive: true });
     return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, { capture: true });
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('scroll', schedule, { capture: true });
+      if (frame !== null) cancelAnimationFrame(frame);
     };
   }
 
@@ -280,14 +294,14 @@ export class KSelect extends FormAssociatedElement {
       this.#display.textContent = selectedOption.labelText;
       this.#display.classList.remove('placeholder');
     } else {
-      this.#display.textContent = this.placeholder;
+      this.#display.textContent = this.placeholder || this.localize.term('selectPlaceholder');
       this.#display.classList.add('placeholder');
     }
 
     this.setFormValue(selectedOption ? this.value : null);
     this.setValidity(
       { valueMissing: this.required && !selectedOption },
-      'Please select an item in the list.',
+      this.localize.term('selectRequired'),
       this.#combobox,
     );
   }

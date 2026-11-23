@@ -17,7 +17,7 @@ export const textareaStyles = css`
   :host {
     --_font-size: ${token('font.size.sm')};
     --_padding: 8px ${token('control.paddingX.md')};
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
     --_border: var(--k-textarea-border-color, ${token('color.stroke.strong')});
 
     display: inline-flex;
@@ -36,7 +36,7 @@ export const textareaStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {

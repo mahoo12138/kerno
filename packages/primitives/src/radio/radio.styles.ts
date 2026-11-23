@@ -122,7 +122,7 @@ export const radioStyles = css`
     background: var(--k-radio-dot-color, ${token('color.accent.default')});
     transform: scale(0);
     transition:
-      transform 140ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      transform ${token('motion.duration.normal')} ${token('motion.easing.decelerate')},
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 

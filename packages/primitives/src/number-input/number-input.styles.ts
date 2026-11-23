@@ -16,7 +16,7 @@ export const numberInputStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
     --_border: var(--k-number-input-border-color, ${token('color.stroke.strong')});
 
     display: inline-flex;
@@ -32,7 +32,7 @@ export const numberInputStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {

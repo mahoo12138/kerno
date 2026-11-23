@@ -18,7 +18,7 @@ export const inputStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
     --_bg: ${token('color.bg.layer')};
     --_bg-hover: ${token('color.bg.layer')};
     --_bg-focus: ${token('color.bg.layer')};
@@ -40,7 +40,7 @@ export const inputStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {
@@ -180,7 +180,7 @@ export const inputStyles = css`
     justify-content: center;
     width: 20px;
     height: 20px;
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.control')};
     color: ${token('color.fg.secondary')};
     cursor: pointer;
     flex-shrink: 0;

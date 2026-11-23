@@ -15,7 +15,7 @@ export const pinInputStyles = css`
   :host {
     --_cell: var(--k-pin-input-size, 40px);
     --_font-size: ${token('font.size.md')};
-    --_radius: var(--k-pin-input-radius, 0px);
+    --_radius: var(--k-pin-input-radius, ${token('shape.radius.control')});
     --_gap: var(--k-pin-input-gap, ${token('spacing.sm')});
 
     display: inline-flex;

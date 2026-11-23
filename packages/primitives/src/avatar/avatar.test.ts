@@ -1,6 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { loadShapeOutline } from '@kerno/effects/shape/lazy';
 import './define.js';
 import { deriveInitials, type KAvatar, type KAvatarGroup } from './index.js';
+
+// Shape outlines load on demand; preload so `shape` changes apply synchronously.
+beforeAll(() => loadShapeOutline());
 
 afterEach(() => {
   document.body.innerHTML = '';

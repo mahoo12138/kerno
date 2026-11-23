@@ -26,7 +26,7 @@ export const kbdStyles = css`
   }
 
   :host([size='xs']) {
-    --_font-size: 10px;
+    --_font-size: ${token('font.size.3xs')};
     --_pad-y: 1px;
     --_pad-x: 4px;
     --_min-w: 18px;

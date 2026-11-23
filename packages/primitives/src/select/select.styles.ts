@@ -25,14 +25,14 @@ export const optionStyles = css`
     align-items: center;
     min-height: 32px;
     padding: 4px ${token('control.paddingX.md')};
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.control')};
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
     font-size: ${token('font.size.sm')};
     font-weight: ${token('font.weight.regular')};
     cursor: pointer;
     user-select: none;
-    transition: background-color 80ms ${token('motion.easing.standard')};
+    transition: background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .base:hover:not(:disabled),
@@ -76,7 +76,7 @@ export const selectStyles = css`
     --_height: 32px;
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
 
     display: inline-flex;
     vertical-align: middle;
@@ -90,7 +90,7 @@ export const selectStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {
@@ -215,7 +215,7 @@ export const selectStyles = css`
     max-height: 260px;
     overflow: auto;
     padding: 4px 0;
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.overlay')};
     border: 1px solid
       color-mix(in srgb, ${token('color.stroke.strong')} 35%, ${token('color.stroke.default')});
     background: ${token('color.bg.layerAlt')};

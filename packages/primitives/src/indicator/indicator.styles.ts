@@ -29,17 +29,17 @@ export const indicatorStyles = css`
 
   :host([variant='success']) {
     --_bg: var(--k-indicator-color, ${token('color.status.success.solid')});
-    --_fg: var(--k-indicator-fg, #ffffff);
+    --_fg: var(--k-indicator-fg, ${token('color.status.success.onSolid')});
   }
 
   :host([variant='warning']) {
     --_bg: var(--k-indicator-color, ${token('color.status.warning.solid')});
-    --_fg: var(--k-indicator-fg, #000000);
+    --_fg: var(--k-indicator-fg, ${token('color.status.warning.onSolid')});
   }
 
   :host([variant='danger']) {
     --_bg: var(--k-indicator-color, ${token('color.status.danger.solid')});
-    --_fg: var(--k-indicator-fg, #ffffff);
+    --_fg: var(--k-indicator-fg, ${token('color.status.danger.onSolid')});
   }
 
   :host([variant='neutral']) {
@@ -56,10 +56,10 @@ export const indicatorStyles = css`
     justify-content: center;
     min-width: var(--_size);
     height: var(--_size);
-    border-radius: 9999px;
+    border-radius: ${token('radius.full')};
     background: var(--_bg);
     color: var(--_fg);
-    font-size: 10px;
+    font-size: ${token('font.size.3xs')};
     font-weight: ${token('font.weight.semibold')};
     line-height: 1;
     white-space: nowrap;
@@ -145,7 +145,8 @@ export const indicatorStyles = css`
     border-radius: inherit;
     background: var(--_bg);
     z-index: -1;
-    animation: k-indicator-pulse 1.5s cubic-bezier(0.2, 0, 0, 1) infinite;
+    animation: k-indicator-pulse ${token('motion.loop.pulse')} ${token('motion.easing.emphasized')}
+      infinite;
   }
 
   @keyframes k-indicator-pulse {

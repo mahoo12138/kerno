@@ -1,4 +1,9 @@
-import { FormAssociatedElement, prop, type PropertyValues } from '@kerno/core';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
 import { sliderStyles } from './slider.styles.js';
 
 /**
@@ -34,6 +39,15 @@ export class KSlider extends FormAssociatedElement {
   #input!: HTMLInputElement;
   #defaultValue = 50;
   #defaultCaptured = false;
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, {
+      getTarget: () => this.#input,
+      getFallbackLabel: () => this.label,
+    });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -76,8 +90,6 @@ export class KSlider extends FormAssociatedElement {
     this.#input.max = String(this.max);
     this.#input.step = String(this.step);
     this.#input.disabled = this.isDisabled;
-    if (this.label) this.#input.setAttribute('aria-label', this.label);
-    else this.#input.removeAttribute('aria-label');
 
     const clamped = this.#clamp(this.value);
     if (this.#input.value !== String(clamped)) {

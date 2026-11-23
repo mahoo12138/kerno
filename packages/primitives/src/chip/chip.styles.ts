@@ -11,7 +11,7 @@ export const chipStyles = css`
     --_height: 30px;
     --_pad-x: 12px;
     --_font-size: ${token('font.size.xs')};
-    --_radius: var(--k-chip-radius, 0px);
+    --_radius: var(--k-chip-radius, ${token('shape.radius.control')});
 
     display: inline-flex;
     vertical-align: middle;
@@ -23,13 +23,13 @@ export const chipStyles = css`
   }
 
   :host([pill]) {
-    --_radius: 9999px;
+    --_radius: ${token('radius.full')};
   }
 
   :host([size='sm']) {
     --_height: 24px;
     --_pad-x: 9px;
-    --_font-size: 11px;
+    --_font-size: ${token('font.size.2xs')};
   }
 
   :host([size='lg']) {

@@ -290,16 +290,17 @@ export class KRangeSlider extends FormAssociatedElement {
     this.#tipStart.textContent = this.#formatVal(s);
     this.#tipEnd.textContent = this.#formatVal(e);
 
-    const baseLabel = this.label || 'Range';
+    const baseLabel =
+      this.getAttribute('aria-label')?.trim() || this.label || this.localize.term('range');
     this.#thumbStart.tabIndex = disabled ? -1 : 0;
-    this.#thumbStart.setAttribute('aria-label', `${baseLabel} minimum`);
+    this.#thumbStart.setAttribute('aria-label', this.localize.term('rangeMinimum', baseLabel));
     this.#thumbStart.setAttribute('aria-valuemin', String(this.min));
     this.#thumbStart.setAttribute('aria-valuemax', String(e - this.#safeGap()));
     this.#thumbStart.setAttribute('aria-valuenow', String(s));
     this.#thumbStart.setAttribute('aria-disabled', disabled ? 'true' : 'false');
 
     this.#thumbEnd.tabIndex = disabled ? -1 : 0;
-    this.#thumbEnd.setAttribute('aria-label', `${baseLabel} maximum`);
+    this.#thumbEnd.setAttribute('aria-label', this.localize.term('rangeMaximum', baseLabel));
     this.#thumbEnd.setAttribute('aria-valuemin', String(s + this.#safeGap()));
     this.#thumbEnd.setAttribute('aria-valuemax', String(this.max));
     this.#thumbEnd.setAttribute('aria-valuenow', String(e));

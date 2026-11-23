@@ -1,5 +1,6 @@
 import { userEvent } from 'vitest/browser';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { loadShapeOutline } from '@kerno/effects/shape/lazy';
 import { KButton } from './button.js';
 import './define.js';
 
@@ -9,6 +10,9 @@ const mount = async (html: string): Promise<HTMLElement> => {
   await Promise.all(buttons.map((b) => b.updateComplete));
   return document.body.firstElementChild as HTMLElement;
 };
+
+// Shape outlines load on demand; preload so `shape` changes apply synchronously.
+beforeAll(() => loadShapeOutline());
 
 afterEach(() => {
   document.body.innerHTML = '';

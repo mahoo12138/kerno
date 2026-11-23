@@ -1,5 +1,11 @@
-import { FormAssociatedElement, prop, type PropertyValues } from '@kerno/core';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { buttonStyles } from './button.styles.js';
 
 export type ButtonVariant = 'standard' | 'accent' | 'subtle';
@@ -52,7 +58,7 @@ export class KButton extends FormAssociatedElement {
 
   #base!: HTMLButtonElement;
   #spinnerEl: HTMLSpanElement | null = null;
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#base ?? null,
     getKind: () => this.shape,
   });
@@ -61,6 +67,8 @@ export class KButton extends FormAssociatedElement {
     super();
     // Capture phase: swallow activation while disabled before user handlers run.
     this.addEventListener('click', this.#onClick, { capture: true });
+    // Forward host aria-label / aria-labelledby / aria-describedby to the inner button.
+    new AriaForwardingController(this, { getTarget: () => this.#base });
   }
 
   override click(): void {

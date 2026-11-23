@@ -1,5 +1,14 @@
-import { FormAssociatedElement, emit, prop, type PropertyValues } from '@kerno/core';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  emit,
+  isComposing,
+  prop,
+  setLabels,
+  type PropertyValues,
+} from '@kerno/core';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '../icon/registry.js';
 import { numberInputStyles } from './number-input.styles.js';
 
@@ -38,6 +47,7 @@ export class KNumberInput extends FormAssociatedElement {
   static override styles = numberInputStyles;
   static override shadowRootOptions: ShadowRootInit = { mode: 'open', delegatesFocus: true };
   static override template = /* html */ `<div part="base" class="base"><span class="prefix"><slot name="prefix"></slot></span><input part="input" class="input" type="text" inputmode="decimal" role="spinbutton" autocomplete="off" /><span class="suffix"><slot name="suffix"></slot></span><div class="steppers"><button part="decrement" class="step-btn dec-btn" type="button" tabindex="-1" aria-label="Decrease value"></button><button part="increment" class="step-btn inc-btn" type="button" tabindex="-1" aria-label="Increase value"></button></div></div>`;
+  static override readonly blocksImplicitSubmission = true;
 
   /** Current numeric value (`null` when empty). */
   @prop({
@@ -73,10 +83,16 @@ export class KNumberInput extends FormAssociatedElement {
   #repeatDelay: ReturnType<typeof setTimeout> | null = null;
   #repeatTimer: ReturnType<typeof setInterval> | null = null;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#base ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, { getTarget: () => this.#input });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -137,7 +153,7 @@ export class KNumberInput extends FormAssociatedElement {
     });
 
     this.#input.addEventListener('keydown', (e) => {
-      if (this.isDisabled || this.readonly) return;
+      if (this.isDisabled || this.readonly || isComposing(e)) return;
       if (e.key === 'ArrowUp') {
         e.preventDefault();
         this.stepUp(1);
@@ -158,6 +174,10 @@ export class KNumberInput extends FormAssociatedElement {
         this.#applySteppedValue(this.max);
       } else if (e.key === 'Enter') {
         this.#commitRawInput();
+        if (this.form) {
+          e.preventDefault();
+          this.submitImplicitly();
+        }
       }
     });
 
@@ -189,6 +209,11 @@ export class KNumberInput extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [
+      ['.dec-btn', this.localize.term('decrement')],
+      ['.inc-btn', this.localize.term('increment')],
+    ]);
     const disabled = this.isDisabled;
     this.#base.classList.toggle('disabled', disabled);
     this.#input.disabled = disabled;
@@ -311,17 +336,17 @@ export class KNumberInput extends FormAssociatedElement {
       return;
     }
     if (this.#badInput) {
-      this.setValidity({ badInput: true }, 'Please enter a valid number.', this.#input);
+      this.setValidity({ badInput: true }, this.localize.term('badNumber'), this.#input);
       return;
     }
     if (this.required && this.value === null) {
-      this.setValidity({ valueMissing: true }, 'Please fill out this field.', this.#input);
+      this.setValidity({ valueMissing: true }, this.localize.term('valueMissing'), this.#input);
       return;
     }
     if (this.value !== null && this.min !== null && this.value < this.min) {
       this.setValidity(
         { rangeUnderflow: true },
-        `Value must be greater than or equal to ${this.min}.`,
+        this.localize.term('rangeUnderflow', this.localize.number(this.min)),
         this.#input,
       );
       return;
@@ -329,7 +354,7 @@ export class KNumberInput extends FormAssociatedElement {
     if (this.value !== null && this.max !== null && this.value > this.max) {
       this.setValidity(
         { rangeOverflow: true },
-        `Value must be less than or equal to ${this.max}.`,
+        this.localize.term('rangeOverflow', this.localize.number(this.max)),
         this.#input,
       );
       return;

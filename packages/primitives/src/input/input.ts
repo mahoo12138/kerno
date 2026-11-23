@@ -1,5 +1,15 @@
-import { FormAssociatedElement, emit, prop, state, type PropertyValues } from '@kerno/core';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  emit,
+  isComposing,
+  prop,
+  setLabels,
+  state,
+  type PropertyValues,
+} from '@kerno/core';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '../icon/registry.js';
 import { inputStyles } from './input.styles.js';
 
@@ -31,6 +41,7 @@ export class KInput extends FormAssociatedElement {
   static override styles = inputStyles;
   static override shadowRootOptions: ShadowRootInit = { mode: 'open', delegatesFocus: true };
   static override template = /* html */ `<div part="base" class="base"><span part="prefix" class="prefix"><slot name="prefix"></slot></span><input part="input" class="input" type="text" /><button part="clear-button" class="action-btn clear-btn" type="button" tabindex="-1" aria-label="Clear" hidden></button><button part="password-button" class="action-btn password-btn" type="button" tabindex="-1" aria-label="Show password" hidden></button><span part="suffix" class="suffix"><slot name="suffix"></slot></span></div>`;
+  static override readonly blocksImplicitSubmission = true;
 
   @prop() accessor value = '';
   @prop({ reflect: true }) accessor type: InputType = 'text';
@@ -57,10 +68,16 @@ export class KInput extends FormAssociatedElement {
   #passwordBtn!: HTMLButtonElement;
   #defaultValue = '';
   #defaultCaptured = false;
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#base ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, { getTarget: () => this.#input });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -115,6 +132,14 @@ export class KInput extends FormAssociatedElement {
       this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
     });
 
+    this.#input.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.defaultPrevented || isComposing(event)) return;
+      if (!this.form) return;
+      // The inner <input> sits outside the form's tree, so the browser never submits on Enter.
+      event.preventDefault();
+      this.submitImplicitly();
+    });
+
     this.#clearBtn.addEventListener('click', (event) => {
       event.stopPropagation();
       if (this.isDisabled || this.readonly) return;
@@ -147,6 +172,12 @@ export class KInput extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    const passwordLabel = this.#passwordVisible ? 'hidePassword' : 'showPassword';
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [
+      ['.clear-btn', this.localize.term('clear')],
+      ['.password-btn', this.localize.term(passwordLabel)],
+    ]);
     const effectiveType =
       this.type === 'password' && this.#passwordVisible ? 'text' : this.type || 'text';
     if (this.#input.type !== effectiveType) this.#input.type = effectiveType;
@@ -201,7 +232,7 @@ export class KInput extends FormAssociatedElement {
     const iconName = this.#passwordVisible ? 'eye-off' : 'eye';
     this.#passwordBtn.setAttribute(
       'aria-label',
-      this.#passwordVisible ? 'Hide password' : 'Show password',
+      this.localize.term(this.#passwordVisible ? 'hidePassword' : 'showPassword'),
     );
     this.#passwordBtn.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true">${getIcon(iconName) ?? ''}</svg>`;
   }
@@ -235,8 +266,8 @@ export class KInput extends FormAssociatedElement {
     };
     const message =
       this.#input.validationMessage ||
-      (tooShort ? `Please lengthen this text to ${this.minLength} characters or more.` : '') ||
-      (tooLong ? `Please shorten this text to ${this.maxLength} characters or less.` : '');
+      (tooShort ? this.localize.term('tooShort', this.minLength ?? 0) : '') ||
+      (tooLong ? this.localize.term('tooLong', this.maxLength ?? 0) : '');
     this.setValidity(flags, message, this.#input);
   }
 }

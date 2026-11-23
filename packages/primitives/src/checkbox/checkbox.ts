@@ -1,5 +1,11 @@
-import { FormAssociatedElement, prop, type PropertyValues } from '@kerno/core';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '../icon/registry.js';
 import { checkboxStyles } from './checkbox.styles.js';
 
@@ -25,7 +31,7 @@ export type CheckboxShape = CornerKind;
 export class KCheckbox extends FormAssociatedElement {
   static override styles = checkboxStyles;
   static override shadowRootOptions: ShadowRootInit = { mode: 'open', delegatesFocus: true };
-  static override template = /* html */ `<div part="base" class="base"><button part="control" class="control" type="button" role="checkbox" aria-checked="false"><span part="indicator" class="indicator" aria-hidden="true"></span></button><span part="label" class="label"><slot></slot></span></div>`;
+  static override template = /* html */ `<div part="base" class="base"><button part="control" class="control" type="button" role="checkbox" aria-checked="false"><span part="indicator" class="indicator" aria-hidden="true"></span></button><span part="label" class="label" id="label"><slot></slot></span></div>`;
 
   @prop({ type: Boolean, reflect: true }) accessor checked = false;
   @prop({ type: Boolean, reflect: true }) accessor indeterminate = false;
@@ -38,7 +44,7 @@ export class KCheckbox extends FormAssociatedElement {
   #indicator!: HTMLSpanElement;
   #defaultChecked = false;
   #defaultCaptured = false;
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#control ?? null,
     getKind: () => this.shape,
     fallbackRadius: 4,
@@ -47,6 +53,12 @@ export class KCheckbox extends FormAssociatedElement {
   constructor() {
     super();
     this.addEventListener('click', this.#onHostClick, { capture: true });
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, {
+      getTarget: () => this.#control,
+      // Name the control by its visible slotted label while it has content.
+      getInternalLabelId: () => this.renderRoot.querySelector('#label.has-content') && 'label',
+    });
   }
 
   override connectedCallback(): void {
@@ -79,6 +91,8 @@ export class KCheckbox extends FormAssociatedElement {
         .assignedNodes({ flatten: true })
         .some((n) => n.nodeType === Node.ELEMENT_NODE || (n.textContent?.trim().length ?? 0) > 0);
       slot.parentElement?.classList.toggle('has-content', hasText);
+      // Re-sync the forwarded accessible name now that the visible label changed.
+      this.requestUpdate();
     };
     slot.addEventListener('slotchange', syncSlot);
     syncSlot();
@@ -108,7 +122,7 @@ export class KCheckbox extends FormAssociatedElement {
     this.setFormValue(this.checked ? this.value : null);
     this.setValidity(
       { valueMissing: this.required && !this.checked },
-      'Please check this box if you want to proceed.',
+      this.localize.term('checkboxRequired'),
       this.#control,
     );
   }

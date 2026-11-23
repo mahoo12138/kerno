@@ -13,7 +13,7 @@ export const ratingStyles = css`
   :host {
     --_size: var(--k-rating-size, 22px);
     --_gap: var(--k-rating-gap, 4px);
-    --_active-color: var(--k-rating-color, #f59e0b);
+    --_active-color: var(--k-rating-color, ${token('color.status.warning.solid')});
     --_empty-color: var(
       --k-rating-empty-color,
       color-mix(in srgb, ${token('color.fg.default')} 20%, transparent)
@@ -44,7 +44,7 @@ export const ratingStyles = css`
     align-items: center;
     gap: var(--_gap);
     padding: 2px;
-    border-radius: 2px;
+    border-radius: ${token('radius.sm')};
     outline: none;
     user-select: none;
   }

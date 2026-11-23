@@ -1,4 +1,10 @@
-import { FormAssociatedElement, emit, prop, type PropertyValues } from '@kerno/core';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  emit,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
 import { getIcon } from '../icon/registry.js';
 import { chipGroupStyles, chipStyles } from './chip.styles.js';
 
@@ -40,6 +46,12 @@ export class KChip extends FormAssociatedElement {
   #explicitPill = false;
   #inGroup = false;
   #groupRole: 'checkbox' | 'radio' = 'checkbox';
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / aria-describedby to the inner button.
+    new AriaForwardingController(this, { getTarget: () => this.#button });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -124,7 +136,7 @@ export class KChip extends FormAssociatedElement {
       return;
     }
     if (this.required && !this.checked) {
-      this.setValidity({ valueMissing: true }, 'Please select this option.', this.#button);
+      this.setValidity({ valueMissing: true }, this.localize.term('chipRequired'), this.#button);
       return;
     }
     this.setValidity({});
@@ -150,12 +162,13 @@ export class KChipGroup extends FormAssociatedElement {
   @prop({ reflect: true }) accessor variant: ChipVariant = 'filled';
   @prop({ reflect: true }) accessor size: ChipSize = 'md';
   @prop({ type: Boolean, reflect: true }) accessor pill = false;
-  @prop({ reflect: true }) accessor label = 'Chip options';
+  @prop({ reflect: true }) accessor label = '';
 
   #slot!: HTMLSlotElement;
   #selected: string[] = [];
   #defaultValue = '';
   #defaultCaptured = false;
+  #autoAriaLabel: string | null = null;
 
   get values(): string[] {
     return [...this.#selected];
@@ -205,9 +218,25 @@ export class KChipGroup extends FormAssociatedElement {
       this.#syncSelectedFromValue();
     }
     this.setAttribute('role', this.multiple ? 'group' : 'radiogroup');
-    this.setAttribute('aria-label', this.label || 'Chip options');
+    this.#syncAriaLabel();
     this.#syncChips();
     this.#syncFormAndValidity();
+  }
+
+  #syncAriaLabel(): void {
+    if (this.hasAttribute('aria-labelledby')) {
+      if (this.#autoAriaLabel !== null && this.getAttribute('aria-label') === this.#autoAriaLabel) {
+        this.removeAttribute('aria-label');
+      }
+      this.#autoAriaLabel = null;
+      return;
+    }
+    const desired = this.label || this.localize.term('chipOptions');
+    const current = this.getAttribute('aria-label');
+    if (this.label || current === null || current === this.#autoAriaLabel) {
+      if (current !== desired) this.setAttribute('aria-label', desired);
+      this.#autoAriaLabel = this.label ? null : desired;
+    }
   }
 
   #chips(): KChip[] {
@@ -285,7 +314,7 @@ export class KChipGroup extends FormAssociatedElement {
     if (this.required && this.#selected.length === 0) {
       this.setValidity(
         { valueMissing: true },
-        'Please select at least one option.',
+        this.localize.term('optionsRequired'),
         this.#chips()[0],
       );
       return;
