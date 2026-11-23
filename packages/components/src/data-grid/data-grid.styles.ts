@@ -13,7 +13,7 @@ export const dataGridStyles = css`
     flex-direction: column;
     width: 100%;
     border: 1px solid ${token('color.stroke.default')};
-    border-radius: var(--k-data-grid-radius, 0px);
+    border-radius: var(--k-data-grid-radius, ${token('shape.radius.control')});
     background: ${token('color.bg.layer')};
     color: ${token('color.fg.default')};
     font-family: ${token('font.family.sans')};
@@ -93,7 +93,7 @@ export const dataGridStyles = css`
 
   .sort-ind {
     color: ${token('color.accent.text')};
-    font-size: 10px;
+    font-size: ${token('font.size.3xs')};
   }
 
   .resizer {
@@ -114,7 +114,7 @@ export const dataGridStyles = css`
     right: 2px;
     width: 1px;
     background: ${token('color.stroke.default')};
-    transition: background-color 100ms ease;
+    transition: background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .resizer:hover::after,
@@ -140,7 +140,7 @@ export const dataGridStyles = css`
     border-bottom: 1px solid ${token('color.stroke.subtle')};
     background: ${token('color.bg.layer')};
     font-size: ${token('font.size.sm')};
-    transition: background-color 60ms linear;
+    transition: background-color ${token('motion.duration.fast')} linear;
   }
 
   :host([striped]) .row[data-even='true'] {

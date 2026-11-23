@@ -1,4 +1,11 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import {
+  KernoElement,
+  LocalizeController,
+  emit,
+  prop,
+  setLabels,
+  type PropertyValues,
+} from '@kerno/core';
 import { getIcon } from '@kerno/primitives/icon';
 import { breadcrumbItemStyles, breadcrumbStyles } from './breadcrumb.styles.js';
 
@@ -24,6 +31,7 @@ export interface BreadcrumbSelectDetail {
 export class KBreadcrumbItem extends KernoElement {
   static override styles = breadcrumbItemStyles;
   static override template = /* html */ `<a part="link" class="link"><slot></slot></a><span part="current" class="current" aria-current="page" hidden></span><span part="separator" class="sep sep-main" aria-hidden="true"></span><button part="ellipsis" class="ellipsis" type="button" aria-label="Show hidden path items" hidden></button><span class="sep sep-ellipsis" aria-hidden="true" hidden></span>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor href = '';
   @prop({ reflect: true }) accessor target = '';
@@ -82,6 +90,8 @@ export class KBreadcrumbItem extends KernoElement {
   }
 
   protected override update(_changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [['.ellipsis', this.#localize.term('showHiddenPath')]]);
     const isCurrent = this.current || this.isLast;
     this.#syncSlotHost();
 
@@ -113,7 +123,9 @@ export class KBreadcrumbItem extends KernoElement {
 
     const showEllipsis = !this.isLast && this.collapsedAfter > 0;
     this.#ellipsisBtn.hidden = !showEllipsis;
-    this.#ellipsisBtn.title = showEllipsis ? `Show ${this.collapsedAfter} hidden items` : '';
+    this.#ellipsisBtn.title = showEllipsis
+      ? this.#localize.term('hiddenItems', this.collapsedAfter)
+      : '';
     this.#sepEllipsis.innerHTML = sepMarkup;
     this.#sepEllipsis.hidden = !showEllipsis;
   }
@@ -148,8 +160,9 @@ export class KBreadcrumbItem extends KernoElement {
 export class KBreadcrumb extends KernoElement {
   static override styles = breadcrumbStyles;
   static override template = /* html */ `<nav part="nav" class="nav"><ol part="list" class="list"><slot></slot></ol></nav>`;
+  readonly #localize = new LocalizeController(this);
 
-  @prop({ reflect: true }) accessor label = 'Breadcrumb';
+  @prop({ reflect: true }) accessor label = '';
   /** Optional custom separator text (e.g. `"/"`). Defaults to a crisp chevron-right icon. */
   @prop({ reflect: true }) accessor separator = '';
   /** Collapses middle crumbs behind an expandable `…` button when total exceeds `max-items` (`0` = disabled). */
@@ -182,7 +195,7 @@ export class KBreadcrumb extends KernoElement {
   }
 
   protected override update(changed: PropertyValues): void {
-    this.#nav.setAttribute('aria-label', this.label || 'Breadcrumb');
+    this.#nav.setAttribute('aria-label', this.label || this.#localize.term('breadcrumb'));
     if (changed.has('maxItems')) {
       this.#expanded = false;
     }

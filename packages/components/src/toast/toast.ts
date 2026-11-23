@@ -1,10 +1,12 @@
 import {
   KernoElement,
+  LocalizeController,
   emit,
   enterTopLayer,
   exitTopLayer,
   isServer,
   prop,
+  setLabels,
   type PropertyValues,
 } from '@kerno/core';
 import { slideIn, slideOut, type MotionHandle } from '@kerno/effects/motion';
@@ -52,6 +54,7 @@ const VARIANT_ICON: Record<ToastVariant, string> = {
 export class KToast extends KernoElement {
   static override styles = toastStyles;
   static override template = /* html */ `<div part="base" class="base"><span part="icon" class="icon" aria-hidden="true"></span><div class="body"><div part="title" class="title"></div><div part="description" class="description"><span class="desc-text"></span><slot></slot></div><div class="actions"><button part="action-button" class="action-btn" type="button" hidden></button><slot name="action"></slot></div></div><button part="close-button" class="close-btn" type="button" aria-label="Dismiss"></button><div part="progress" class="progress" aria-hidden="true" hidden></div></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor variant: ToastVariant = 'info';
   @prop({ reflect: true }) override accessor title = '';
@@ -183,6 +186,8 @@ export class KToast extends KernoElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [['.close-btn', this.#localize.term('dismiss')]]);
     const urgent = this.variant === 'danger' || this.variant === 'warning';
     this.#base.setAttribute('role', urgent ? 'alert' : 'status');
     this.#base.setAttribute('aria-live', urgent ? 'assertive' : 'polite');
@@ -279,6 +284,7 @@ export class KToast extends KernoElement {
 export class KToastContainer extends KernoElement {
   static override styles = toastContainerStyles;
   static override template = /* html */ `<div part="viewport" class="viewport" role="region" aria-label="Notifications"><slot></slot></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor placement: ToastPlacement = 'bottom-end';
   /** Maximum simultaneous toasts (`0` = unlimited). Oldest toasts are dismissed automatically. */
@@ -301,6 +307,8 @@ export class KToastContainer extends KernoElement {
   }
 
   protected override update(_changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [['.viewport', this.#localize.term('notifications')]]);
     this.#syncStack();
   }
 

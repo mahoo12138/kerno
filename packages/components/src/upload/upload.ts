@@ -1,4 +1,11 @@
-import { FormAssociatedElement, emit, prop, uniqueId, type PropertyValues } from '@kerno/core';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  emit,
+  prop,
+  uniqueId,
+  type PropertyValues,
+} from '@kerno/core';
 import { getIcon } from '@kerno/primitives/icon';
 import { uploadStyles } from './upload.styles.js';
 
@@ -71,7 +78,7 @@ export class KUpload extends FormAssociatedElement {
   @prop({ type: Number, attribute: 'max-size', reflect: true }) accessor maxSize = 0;
   /** Maximum number of files allowed (`0` = unlimited). */
   @prop({ type: Number, attribute: 'max-files', reflect: true }) accessor maxFiles = 0;
-  @prop({ reflect: true }) accessor label = 'Drop files here or click to browse';
+  @prop({ reflect: true }) accessor label = '';
   @prop({ reflect: true }) accessor hint = '';
 
   #input!: HTMLInputElement;
@@ -82,6 +89,12 @@ export class KUpload extends FormAssociatedElement {
   #list!: HTMLUListElement;
 
   #entries: UploadFileEntry[] = [];
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused dropzone button.
+    new AriaForwardingController(this, { getTarget: () => this.#dropzone });
+  }
 
   /** Current file queue snapshot. */
   get files(): readonly UploadFileEntry[] {
@@ -235,11 +248,13 @@ export class KUpload extends FormAssociatedElement {
     this.#input.multiple = this.multiple;
     this.#input.accept = this.accept;
 
-    this.#dropLabel.textContent = this.label;
+    this.#dropLabel.textContent = this.label || this.localize.term('uploadPrompt');
     const autoHints: string[] = [];
     if (this.accept) autoHints.push(this.accept);
-    if (this.maxSize > 0) autoHints.push(`Max ${formatFileSize(this.maxSize)}`);
-    if (this.maxFiles > 0) autoHints.push(`Up to ${this.maxFiles} files`);
+    if (this.maxSize > 0) {
+      autoHints.push(this.localize.term('maxFileSize', formatFileSize(this.maxSize)));
+    }
+    if (this.maxFiles > 0) autoHints.push(this.localize.term('maxFiles', this.maxFiles));
     this.#dropHint.textContent = this.hint || autoHints.join(' · ');
 
     this.#renderList();
@@ -296,7 +311,7 @@ export class KUpload extends FormAssociatedElement {
       removeBtn.type = 'button';
       removeBtn.className = 'remove-btn';
       removeBtn.disabled = this.isDisabled;
-      removeBtn.setAttribute('aria-label', `Remove ${entry.file.name}`);
+      removeBtn.setAttribute('aria-label', this.localize.term('remove', entry.file.name));
       removeBtn.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true">${getIcon('trash') ?? ''}</svg>`;
       removeBtn.addEventListener('click', () => this.removeFile(entry.id));
 
@@ -324,7 +339,7 @@ export class KUpload extends FormAssociatedElement {
       return;
     }
     if (this.required && this.#entries.length === 0) {
-      this.setValidity({ valueMissing: true }, 'Please select at least one file.', this.#dropzone);
+      this.setValidity({ valueMissing: true }, this.localize.term('filesRequired'), this.#dropzone);
     } else {
       this.setValidity({});
     }

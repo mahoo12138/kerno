@@ -43,7 +43,7 @@ export const copyButtonStyles = css`
     min-height: var(--_height);
     padding-inline: var(--_pad-x);
     border: 2px solid transparent;
-    border-radius: var(--k-copy-button-radius, 0px);
+    border-radius: var(--k-copy-button-radius, ${token('shape.radius.control')});
     background: ${token('color.control.default')};
     color: ${token('color.fg.default')};
     font-size: var(--_font-size);

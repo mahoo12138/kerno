@@ -29,7 +29,8 @@ export const skeletonStyles = css`
   }
 
   :host([effect='pulse']) .base {
-    animation: k-skeleton-pulse 1.5s ease-in-out infinite;
+    animation: k-skeleton-pulse ${token('motion.loop.pulse')} ${token('motion.easing.standard')}
+      infinite;
   }
 
   @keyframes k-skeleton-pulse {

@@ -53,7 +53,8 @@ export const progressStyles = css`
 
   :host([indeterminate]) .bar {
     width: 40% !important;
-    animation: k-progress-indeterminate 1.2s ${token('motion.easing.standard')} infinite;
+    animation: k-progress-indeterminate ${token('motion.loop.indeterminate')}
+      ${token('motion.easing.standard')} infinite;
   }
 
   @keyframes k-progress-indeterminate {

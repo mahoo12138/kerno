@@ -1,4 +1,5 @@
 import {
+  AriaForwardingController,
   FormAssociatedElement,
   autoPosition,
   emit,
@@ -6,11 +7,13 @@ import {
   exitTopLayer,
   overlayManager,
   prop,
+  setLabels,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
 import { fadeOut, slideIn, type MotionHandle } from '@kerno/effects/motion';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '@kerno/primitives/icon';
 import {
   formatTimeDisplay,
@@ -53,7 +56,7 @@ export class KTimePicker extends FormAssociatedElement {
   @prop({ reflect: true }) accessor value = '';
   @prop({ reflect: true }) accessor min = '';
   @prop({ reflect: true }) accessor max = '';
-  @prop({ reflect: true }) accessor placeholder = 'Select time';
+  @prop({ reflect: true }) accessor placeholder = '';
   @prop({ reflect: true }) accessor size: TimePickerSize = 'md';
   @prop({ reflect: true }) accessor shape: CornerKind = 'rounded';
   @prop({ type: Boolean, attribute: 'show-seconds', reflect: true }) accessor showSeconds = false;
@@ -83,10 +86,16 @@ export class KTimePicker extends FormAssociatedElement {
   #defaultValue = '';
   #defaultCaptured = false;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#trigger ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused trigger button.
+    new AriaForwardingController(this, { getTarget: () => this.#trigger });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -155,6 +164,13 @@ export class KTimePicker extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [
+      ['.clear-btn', this.localize.term('clearTime')],
+      ['.panel', this.localize.term('timePicker')],
+      ['.now-btn', this.localize.term('now'), 'text'],
+      ['.done-btn', this.localize.term('ok'), 'text'],
+    ]);
     const disabled = this.isDisabled;
     this.#trigger.disabled = disabled;
     this.#trigger.setAttribute('aria-expanded', this.open ? 'true' : 'false');
@@ -164,9 +180,13 @@ export class KTimePicker extends FormAssociatedElement {
       ? formatTimeDisplay(parsed, {
           showSeconds: this.showSeconds,
           use12Hours: this.use12Hours,
+          am: this.localize.term('am'),
+          pm: this.localize.term('pm'),
+          join: (time, period) => this.localize.term('time12h', time, period),
         })
       : '';
-    this.#display.textContent = displayText || this.placeholder;
+    this.#display.textContent =
+      displayText || this.placeholder || this.localize.term('timePlaceholder');
     this.#display.classList.toggle('placeholder', !displayText);
     this.#clearBtn.hidden = !this.clearable || disabled || !displayText;
 
@@ -257,9 +277,9 @@ export class KTimePicker extends FormAssociatedElement {
 
   #renderColumns(): void {
     const savedScroll = new Map<string, number>();
-    for (const col of this.#columnsEl.querySelectorAll<HTMLElement>('.col[aria-label]')) {
-      const label = col.getAttribute('aria-label');
-      if (label) savedScroll.set(label, col.scrollTop);
+    for (const col of this.#columnsEl.querySelectorAll<HTMLElement>('.col[data-col]')) {
+      const key = col.dataset.col;
+      if (key) savedScroll.set(key, col.scrollTop);
     }
 
     this.#columnsEl.innerHTML = '';
@@ -283,7 +303,8 @@ export class KTimePicker extends FormAssociatedElement {
 
     this.#columnsEl.append(
       this.#buildColumn(
-        'Hour',
+        'hour',
+        this.localize.term('hour'),
         hourValues.map((h) => ({
           label: h.label,
           selected: this.#draft.hours === h.value24,
@@ -309,7 +330,7 @@ export class KTimePicker extends FormAssociatedElement {
         },
       });
     }
-    this.#columnsEl.append(this.#buildColumn('Min', mins));
+    this.#columnsEl.append(this.#buildColumn('minute', this.localize.term('minute'), mins));
 
     if (this.showSeconds) {
       const secs: { label: string; selected: boolean; disabled: boolean; onSelect: () => void }[] =
@@ -325,16 +346,16 @@ export class KTimePicker extends FormAssociatedElement {
           },
         });
       }
-      this.#columnsEl.append(this.#buildColumn('Sec', secs));
+      this.#columnsEl.append(this.#buildColumn('second', this.localize.term('second'), secs));
     }
 
     if (this.use12Hours) {
       const amHour = this.#draft.hours % 12;
       const pmHour = amHour + 12;
       this.#columnsEl.append(
-        this.#buildColumn('Period', [
+        this.#buildColumn('period', this.localize.term('period'), [
           {
-            label: 'AM',
+            label: this.localize.term('am'),
             selected: !isPm,
             disabled: isTimeOutOfBounds({ ...this.#draft, hours: amHour }, this.min, this.max),
             onSelect: () => {
@@ -343,7 +364,7 @@ export class KTimePicker extends FormAssociatedElement {
             },
           },
           {
-            label: 'PM',
+            label: this.localize.term('pm'),
             selected: isPm,
             disabled: isTimeOutOfBounds({ ...this.#draft, hours: pmHour }, this.min, this.max),
             onSelect: () => {
@@ -355,14 +376,15 @@ export class KTimePicker extends FormAssociatedElement {
       );
     }
 
-    for (const col of this.#columnsEl.querySelectorAll<HTMLElement>('.col[aria-label]')) {
-      const label = col.getAttribute('aria-label');
-      const top = label ? savedScroll.get(label) : undefined;
+    for (const col of this.#columnsEl.querySelectorAll<HTMLElement>('.col[data-col]')) {
+      const key = col.dataset.col;
+      const top = key ? savedScroll.get(key) : undefined;
       if (top !== undefined) col.scrollTop = top;
     }
   }
 
   #buildColumn(
+    key: string,
     title: string,
     entries: { label: string; selected: boolean; disabled: boolean; onSelect: () => void }[],
   ): HTMLDivElement {
@@ -375,6 +397,7 @@ export class KTimePicker extends FormAssociatedElement {
 
     const col = document.createElement('div');
     col.className = 'col';
+    col.dataset.col = key;
     col.setAttribute('role', 'listbox');
     col.setAttribute('aria-label', title);
 
@@ -423,12 +446,16 @@ export class KTimePicker extends FormAssociatedElement {
       return;
     }
     if (this.required && !this.value) {
-      this.setValidity({ valueMissing: true }, 'Please select a time.', this.#trigger);
+      this.setValidity({ valueMissing: true }, this.localize.term('timeRequired'), this.#trigger);
       return;
     }
     const parsed = this.value ? parseTimeValue(this.value) : null;
     if (parsed && isTimeOutOfBounds(parsed, this.min, this.max)) {
-      this.setValidity({ rangeUnderflow: true }, 'Selected time is out of range.', this.#trigger);
+      this.setValidity(
+        { rangeUnderflow: true },
+        this.localize.term('timeOutOfRange'),
+        this.#trigger,
+      );
       return;
     }
     this.setValidity({});

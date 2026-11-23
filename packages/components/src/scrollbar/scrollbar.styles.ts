@@ -30,8 +30,8 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     --k-scrollbar-marker-reach: 12px;
     --k-scrollbar-card-gap: 10px;
     --k-scrollbar-card-delay: 320ms;
-    --k-scrollbar-fade-in: 120ms;
-    --k-scrollbar-fade-out: 167ms;
+    --k-scrollbar-fade-in: ${token('motion.duration.normal')};
+    --k-scrollbar-fade-out: ${token('motion.duration.normal')};
     --k-scrollbar-z-index: 2147483000;
 
     --_sb-track-bg: color-mix(in srgb, ${token('color.bg.layer')} 76%, transparent);
@@ -50,7 +50,7 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     --_sb-marker-current-bg: ${token('color.accent.default')};
     --_sb-marker-hover-bg: ${token('color.fg.default')};
     --_sb-marker-on-thumb-bg: ${token('color.bg.layer')};
-    --_sb-radius: 999px;
+    --_sb-radius: ${token('radius.full')};
     --_sb-thumb-rest-size: 3px;
     --_sb-thumb-engaged-size: 6px;
     --_sb-card-radius: ${token('radius.md')};
@@ -66,8 +66,8 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     --k-scrollbar-thumb-min-length: 48px;
     --k-scrollbar-button-length: calc(var(--k-scrollbar-thickness) * 33 / 17);
     --k-scrollbar-idle-delay: 3000ms;
-    --k-scrollbar-fade-in: 250ms;
-    --k-scrollbar-fade-out: 167ms;
+    --k-scrollbar-fade-in: ${token('motion.duration.slow')};
+    --k-scrollbar-fade-out: ${token('motion.duration.normal')};
     --_sb-radius: 0px;
     --_sb-thumb-rest-size: calc(var(--k-scrollbar-thickness) - 2 * var(--k-scrollbar-padding));
     --_sb-thumb-engaged-size: calc(var(--k-scrollbar-thickness) - 2 * var(--k-scrollbar-padding));
@@ -152,8 +152,8 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     border: 1px solid var(--_sb-track-border);
     opacity: 0;
     transition:
-      opacity 120ms ease,
-      background-color 120ms ease;
+      opacity ${token('motion.duration.normal')} ${token('motion.easing.standard')},
+      background-color ${token('motion.duration.normal')} ${token('motion.easing.standard')};
   }
 
   :host([variant='fluent']) .track-bg,
@@ -185,9 +185,9 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     border-radius: var(--_sb-radius);
     opacity: 0;
     transition:
-      opacity 120ms ease,
-      background-color 100ms ease,
-      color 100ms ease;
+      opacity ${token('motion.duration.normal')} ${token('motion.easing.standard')},
+      background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
+      color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .bar.v > .button {
@@ -219,7 +219,7 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     width: 10px;
     height: 10px;
     fill: currentColor;
-    transition: transform 80ms ease;
+    transition: transform ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   :host([variant='classic']) .button svg {
@@ -260,12 +260,12 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     border: 1px solid var(--_sb-thumb-border);
     will-change: transform;
     transition:
-      width 167ms cubic-bezier(0.1, 0.9, 0.2, 1),
-      height 167ms cubic-bezier(0.1, 0.9, 0.2, 1),
-      left 167ms cubic-bezier(0.1, 0.9, 0.2, 1),
-      top 167ms cubic-bezier(0.1, 0.9, 0.2, 1),
-      background-color 100ms ease,
-      border-color 100ms ease;
+      width ${token('motion.duration.normal')} ${token('motion.easing.decelerate')},
+      height ${token('motion.duration.normal')} ${token('motion.easing.decelerate')},
+      left ${token('motion.duration.normal')} ${token('motion.easing.decelerate')},
+      top ${token('motion.duration.normal')} ${token('motion.easing.decelerate')},
+      background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
+      border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .bar.v .thumb {
@@ -295,8 +295,8 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
   /* Classic keeps constant thumb thickness with crisp zero-lag state */
   :host([variant='classic']) .thumb {
     transition:
-      background-color 80ms ease,
-      border-color 80ms ease;
+      background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')},
+      border-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   /* Touch indicator: slim 4px panning pill */
@@ -347,9 +347,9 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     border-radius: 1px;
     background: var(--_sb-marker-bg);
     transition:
-      width 120ms ease,
-      height 120ms ease,
-      background-color 100ms ease;
+      width ${token('motion.duration.normal')} ${token('motion.easing.standard')},
+      height ${token('motion.duration.normal')} ${token('motion.easing.standard')},
+      background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .bar.v .marker {
@@ -401,7 +401,7 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     box-sizing: border-box;
     background: var(--_sb-track-bg);
     opacity: 0;
-    transition: opacity 140ms linear;
+    transition: opacity ${token('motion.duration.normal')} linear;
   }
 
   .corner[data-shown='true'] {
@@ -437,7 +437,7 @@ const SHARED_SCROLLBAR_CSS = /* css */ `
     transform: translateY(0);
     transition:
       opacity var(--k-scrollbar-fade-in) linear,
-      transform 367ms cubic-bezier(0.1, 0.9, 0.2, 1);
+      transform ${token('motion.duration.slower')} ${token('motion.easing.decelerate')};
   }
 
   .card:not(.open) {

@@ -1,4 +1,11 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import {
+  AriaForwardingController,
+  KernoElement,
+  LocalizeController,
+  emit,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
 import { getIcon } from '@kerno/primitives/icon';
 import { copyButtonStyles } from './copy-button.styles.js';
 
@@ -26,11 +33,12 @@ export class KCopyButton extends KernoElement {
   static override styles = copyButtonStyles;
   static override shadowRootOptions: ShadowRootInit = { mode: 'open', delegatesFocus: true };
   static override template = /* html */ `<button part="button" class="btn" type="button"><span class="icon" aria-hidden="true"></span><span class="text"><slot></slot></span></button>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor value = '';
   @prop({ type: Number, reflect: true }) accessor timeout = 2000;
-  @prop({ reflect: true }) accessor label = 'Copy';
-  @prop({ attribute: 'copied-label', reflect: true }) accessor copiedLabel = 'Copied';
+  @prop({ reflect: true }) accessor label = '';
+  @prop({ attribute: 'copied-label', reflect: true }) accessor copiedLabel = '';
   @prop({ reflect: true }) accessor variant: CopyButtonVariant = 'standard';
   @prop({ reflect: true }) accessor size: CopyButtonSize = 'md';
   @prop({ type: Boolean, reflect: true }) accessor copied = false;
@@ -41,6 +49,15 @@ export class KCopyButton extends KernoElement {
   #textEl!: HTMLSpanElement;
   #slot!: HTMLSlotElement;
   #timer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / aria-describedby; fall back to default copy label when unslotted.
+    new AriaForwardingController(this, {
+      getTarget: () => this.#btn,
+      getFallbackLabel: () => (this.#hasSlotted() ? null : this.#text),
+    });
+  }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
@@ -100,29 +117,41 @@ export class KCopyButton extends KernoElement {
     this.#btn.addEventListener('click', () => {
       void this.copy();
     });
-    this.#slot.addEventListener('slotchange', () => this.#syncText());
+    this.#slot.addEventListener('slotchange', () => {
+      this.#syncText();
+      this.requestUpdate();
+    });
+  }
+
+  get #text(): string {
+    return this.copied
+      ? this.copiedLabel || this.#localize.term('copied')
+      : this.label || this.#localize.term('copy');
   }
 
   protected override update(_changed: PropertyValues): void {
     this.#btn.disabled = this.disabled;
-    this.#btn.setAttribute('aria-label', this.copied ? this.copiedLabel : this.label);
     const iconName = this.copied ? 'check' : 'copy';
     this.#iconEl.innerHTML = `<svg viewBox="0 0 16 16">${getIcon(iconName) ?? ''}</svg>`;
     this.#syncText();
   }
 
-  #syncText(): void {
-    const hasSlotted = this.#slot
+  #hasSlotted(): boolean {
+    if (!this.#slot) return false;
+    return this.#slot
       .assignedNodes({ flatten: true })
       .some((n) => n.nodeType === Node.ELEMENT_NODE || (n.textContent?.trim().length ?? 0) > 0);
-    if (!hasSlotted) {
+  }
+
+  #syncText(): void {
+    if (!this.#hasSlotted()) {
       let fallback = this.#textEl.querySelector<HTMLSpanElement>('.fallback');
       if (!fallback) {
         fallback = document.createElement('span');
         fallback.className = 'fallback';
         this.#textEl.append(fallback);
       }
-      fallback.textContent = this.copied ? this.copiedLabel : this.label;
+      fallback.textContent = this.#text;
     } else {
       this.#textEl.querySelector('.fallback')?.remove();
     }

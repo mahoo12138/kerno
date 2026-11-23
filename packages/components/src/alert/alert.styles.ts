@@ -22,7 +22,7 @@ export const alertStyles = css`
     --_accent: ${token('color.status.info.solid')};
     --_icon: ${token('color.status.info.fg')};
     --_border: color-mix(in srgb, var(--_accent) 28%, ${token('color.stroke.default')});
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
 
     display: block;
     font-family: ${token('font.family.sans')};
@@ -36,7 +36,7 @@ export const alertStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([variant='neutral']) {

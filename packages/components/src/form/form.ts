@@ -1,4 +1,11 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import {
+  KernoElement,
+  LocalizeController,
+  emit,
+  isComposing,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
 import { formStyles } from './form.styles.js';
 
 export type FormLayout = 'vertical' | 'horizontal' | 'grid';
@@ -75,6 +82,7 @@ function resolveFieldLabel(el: HTMLElement): string {
 export class KForm extends KernoElement {
   static override styles = formStyles;
   static override template = /* html */ `<div part="base" class="base" role="form"><div part="summary" class="summary" role="alert" hidden><p class="summary-title"></p><ul class="summary-list"></ul></div><div part="fields" class="fields"><slot></slot></div><div part="actions" class="actions"><slot name="actions"></slot></div></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor layout: FormLayout = 'vertical';
   @prop({ type: Boolean, reflect: true }) accessor disabled = false;
@@ -91,6 +99,7 @@ export class KForm extends KernoElement {
   #actionsSlot!: HTMLSlotElement;
 
   #lockedControls = new WeakSet<HTMLElement>();
+  #lastErrors: FormValidationError[] = [];
 
   /** Extracts all named control values into a structured object and `FormData`. */
   getValues(): { values: Record<string, unknown>; formData: FormData } {
@@ -170,7 +179,7 @@ export class KForm extends KernoElement {
           errors.push({
             name: ctrl.name || ctrl.getAttribute('name') || '',
             label: resolveFieldLabel(ctrl),
-            message: ctrl.validationMessage || 'Invalid value',
+            message: ctrl.validationMessage || this.#localize.term('invalidValue'),
             element: ctrl,
           });
         }
@@ -263,11 +272,20 @@ export class KForm extends KernoElement {
     });
 
     this.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter') return;
+      // Skip Enter already handled by the control, e.g. <k-input> inside a native <form>.
+      if (event.key !== 'Enter' || event.defaultPrevented || isComposing(event)) return;
       const target = event.target as HTMLElement | null;
       if (!target) return;
       const tag = target.tagName.toLowerCase();
-      if (tag === 'k-input' || (target instanceof HTMLInputElement && target.type !== 'button')) {
+      const blocksSubmit =
+        (target.constructor as { blocksImplicitSubmission?: boolean }).blocksImplicitSubmission ===
+        true;
+      if (
+        blocksSubmit ||
+        tag === 'k-input' ||
+        tag === 'k-number-input' ||
+        (target instanceof HTMLInputElement && target.type !== 'button')
+      ) {
         event.preventDefault();
         this.submit();
       }
@@ -280,6 +298,9 @@ export class KForm extends KernoElement {
 
     if (changed.has('disabled') || changed.has('loading')) {
       this.#syncDisabledState();
+    }
+    if (this.#lastErrors.length > 0 && !this.#summary.hidden) {
+      this.#summaryTitle.textContent = this.#localize.term('formErrors', this.#lastErrors.length);
     }
   }
 
@@ -320,6 +341,7 @@ export class KForm extends KernoElement {
   }
 
   #renderSummary(errors: FormValidationError[]): void {
+    this.#lastErrors = errors;
     if (!this.showSummary || errors.length === 0) {
       this.#summary.hidden = true;
       this.#summaryList.innerHTML = '';
@@ -327,10 +349,7 @@ export class KForm extends KernoElement {
     }
 
     this.#summary.hidden = false;
-    this.#summaryTitle.textContent =
-      errors.length === 1
-        ? 'Please fix 1 validation error:'
-        : `Please fix ${errors.length} validation errors:`;
+    this.#summaryTitle.textContent = this.#localize.term('formErrors', errors.length);
 
     const frag = document.createDocumentFragment();
     for (const err of errors) {

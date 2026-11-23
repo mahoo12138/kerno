@@ -62,7 +62,7 @@ export const paginationStyles = css`
     min-width: var(--k-pagination-size, var(--_item-size));
     height: var(--k-pagination-size, var(--_item-size));
     padding-inline: 6px;
-    border-radius: var(--k-pagination-radius, 0px);
+    border-radius: var(--k-pagination-radius, ${token('shape.radius.control')});
     border: 2px solid transparent;
     background: transparent;
     color: ${token('color.fg.default')};

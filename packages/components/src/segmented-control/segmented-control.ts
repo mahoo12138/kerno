@@ -1,4 +1,11 @@
-import { FormAssociatedElement, emit, isServer, prop, type PropertyValues } from '@kerno/core';
+import {
+  AriaForwardingController,
+  FormAssociatedElement,
+  emit,
+  isServer,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
 import { segmentedControlStyles } from './segmented-control.styles.js';
 
 export type SegmentedControlSize = 'sm' | 'md' | 'lg';
@@ -47,7 +54,7 @@ export class KSegmentedControl extends FormAssociatedElement {
   @prop({ reflect: true }) accessor variant: SegmentedControlVariant = 'accent';
   @prop({ type: Boolean, attribute: 'full-width', reflect: true }) accessor fullWidth = false;
   @prop({ type: Boolean, reflect: true }) accessor readonly = false;
-  @prop({ reflect: true }) accessor label = 'Segmented control';
+  @prop({ reflect: true }) accessor label = '';
 
   #track!: HTMLDivElement;
   #indicator!: HTMLDivElement;
@@ -58,6 +65,15 @@ export class KSegmentedControl extends FormAssociatedElement {
   #defaultCaptured = false;
   #hasPositioned = false;
   #ro: ResizeObserver | null = null;
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the inner radiogroup.
+    new AriaForwardingController(this, {
+      getTarget: () => this.#track,
+      getFallbackLabel: () => this.label || this.localize.term('segmentedControl'),
+    });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -99,7 +115,6 @@ export class KSegmentedControl extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
-    this.#track.setAttribute('aria-label', this.label || 'Segmented control');
     this.#track.setAttribute('aria-orientation', this.orientation);
 
     if (changed.has('data') || this.#buttons.length === 0) {
@@ -251,7 +266,11 @@ export class KSegmentedControl extends FormAssociatedElement {
       return;
     }
     if (this.required && !this.value) {
-      this.setValidity({ valueMissing: true }, 'Please select an option.', this.#buttons[0]);
+      this.setValidity(
+        { valueMissing: true },
+        this.localize.term('optionRequired'),
+        this.#buttons[0],
+      );
       return;
     }
     this.setValidity({});

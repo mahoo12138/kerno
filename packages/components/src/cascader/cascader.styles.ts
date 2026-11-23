@@ -15,7 +15,7 @@ export const cascaderStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
     --_border: var(--k-cascader-border-color, ${token('color.stroke.strong')});
 
     display: inline-flex;
@@ -32,7 +32,7 @@ export const cascaderStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {
@@ -187,7 +187,7 @@ export const cascaderStyles = css`
     margin: 0;
     box-sizing: border-box;
     z-index: ${token('zIndex.dropdown')};
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.overlay')};
     border: 1px solid ${token('color.stroke.control')};
     background: ${token('color.bg.layer')};
     color: ${token('color.fg.default')};
@@ -244,7 +244,7 @@ export const cascaderStyles = css`
     font-size: ${token('font.size.sm')};
     color: ${token('color.fg.default')};
     cursor: pointer;
-    transition: background-color 80ms ${token('motion.easing.standard')};
+    transition: background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .item::before {

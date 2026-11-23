@@ -3,6 +3,7 @@ import {
   prefersReducedMotion,
   type SurfaceMotionState,
 } from '@kerno/effects';
+import { resolveLang, translate } from '@kerno/core';
 import { bandCount, closestBoundary, type KTileBoundary } from './boundary.js';
 import {
   bandShift,
@@ -1522,7 +1523,8 @@ function suppressNextClick(): void {
 export type DescribeMove = (tile: Element, position: number, count: number) => string;
 
 function describeMoved(tile: Element, position: number, count: number): string {
-  return `${labelOf(tile)}, moved to position ${position} of ${count}`;
+  const lang = resolveLang(tile);
+  return translate(lang, 'tileMoved', labelOf(tile), String(position), String(count));
 }
 
 function labelOf(tile: Element): string {

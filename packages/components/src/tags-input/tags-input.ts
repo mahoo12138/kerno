@@ -1,16 +1,20 @@
 import {
+  AriaForwardingController,
   FormAssociatedElement,
   autoPosition,
   emit,
   enterTopLayer,
   exitTopLayer,
+  isComposing,
   overlayManager,
   prop,
+  setLabels,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
 import { fadeOut, slideIn, type MotionHandle } from '@kerno/effects/motion';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '@kerno/primitives/icon';
 import { tagsInputStyles } from './tags-input.styles.js';
 
@@ -48,7 +52,7 @@ export class KTagsInput extends FormAssociatedElement {
   /** Comma-joined string representation of current tags. */
   @prop({ reflect: true }) accessor value = '';
   @prop({ attribute: false }) accessor suggestions: readonly string[] = [];
-  @prop({ reflect: true }) accessor placeholder = 'Add tag and press Enter...';
+  @prop({ reflect: true }) accessor placeholder = '';
   @prop({ type: Number, attribute: 'max-tags', reflect: true }) accessor maxTags = Infinity;
   @prop({ type: Boolean, attribute: 'allow-duplicates', reflect: true })
   accessor allowDuplicates = false;
@@ -78,10 +82,16 @@ export class KTagsInput extends FormAssociatedElement {
   #defaultValue = '';
   #defaultCaptured = false;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#control ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, { getTarget: () => this.#input });
+  }
 
   /** Array accessor for tags. */
   get values(): string[] {
@@ -157,7 +167,7 @@ export class KTagsInput extends FormAssociatedElement {
       }
     });
 
-    this.#input.addEventListener('input', () => {
+    const onText = (): void => {
       if (this.isDisabled || this.readonly) return;
       const splitSet = this.splitChars;
       if (splitSet && [...splitSet].some((ch) => this.#input.value.includes(ch))) {
@@ -165,7 +175,12 @@ export class KTagsInput extends FormAssociatedElement {
         return;
       }
       this.#refreshSuggestions();
+    };
+    this.#input.addEventListener('input', (e) => {
+      // Don't split or filter mid-composition; `compositionend` delivers the committed text.
+      if (!(e as InputEvent).isComposing) onText();
     });
+    this.#input.addEventListener('compositionend', onText);
 
     this.#input.addEventListener('paste', (e) => {
       if (this.isDisabled || this.readonly) return;
@@ -178,7 +193,7 @@ export class KTagsInput extends FormAssociatedElement {
     });
 
     this.#input.addEventListener('keydown', (e) => {
-      if (this.isDisabled || this.readonly) return;
+      if (this.isDisabled || this.readonly || isComposing(e)) return;
       if (e.key === 'ArrowDown' && this.#filteredSuggestions.length > 0) {
         e.preventDefault();
         if (!this.open) this.open = true;
@@ -226,6 +241,11 @@ export class KTagsInput extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [
+      ['.clear-btn', this.localize.term('clearTags')],
+      ['.panel', this.localize.term('tagSuggestions')],
+    ]);
     if (changed.has('value')) {
       this.#syncTagsFromValue();
     }
@@ -234,7 +254,8 @@ export class KTagsInput extends FormAssociatedElement {
     this.#control.classList.toggle('disabled', disabled);
     this.#input.disabled = disabled;
     this.#input.readOnly = this.readonly;
-    this.#input.placeholder = this.#tags.length === 0 ? this.placeholder : '';
+    const placeholder = this.placeholder || this.localize.term('tagsPlaceholder');
+    this.#input.placeholder = this.#tags.length === 0 ? placeholder : '';
     this.#clearBtn.hidden = !this.clearable || disabled || this.readonly || this.#tags.length === 0;
 
     this.#renderTags();
@@ -337,7 +358,7 @@ export class KTagsInput extends FormAssociatedElement {
         const rm = document.createElement('button');
         rm.type = 'button';
         rm.className = 'tag-remove';
-        rm.setAttribute('aria-label', `Remove ${tag}`);
+        rm.setAttribute('aria-label', this.localize.term('remove', tag));
         rm.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true">${closeSvg}</svg>`;
         rm.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -473,7 +494,7 @@ export class KTagsInput extends FormAssociatedElement {
       return;
     }
     if (this.required && this.#tags.length === 0) {
-      this.setValidity({ valueMissing: true }, 'Please add at least one tag.', this.#input);
+      this.setValidity({ valueMissing: true }, this.localize.term('tagsRequired'), this.#input);
       return;
     }
     this.setValidity({});

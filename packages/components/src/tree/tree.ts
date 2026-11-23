@@ -1,4 +1,11 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import {
+  KernoElement,
+  LocalizeController,
+  emit,
+  prop,
+  setLabels,
+  type PropertyValues,
+} from '@kerno/core';
 import { getIcon } from '@kerno/primitives/icon';
 import { treeItemStyles, treeStyles } from './tree.styles.js';
 
@@ -39,6 +46,7 @@ export interface TreeLoadDetail {
 export class KTreeItem extends KernoElement {
   static override styles = treeItemStyles;
   static override template = /* html */ `<div part="row" class="row" role="treeitem" tabindex="-1"><button part="toggle" class="toggle leaf" type="button" tabindex="-1" aria-label="Toggle branch"></button><button part="checkbox" class="check" type="button" tabindex="-1" role="checkbox" aria-checked="false" hidden></button><span class="icon"><slot name="icon"></slot></span><span part="label" class="label"><slot name="label"></slot><span class="label-fallback"></span></span></div><div part="children" class="children" role="group"><slot></slot></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor value = '';
   @prop({ reflect: true }) accessor label = '';
@@ -141,6 +149,8 @@ export class KTreeItem extends KernoElement {
   }
 
   protected override update(_changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [['.toggle', this.#localize.term('toggleBranch')]]);
     this.#syncLabel();
     this.#syncBranch();
 
@@ -195,10 +205,11 @@ export class KTreeItem extends KernoElement {
 export class KTree extends KernoElement {
   static override styles = treeStyles;
   static override template = /* html */ `<div part="base" class="base" role="tree"><slot></slot></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor selection: TreeSelectionMode = 'single';
   @prop({ type: Boolean, reflect: true }) accessor checkable = false;
-  @prop({ reflect: true }) accessor label = 'Tree';
+  @prop({ reflect: true }) accessor label = '';
 
   #base!: HTMLDivElement;
   #slot!: HTMLSlotElement;
@@ -252,7 +263,7 @@ export class KTree extends KernoElement {
   }
 
   protected override update(_changed: PropertyValues): void {
-    this.#base.setAttribute('aria-label', this.label || 'Tree');
+    this.#base.setAttribute('aria-label', this.label || this.#localize.term('tree'));
     this.#base.setAttribute(
       'aria-multiselectable',
       this.selection === 'multiple' ? 'true' : 'false',

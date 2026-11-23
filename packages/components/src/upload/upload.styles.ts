@@ -36,7 +36,7 @@ export const uploadStyles = css`
     width: 100%;
     min-height: 112px;
     padding: var(--k-upload-padding, 20px 16px);
-    border-radius: var(--k-upload-radius, 0px);
+    border-radius: var(--k-upload-radius, ${token('shape.radius.control')});
     border: 2px dashed ${token('color.stroke.strong')};
     background: var(--k-upload-bg, ${token('color.bg.layer')});
     color: ${token('color.fg.default')};
@@ -214,7 +214,7 @@ export const uploadStyles = css`
   .bar-fill {
     height: 100%;
     background: ${token('color.accent.default')};
-    transition: width 120ms linear;
+    transition: width ${token('motion.duration.normal')} linear;
   }
 
   .item[data-status='done'] .bar-fill {

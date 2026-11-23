@@ -1,16 +1,20 @@
 import {
+  AriaForwardingController,
   FormAssociatedElement,
   autoPosition,
   emit,
   enterTopLayer,
   exitTopLayer,
+  isComposing,
   overlayManager,
   prop,
+  setLabels,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
 import { fadeOut, slideIn, type MotionHandle } from '@kerno/effects/motion';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '@kerno/primitives/icon';
 import { multiSelectStyles } from './multi-select.styles.js';
 
@@ -51,7 +55,7 @@ export class KMultiSelect extends FormAssociatedElement {
   @prop({ attribute: false }) accessor options: readonly MultiSelectOption[] = [];
   /** Comma-joined selected values string. */
   @prop({ reflect: true }) accessor value = '';
-  @prop({ reflect: true }) accessor placeholder = 'Select options...';
+  @prop({ reflect: true }) accessor placeholder = '';
   @prop({ type: Boolean, reflect: true }) accessor searchable = true;
   @prop({ type: Number, attribute: 'max-values', reflect: true }) accessor maxValues = Infinity;
   @prop({ type: Boolean, attribute: 'hide-picked-options', reflect: true })
@@ -62,7 +66,7 @@ export class KMultiSelect extends FormAssociatedElement {
   @prop({ type: Boolean, reflect: true }) accessor acrylic = false;
   @prop({ type: Boolean, reflect: true }) accessor readonly = false;
   @prop({ type: Boolean, reflect: true }) accessor open = false;
-  @prop({ reflect: true, attribute: 'empty-text' }) accessor emptyText = 'No matching options.';
+  @prop({ reflect: true, attribute: 'empty-text' }) accessor emptyText = '';
 
   readonly #overlayId = uniqueId('k-multiselect');
 
@@ -83,10 +87,16 @@ export class KMultiSelect extends FormAssociatedElement {
   #defaultValue = '';
   #defaultCaptured = false;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#control ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, { getTarget: () => this.#search });
+  }
 
   get values(): string[] {
     return [...this.#selected];
@@ -163,7 +173,7 @@ export class KMultiSelect extends FormAssociatedElement {
     });
 
     this.#search.addEventListener('keydown', (e) => {
-      if (this.isDisabled || this.readonly) return;
+      if (this.isDisabled || this.readonly || isComposing(e)) return;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         if (!this.open) {
@@ -221,6 +231,8 @@ export class KMultiSelect extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [['.clear-btn', this.localize.term('clearSelection')]]);
     if (changed.has('value')) {
       this.#syncSelectedFromValue();
     }
@@ -230,7 +242,8 @@ export class KMultiSelect extends FormAssociatedElement {
     this.#search.disabled = disabled;
     this.#search.readOnly = !this.searchable || this.readonly;
     this.#search.setAttribute('aria-expanded', this.open ? 'true' : 'false');
-    this.#search.placeholder = this.#selected.length === 0 ? this.placeholder : '';
+    const placeholder = this.placeholder || this.localize.term('optionsPlaceholder');
+    this.#search.placeholder = this.#selected.length === 0 ? placeholder : '';
     this.#clearBtn.hidden =
       !this.clearable || disabled || this.readonly || this.#selected.length === 0;
 
@@ -308,7 +321,7 @@ export class KMultiSelect extends FormAssociatedElement {
         const rm = document.createElement('button');
         rm.type = 'button';
         rm.className = 'pill-remove';
-        rm.setAttribute('aria-label', `Remove ${optionMap.get(val) ?? val}`);
+        rm.setAttribute('aria-label', this.localize.term('remove', optionMap.get(val) ?? val));
         rm.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true">${closeSvg}</svg>`;
         rm.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -338,7 +351,7 @@ export class KMultiSelect extends FormAssociatedElement {
     if (this.#visibleOptions.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'empty';
-      empty.textContent = this.emptyText;
+      empty.textContent = this.emptyText || this.localize.term('noMatchingOptions');
       this.#panel.append(empty);
       return;
     }
@@ -476,7 +489,7 @@ export class KMultiSelect extends FormAssociatedElement {
       return;
     }
     if (this.required && this.#selected.length === 0) {
-      this.setValidity({ valueMissing: true }, 'Please select at least one option.', this.#search);
+      this.setValidity({ valueMissing: true }, this.localize.term('optionsRequired'), this.#search);
       return;
     }
     this.setValidity({});

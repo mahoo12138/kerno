@@ -1,4 +1,11 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import {
+  KernoElement,
+  LocalizeController,
+  emit,
+  prop,
+  setLabels,
+  type PropertyValues,
+} from '@kerno/core';
 import { getIcon } from '@kerno/primitives/icon';
 import { paginationStyles } from './pagination.styles.js';
 
@@ -84,6 +91,7 @@ export function computePaginationRange(
 export class KPagination extends KernoElement {
   static override styles = paginationStyles;
   static override template = /* html */ `<nav part="nav" class="nav" aria-label="Pagination"><ul part="list" class="list"></ul><span part="summary" class="summary" hidden></span></nav>`;
+  readonly #localize = new LocalizeController(this);
 
   /** Current 1-based page number. */
   @prop({ type: Number, reflect: true }) accessor page = 1;
@@ -129,6 +137,8 @@ export class KPagination extends KernoElement {
   }
 
   protected override update(_changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [['.nav', this.#localize.term('pagination')]]);
     const count = this.pageCount;
     const current = Math.min(count, Math.max(1, Math.floor(this.page) || 1));
     if (current !== this.page) {
@@ -142,7 +152,7 @@ export class KPagination extends KernoElement {
       frag.append(
         this.#createNavItem(
           1,
-          'First page',
+          this.#localize.term('firstPage'),
           `<svg viewBox="0 0 16 16" aria-hidden="true">${getIcon('chevrons-left') ?? ''}</svg>`,
           this.disabled || current <= 1,
         ),
@@ -152,7 +162,7 @@ export class KPagination extends KernoElement {
     frag.append(
       this.#createNavItem(
         Math.max(1, current - 1),
-        'Previous page',
+        this.#localize.term('previousPage'),
         `<svg viewBox="0 0 16 16" aria-hidden="true">${getIcon('chevron-left') ?? ''}</svg>`,
         this.disabled || current <= 1,
       ),
@@ -168,7 +178,7 @@ export class KPagination extends KernoElement {
         btn.dataset.page = String(entry);
         btn.textContent = String(entry);
         btn.disabled = this.disabled;
-        btn.setAttribute('aria-label', `Page ${entry}`);
+        btn.setAttribute('aria-label', this.#localize.term('page', String(entry)));
         if (entry === current) {
           btn.setAttribute('aria-current', 'page');
         }
@@ -186,7 +196,7 @@ export class KPagination extends KernoElement {
     frag.append(
       this.#createNavItem(
         Math.min(count, current + 1),
-        'Next page',
+        this.#localize.term('nextPage'),
         `<svg viewBox="0 0 16 16" aria-hidden="true">${getIcon('chevron-right') ?? ''}</svg>`,
         this.disabled || current >= count,
       ),
@@ -196,7 +206,7 @@ export class KPagination extends KernoElement {
       frag.append(
         this.#createNavItem(
           count,
-          'Last page',
+          this.#localize.term('lastPage'),
           `<svg viewBox="0 0 16 16" aria-hidden="true">${getIcon('chevrons-right') ?? ''}</svg>`,
           this.disabled || current >= count,
         ),
@@ -211,9 +221,10 @@ export class KPagination extends KernoElement {
         const size = Math.max(1, Math.floor(this.pageSize) || 1);
         const start = (current - 1) * size + 1;
         const end = Math.min(this.total, current * size);
-        this.#summary.textContent = `${start}–${end} of ${this.total}`;
+        const range = [String(start), String(end), String(this.total)] as const;
+        this.#summary.textContent = this.#localize.term('pageRange', ...range);
       } else {
-        this.#summary.textContent = `Page ${current} of ${count}`;
+        this.#summary.textContent = this.#localize.term('pageOf', String(current), String(count));
       }
     } else {
       this.#summary.hidden = true;

@@ -15,7 +15,7 @@ export const timePickerStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
     --_border: var(--k-time-picker-border-color, ${token('color.stroke.strong')});
 
     display: inline-flex;
@@ -32,7 +32,7 @@ export const timePickerStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {
@@ -185,7 +185,7 @@ export const timePickerStyles = css`
     margin: 0;
     box-sizing: border-box;
     z-index: ${token('zIndex.popover')};
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.overlay')};
     border: 1px solid ${token('color.stroke.control')};
     background: ${token('color.bg.layer')};
     color: ${token('color.fg.default')};
@@ -225,7 +225,7 @@ export const timePickerStyles = css`
   .col-head {
     padding: 6px 8px;
     text-align: center;
-    font-size: 10px;
+    font-size: ${token('font.size.3xs')};
     font-weight: ${token('font.weight.semibold')};
     letter-spacing: 0.08em;
     text-transform: uppercase;

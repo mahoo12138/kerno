@@ -6,7 +6,7 @@ export const accordionStyles = css`
     display: flex;
     flex-direction: column;
     border: 1px solid ${token('color.stroke.default')};
-    border-radius: var(--k-accordion-radius, 0px);
+    border-radius: var(--k-accordion-radius, ${token('shape.radius.control')});
     background: ${token('color.bg.layer')};
     overflow: hidden;
   }

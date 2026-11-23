@@ -16,7 +16,7 @@ export const autocompleteStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: 0px;
+    --_radius: ${token('shape.radius.control')};
     --_border: var(--k-autocomplete-border-color, ${token('color.stroke.strong')});
 
     display: inline-flex;
@@ -32,7 +32,7 @@ export const autocompleteStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {
@@ -191,7 +191,7 @@ export const autocompleteStyles = css`
   }
 
   .spinner svg {
-    animation: k-ac-spin 0.85s linear infinite;
+    animation: k-ac-spin ${token('motion.loop.spin')} linear infinite;
   }
 
   @keyframes k-ac-spin {
@@ -214,7 +214,7 @@ export const autocompleteStyles = css`
     max-height: 260px;
     overflow: auto;
     padding: 4px 0;
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.overlay')};
     border: 1px solid ${token('color.stroke.control')};
     background: ${token('color.bg.layerAlt')};
     color: ${token('color.fg.default')};
@@ -249,7 +249,7 @@ export const autocompleteStyles = css`
     color: ${token('color.fg.default')};
     cursor: pointer;
     user-select: none;
-    transition: background-color 80ms ${token('motion.easing.standard')};
+    transition: background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .option::before {

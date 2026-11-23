@@ -1,4 +1,5 @@
 import {
+  AriaForwardingController,
   FormAssociatedElement,
   autoPosition,
   emit,
@@ -6,20 +7,19 @@ import {
   exitTopLayer,
   overlayManager,
   prop,
+  setLabels,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
 import { fadeOut, slideIn, type MotionHandle } from '@kerno/effects/motion';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '@kerno/primitives/icon';
 import {
-  MONTH_NAMES_LONG,
-  MONTH_NAMES_SHORT,
   addDaysIso,
   addMonths,
   buildMonthGrid,
   compareIsoDates,
-  getWeekdayLabels,
   isDateOutOfBounds,
   parseIsoDate,
   todayIso,
@@ -101,10 +101,16 @@ export class KDatePicker extends FormAssociatedElement {
   #defaultEnd = '';
   #defaultCaptured = false;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#trigger ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused trigger button.
+    new AriaForwardingController(this, { getTarget: () => this.#trigger });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -197,6 +203,15 @@ export class KDatePicker extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [
+      ['.clear-btn', this.localize.term('clearDate')],
+      ['.panel', this.localize.term('calendar')],
+      ['.prev-btn', this.localize.term('previous')],
+      ['.next-btn', this.localize.term('next')],
+      ['.today-btn', this.localize.term('today'), 'text'],
+      ['.clear-footer-btn', this.localize.term('clear'), 'text'],
+    ]);
     // Sync canonical `value` ↔ `startValue`/`endValue` in range mode
     if (this.mode === 'range') {
       if (changed.has('value') && this.value.includes('..')) {
@@ -217,7 +232,7 @@ export class KDatePicker extends FormAssociatedElement {
     this.#display.textContent =
       displayText ||
       this.placeholder ||
-      (this.mode === 'range' ? 'Start date – End date' : 'Select date');
+      this.localize.term(this.mode === 'range' ? 'dateRangePlaceholder' : 'datePlaceholder');
     this.#display.classList.toggle('placeholder', isEmpty);
 
     const canClear = this.clearable && !disabled && !isEmpty;
@@ -347,7 +362,8 @@ export class KDatePicker extends FormAssociatedElement {
     this.#calBody.innerHTML = '';
 
     if (this.#view === 'days') {
-      this.#viewBtn.textContent = `${MONTH_NAMES_LONG[this.#viewMonth - 1]} ${this.#viewYear}`;
+      const viewDate = new Date(this.#viewYear, this.#viewMonth - 1, 1);
+      this.#viewBtn.textContent = this.localize.date(viewDate, { year: 'numeric', month: 'long' });
       this.#renderDaysView();
     } else if (this.#view === 'months') {
       this.#viewBtn.textContent = String(this.#viewYear);
@@ -361,10 +377,19 @@ export class KDatePicker extends FormAssociatedElement {
     this.#todayBtn.disabled = isDateOutOfBounds(todayIso(), this.min, this.max);
   }
 
+  /** Localized short weekday names, starting at `firstDayOfWeek`. */
+  #weekdayLabels(): string[] {
+    // 2024-01-07 is a Sunday.
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(2024, 0, 7 + ((this.firstDayOfWeek + i) % 7));
+      return this.localize.date(day, { weekday: 'short' });
+    });
+  }
+
   #renderDaysView(): void {
     const weekdays = document.createElement('div');
     weekdays.className = 'weekdays';
-    for (const label of getWeekdayLabels(this.firstDayOfWeek)) {
+    for (const label of this.#weekdayLabels()) {
       const span = document.createElement('span');
       span.className = 'weekday';
       span.textContent = label;
@@ -396,7 +421,8 @@ export class KDatePicker extends FormAssociatedElement {
       btn.className = 'cell';
       btn.dataset.iso = cell.iso;
       btn.textContent = String(cell.day);
-      btn.setAttribute('aria-label', cell.iso);
+      const cellDate = new Date(cell.year, cell.month - 1, cell.day);
+      btn.setAttribute('aria-label', this.localize.date(cellDate, { dateStyle: 'long' }));
 
       const disabled = isDateOutOfBounds(cell.iso, this.min, this.max);
       btn.disabled = disabled;
@@ -447,7 +473,10 @@ export class KDatePicker extends FormAssociatedElement {
   #renderMonthsView(): void {
     const grid = document.createElement('div');
     grid.className = 'period-grid';
-    MONTH_NAMES_SHORT.forEach((label, idx) => {
+    const monthLabels = Array.from({ length: 12 }, (_, i) =>
+      this.localize.date(new Date(2000, i, 1), { month: 'short' }),
+    );
+    monthLabels.forEach((label, idx) => {
       const month = idx + 1;
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -581,7 +610,7 @@ export class KDatePicker extends FormAssociatedElement {
       return;
     }
     if (this.required && !this.value) {
-      this.setValidity({ valueMissing: true }, 'Please select a date.', this.#trigger);
+      this.setValidity({ valueMissing: true }, this.localize.term('dateRequired'), this.#trigger);
     } else {
       this.setValidity({});
     }

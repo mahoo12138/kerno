@@ -1,4 +1,5 @@
 import {
+  AriaForwardingController,
   FormAssociatedElement,
   autoPosition,
   emit,
@@ -6,11 +7,13 @@ import {
   exitTopLayer,
   overlayManager,
   prop,
+  setLabels,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
 import { fadeOut, slideIn, type MotionHandle } from '@kerno/effects/motion';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '@kerno/primitives/icon';
 import {
   formatColor,
@@ -154,6 +157,12 @@ export class KColorPicker extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [
+      ['.saturation', this.localize.term('colorArea')],
+      ['.hue-bar', this.localize.term('hue')],
+      ['.alpha-bar', this.localize.term('opacity')],
+    ]);
     if (changed.has('value')) {
       this.#syncFromValue();
     }
@@ -161,7 +170,7 @@ export class KColorPicker extends FormAssociatedElement {
       this.value = formatColor(this.#hsva, this.format);
     }
     this.#renderAll();
-    if (changed.has('swatches') || changed.has('value')) {
+    if (changed.size === 0 || changed.has('swatches') || changed.has('value')) {
       this.#renderSwatches();
     }
     this.#syncForm();
@@ -232,7 +241,7 @@ export class KColorPicker extends FormAssociatedElement {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'swatch';
-      btn.setAttribute('aria-label', `Select color ${color}`);
+      btn.setAttribute('aria-label', this.localize.term('selectColor', color));
       const parsed = parseColor(color);
       const swatchHex = parsed ? formatColor(parsed, 'hex').toLowerCase() : color.toLowerCase();
       btn.setAttribute('aria-pressed', swatchHex === currentHex ? 'true' : 'false');
@@ -323,10 +332,16 @@ export class KColorInput extends FormAssociatedElement {
   #defaultValue = '';
   #defaultCaptured = false;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#control ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner input.
+    new AriaForwardingController(this, { getTarget: () => this.#input });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -448,6 +463,13 @@ export class KColorInput extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [
+      ['.swatch-btn', this.localize.term('toggleColorPicker')],
+      ['.eye-btn', this.localize.term('pickScreenColor')],
+      ['.clear-btn', this.localize.term('clearColor')],
+      ['.panel', this.localize.term('colorPicker')],
+    ]);
     const disabled = this.isDisabled;
     const hasEyeDropper =
       typeof window !== 'undefined' && 'EyeDropper' in window && this.withEyeDropper;
@@ -543,11 +565,11 @@ export class KColorInput extends FormAssociatedElement {
       return;
     }
     if (this.required && !this.value) {
-      this.setValidity({ valueMissing: true }, 'Please select a color.', this.#input);
+      this.setValidity({ valueMissing: true }, this.localize.term('colorRequired'), this.#input);
       return;
     }
     if (this.value && !parseColor(this.value)) {
-      this.setValidity({ patternMismatch: true }, 'Enter a valid color value.', this.#input);
+      this.setValidity({ patternMismatch: true }, this.localize.term('invalidColor'), this.#input);
       return;
     }
     this.setValidity({});

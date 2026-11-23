@@ -32,7 +32,7 @@ export const hoverCardStyles = css`
     max-width: min(360px, calc(100vw - 24px));
     box-sizing: border-box;
     border: 1px solid ${token('color.stroke.control')};
-    border-radius: var(--k-hover-card-radius, 0px);
+    border-radius: var(--k-hover-card-radius, ${token('shape.radius.overlay')});
     background: ${token('color.bg.layer')};
     color: ${token('color.fg.default')};
     box-shadow: ${token('elevation.4')};

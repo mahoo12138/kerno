@@ -1,6 +1,14 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import {
+  KernoElement,
+  LocalizeController,
+  emit,
+  prop,
+  setLabels,
+  type PropertyValues,
+} from '@kerno/core';
 import { fadeOut } from '@kerno/effects/motion';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '@kerno/primitives/icon';
 import { alertStyles } from './alert.styles.js';
 
@@ -38,6 +46,7 @@ const VARIANT_ICON: Record<AlertVariant, string> = {
 export class KAlert extends KernoElement {
   static override styles = alertStyles;
   static override template = /* html */ `<div part="base" class="base"><span part="icon" class="icon" aria-hidden="true"><slot name="icon"></slot><span class="icon-fallback"></span></span><div part="content" class="content"><div part="title" class="title"><slot name="title"></slot><span class="title-fallback"></span></div><div part="description" class="description"><slot></slot></div></div><div part="action" class="action"><slot name="action"></slot></div><button part="close-button" class="close-btn" type="button" aria-label="Dismiss" hidden></button></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor variant: AlertVariant = 'info';
   @prop({ reflect: true }) override accessor title = '';
@@ -57,7 +66,7 @@ export class KAlert extends KernoElement {
   #actionSlot!: HTMLSlotElement;
   #closeBtn!: HTMLButtonElement;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#base ?? null,
     getKind: () => this.shape,
     fallbackRadius: 6,
@@ -87,6 +96,8 @@ export class KAlert extends KernoElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [['.close-btn', this.#localize.term('dismiss')]]);
     const isUrgent = this.variant === 'danger' || this.variant === 'warning';
     this.#base.setAttribute('role', isUrgent ? 'alert' : 'status');
     this.#closeBtn.hidden = !this.closable;

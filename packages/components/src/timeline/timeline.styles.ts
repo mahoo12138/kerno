@@ -69,11 +69,11 @@ export const timelineItemStyles = css`
     justify-content: center;
     width: var(--_bullet-size);
     height: var(--_bullet-size);
-    border-radius: 9999px;
+    border-radius: ${token('radius.full')};
     border: 2px solid ${token('color.stroke.control')};
     background: ${token('color.bg.layer')};
     color: ${token('color.fg.secondary')};
-    font-size: 11px;
+    font-size: ${token('font.size.2xs')};
     font-weight: ${token('font.weight.semibold')};
     overflow: hidden;
     transition:

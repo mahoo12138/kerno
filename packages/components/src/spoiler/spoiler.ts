@@ -1,4 +1,11 @@
-import { KernoElement, emit, isServer, prop, type PropertyValues } from '@kerno/core';
+import {
+  KernoElement,
+  LocalizeController,
+  emit,
+  isServer,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
 import { spoilerStyles } from './spoiler.styles.js';
 
 export interface SpoilerToggleDetail {
@@ -22,11 +29,12 @@ export interface SpoilerToggleDetail {
 export class KSpoiler extends KernoElement {
   static override styles = spoilerStyles;
   static override template = /* html */ `<div part="clip" class="clip"><div class="measure"><slot></slot></div><div class="fade" aria-hidden="true"></div></div><button part="toggle" class="toggle" type="button" aria-expanded="false" hidden></button>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ type: Number, attribute: 'max-height', reflect: true }) accessor maxHeight = 100;
   @prop({ type: Boolean, reflect: true }) accessor expanded = false;
-  @prop({ attribute: 'show-label', reflect: true }) accessor showLabel = 'Show more';
-  @prop({ attribute: 'hide-label', reflect: true }) accessor hideLabel = 'Show less';
+  @prop({ attribute: 'show-label', reflect: true }) accessor showLabel = '';
+  @prop({ attribute: 'hide-label', reflect: true }) accessor hideLabel = '';
 
   #clip!: HTMLDivElement;
   #measure!: HTMLDivElement;
@@ -77,7 +85,9 @@ export class KSpoiler extends KernoElement {
     this.#overflows = fullHeight > limit + 2;
 
     this.#toggle.hidden = !this.#overflows;
-    this.#toggle.textContent = this.expanded ? this.hideLabel : this.showLabel;
+    this.#toggle.textContent = this.expanded
+      ? this.hideLabel || this.#localize.term('showLess')
+      : this.showLabel || this.#localize.term('showMore');
     this.#toggle.setAttribute('aria-expanded', this.expanded ? 'true' : 'false');
 
     const collapsed = this.#overflows && !this.expanded;

@@ -13,7 +13,7 @@ export const tagsInputStyles = css`
   :host {
     --_min-height: ${token('control.height.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: var(--k-tags-input-radius, 0px);
+    --_radius: var(--k-tags-input-radius, ${token('shape.radius.control')});
     --_border: var(--k-tags-input-border-color, ${token('color.stroke.strong')});
 
     display: inline-flex;
@@ -30,7 +30,7 @@ export const tagsInputStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {
@@ -206,7 +206,7 @@ export const tagsInputStyles = css`
     max-height: 220px;
     overflow: auto;
     border: 1px solid ${token('color.stroke.control')};
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.overlay')};
     background: ${token('color.bg.layer')};
     color: ${token('color.fg.default')};
     box-shadow: ${token('elevation.3')};

@@ -16,7 +16,7 @@ export const segmentedControlStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: 14px;
     --_font-size: ${token('font.size.sm')};
-    --_radius: var(--k-segmented-radius, 0px);
+    --_radius: var(--k-segmented-radius, ${token('shape.radius.control')});
     --_pad: var(--k-segmented-padding, 3px);
 
     display: inline-flex;
@@ -95,9 +95,9 @@ export const segmentedControlStyles = css`
 
   .indicator.animated {
     transition:
-      transform 180ms cubic-bezier(0.2, 0, 0, 1),
-      width 180ms cubic-bezier(0.2, 0, 0, 1),
-      height 180ms cubic-bezier(0.2, 0, 0, 1),
+      transform ${token('motion.duration.normal')} ${token('motion.easing.emphasized')},
+      width ${token('motion.duration.normal')} ${token('motion.easing.emphasized')},
+      height ${token('motion.duration.normal')} ${token('motion.easing.emphasized')},
       background-color ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 

@@ -64,18 +64,12 @@ export const loadingOverlayStyles = css`
     width: 28px;
     height: 28px;
     color: ${token('color.accent.default')};
-    animation: k-overlay-spin 0.8s linear infinite;
+    animation: k-overlay-spin ${token('motion.loop.spin')} linear infinite;
   }
 
   @keyframes k-overlay-spin {
     to {
       transform: rotate(360deg);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .spinner {
-      animation-duration: 2.2s;
     }
   }
 

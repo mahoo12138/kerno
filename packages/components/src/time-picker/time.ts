@@ -43,16 +43,24 @@ export function formatTimeValue(parts: TimeParts, showSeconds = false): string {
 
 export function formatTimeDisplay(
   parts: TimeParts,
-  options: { showSeconds?: boolean; use12Hours?: boolean } = {},
+  options: {
+    showSeconds?: boolean;
+    use12Hours?: boolean;
+    /** Day period labels; default to English `AM` / `PM`. */
+    am?: string;
+    pm?: string;
+    /** Combines the clock time and day period; defaults to `"02:05 PM"` order. */
+    join?: (time: string, period: string) => string;
+  } = {},
 ): string {
-  const { showSeconds = false, use12Hours = false } = options;
+  const { showSeconds = false, use12Hours = false, am = 'AM', pm = 'PM' } = options;
   if (!use12Hours) return formatTimeValue(parts, showSeconds);
-  const period = parts.hours >= 12 ? 'PM' : 'AM';
+  const period = parts.hours >= 12 ? pm : am;
   const h12 = parts.hours % 12 === 0 ? 12 : parts.hours % 12;
   const core = showSeconds
     ? `${pad2(h12)}:${pad2(parts.minutes)}:${pad2(parts.seconds)}`
     : `${pad2(h12)}:${pad2(parts.minutes)}`;
-  return `${core} ${period}`;
+  return options.join ? options.join(core, period) : `${core} ${period}`;
 }
 
 export function toTotalSeconds(parts: TimeParts): number {

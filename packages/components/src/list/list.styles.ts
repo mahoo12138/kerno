@@ -16,7 +16,7 @@ export const listStyles = css`
     flex-direction: column;
     background: ${token('color.bg.layer')};
     border: 1px solid ${token('color.stroke.default')};
-    border-radius: var(--k-list-radius, 0px);
+    border-radius: var(--k-list-radius, ${token('shape.radius.control')});
     overflow: hidden;
   }
 

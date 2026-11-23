@@ -10,7 +10,7 @@ import { token } from '@kerno/tokens';
 export const stepperStyles = css`
   :host {
     --_icon-size: var(--k-stepper-icon-size, 34px);
-    --_radius: var(--k-stepper-radius, 9999px);
+    --_radius: var(--k-stepper-radius, ${token('radius.full')});
     --_title-size: ${token('font.size.sm')};
     --_desc-size: ${token('font.size.xs')};
 
@@ -74,7 +74,7 @@ export const stepperStyles = css`
     padding: 4px 2px;
     flex-shrink: 0;
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: ${token('radius.sm')};
     transition: opacity ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
@@ -148,7 +148,7 @@ export const stepperStyles = css`
   }
 
   .icon svg.spin {
-    animation: k-stepper-spin 0.8s linear infinite;
+    animation: k-stepper-spin ${token('motion.loop.spin')} linear infinite;
   }
 
   @keyframes k-stepper-spin {

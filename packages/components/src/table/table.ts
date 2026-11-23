@@ -1,4 +1,4 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import { KernoElement, LocalizeController, emit, prop, type PropertyValues } from '@kerno/core';
 import { getIcon } from '@kerno/primitives/icon';
 import { tableStyles } from './table.styles.js';
 
@@ -41,6 +41,7 @@ export class KTable<
 > extends KernoElement {
   static override styles = tableStyles;
   static override template = /* html */ `<div part="wrapper" class="wrapper"><table part="table"><thead part="thead"></thead><tbody part="tbody"></tbody></table></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ attribute: false }) accessor columns: readonly TableColumn<T>[] = [];
   @prop({ attribute: false }) accessor data: readonly T[] = [];
@@ -55,7 +56,7 @@ export class KTable<
   /** Case-insensitive live filter query applied across column values. */
   @prop({ reflect: true }) accessor filter = '';
   @prop({ type: Boolean, reflect: true, attribute: 'sticky-header' }) accessor stickyHeader = false;
-  @prop({ reflect: true, attribute: 'empty-text' }) accessor emptyText = 'No records found';
+  @prop({ reflect: true, attribute: 'empty-text' }) accessor emptyText = '';
 
   #thead!: HTMLTableSectionElement;
   #tbody!: HTMLTableSectionElement;
@@ -146,7 +147,7 @@ export class KTable<
       const someSelected = selectedVisible > 0 && !allSelected;
       const checkState = allSelected ? 'true' : someSelected ? 'mixed' : 'false';
       th.append(
-        this.#makeCheckbox(checkState, 'Select all rows', () => {
+        this.#makeCheckbox(checkState, this.#localize.term('selectAllRows'), () => {
           const next = new Set(this.selectedKeys);
           if (allSelected) {
             for (const v of visible) next.delete(v.key);
@@ -199,7 +200,7 @@ export class KTable<
       const td = document.createElement('td');
       td.colSpan = totalCols;
       td.className = 'empty';
-      td.textContent = this.emptyText;
+      td.textContent = this.emptyText || this.#localize.term('noRecords');
       tr.append(td);
       this.#tbody.append(tr);
       return;
@@ -215,8 +216,9 @@ export class KTable<
       if (this.selectable) {
         const td = document.createElement('td');
         td.className = 'select-col';
+        const rowLabel = this.#localize.term('selectRow', String(rowIndex + 1));
         td.append(
-          this.#makeCheckbox(isSelected ? 'true' : 'false', `Select row ${rowIndex + 1}`, () => {
+          this.#makeCheckbox(isSelected ? 'true' : 'false', rowLabel, () => {
             const next = new Set(this.selectedKeys);
             if (next.has(key)) next.delete(key);
             else next.add(key);

@@ -1,16 +1,20 @@
 import {
+  AriaForwardingController,
   FormAssociatedElement,
   autoPosition,
   emit,
   enterTopLayer,
   exitTopLayer,
+  isComposing,
   overlayManager,
   prop,
+  setLabels,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
 import { fadeOut, slideIn, type MotionHandle } from '@kerno/effects/motion';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '@kerno/primitives/icon';
 import { autocompleteStyles } from './autocomplete.styles.js';
 
@@ -67,7 +71,7 @@ export class KAutocomplete extends FormAssociatedElement {
   static override template = /* html */ `<div part="base" class="base"><span class="lead-icon" aria-hidden="true"></span><input part="input" class="input" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" autocomplete="off" /><span class="spinner" aria-hidden="true" hidden></span><button part="clear-button" class="action-btn clear-btn" type="button" tabindex="-1" aria-label="Clear" hidden></button></div><div part="listbox" class="listbox" role="listbox"></div><div class="hidden-slot"><slot></slot></div>`;
 
   @prop({ reflect: true }) accessor value = '';
-  @prop({ reflect: true }) accessor placeholder = 'Search...';
+  @prop({ reflect: true }) accessor placeholder = '';
   @prop({ reflect: true }) accessor size: AutocompleteSize = 'md';
   @prop({ reflect: true }) accessor shape: CornerKind = 'rounded';
   @prop({ type: Boolean, reflect: true }) accessor clearable = false;
@@ -75,7 +79,7 @@ export class KAutocomplete extends FormAssociatedElement {
   @prop({ type: Boolean, attribute: 'allow-custom', reflect: true }) accessor allowCustom = false;
   @prop({ type: Boolean, reflect: true }) accessor loading = false;
   @prop({ type: Boolean, reflect: true }) accessor acrylic = false;
-  @prop({ attribute: 'empty-text', reflect: true }) accessor emptyText = 'No matches found';
+  @prop({ attribute: 'empty-text', reflect: true }) accessor emptyText = '';
   @prop({ type: Boolean, reflect: true }) accessor open = false;
   @prop({ attribute: false }) accessor options: readonly AutocompleteOption[] = [];
 
@@ -103,10 +107,16 @@ export class KAutocomplete extends FormAssociatedElement {
   #defaultValue = '';
   #defaultCaptured = false;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#base ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused inner element.
+    new AriaForwardingController(this, { getTarget: () => this.#input });
+  }
 
   override connectedCallback(): void {
     if (!this.#defaultCaptured) {
@@ -226,10 +236,12 @@ export class KAutocomplete extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [['.clear-btn', this.localize.term('clear')]]);
     const disabled = this.isDisabled;
     this.#base.classList.toggle('disabled', disabled);
     this.#input.disabled = disabled;
-    this.#input.placeholder = this.placeholder;
+    this.#input.placeholder = this.placeholder || this.localize.term('searchPlaceholder');
     this.#input.setAttribute('aria-expanded', this.open ? 'true' : 'false');
     this.#spinner.hidden = !this.loading;
 
@@ -247,7 +259,13 @@ export class KAutocomplete extends FormAssociatedElement {
     } else if (!this.open && this.#wasOpen) {
       this.#wasOpen = false;
       this.#closeOverlay();
-    } else if (this.open && (changed.has('options') || changed.has('loading'))) {
+    } else if (
+      this.open &&
+      (changed.size === 0 ||
+        changed.has('options') ||
+        changed.has('loading') ||
+        changed.has('emptyText'))
+    ) {
       this.#renderOptions();
     }
 
@@ -364,7 +382,9 @@ export class KAutocomplete extends FormAssociatedElement {
     if (this.#filtered.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'empty';
-      empty.textContent = this.loading ? 'Loading...' : this.emptyText;
+      empty.textContent = this.loading
+        ? this.localize.term('loading')
+        : this.emptyText || this.localize.term('noMatches');
       this.#listbox.append(empty);
       this.#activeIndex = -1;
       this.#input.removeAttribute('aria-activedescendant');
@@ -449,7 +469,7 @@ export class KAutocomplete extends FormAssociatedElement {
   }
 
   #onKeyDown(event: KeyboardEvent): void {
-    if (this.isDisabled) return;
+    if (this.isDisabled || isComposing(event)) return;
 
     if (event.key === 'ArrowDown') {
       event.preventDefault();
@@ -487,7 +507,7 @@ export class KAutocomplete extends FormAssociatedElement {
       return;
     }
     if (this.required && !this.value) {
-      this.setValidity({ valueMissing: true }, 'Please select an option.', this.#input);
+      this.setValidity({ valueMissing: true }, this.localize.term('optionRequired'), this.#input);
     } else {
       this.setValidity({});
     }

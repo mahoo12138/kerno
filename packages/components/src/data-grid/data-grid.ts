@@ -1,4 +1,11 @@
-import { KernoElement, emit, isServer, prop, type PropertyValues } from '@kerno/core';
+import {
+  KernoElement,
+  LocalizeController,
+  emit,
+  isServer,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
 import { getIcon } from '@kerno/primitives/icon';
 import { dataGridStyles } from './data-grid.styles.js';
 import { computeVirtualWindow, type VirtualWindow } from './virtual.js';
@@ -50,6 +57,7 @@ export class KDataGrid<
 > extends KernoElement {
   static override styles = dataGridStyles;
   static override template = /* html */ `<div part="viewport" class="viewport" role="grid"><div part="header" class="header" role="row"></div><div part="body" class="body" role="rowgroup"></div><div class="empty" hidden></div></div><div part="footer" class="footer"><span class="footer-stats"></span><span class="footer-virtual"></span></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ attribute: false }) accessor columns: readonly DataGridColumn<T>[] = [];
   @prop({ attribute: false }) accessor data: readonly T[] = [];
@@ -64,8 +72,7 @@ export class KDataGrid<
   accessor sortDirection: DataGridSortDirection = null;
   @prop({ type: Boolean, reflect: true }) accessor striped = true;
   @prop({ type: Boolean, attribute: 'show-footer', reflect: true }) accessor showFooter = true;
-  @prop({ reflect: true, attribute: 'empty-text' }) accessor emptyText =
-    'No rows match the current filter.';
+  @prop({ reflect: true, attribute: 'empty-text' }) accessor emptyText = '';
 
   #viewport!: HTMLDivElement;
   #header!: HTMLDivElement;
@@ -244,7 +251,7 @@ export class KDataGrid<
       cell.append(
         this.#makeCheckbox(
           allSelected ? 'true' : someSelected ? 'mixed' : 'false',
-          'Select all rows',
+          this.#localize.term('selectAllRows'),
           () => {
             const next = new Set(this.selectedKeys);
             if (allSelected) {
@@ -355,7 +362,7 @@ export class KDataGrid<
       this.#body.style.height = '0px';
       this.#body.innerHTML = '';
       this.#empty.hidden = false;
-      this.#empty.textContent = this.emptyText;
+      this.#empty.textContent = this.emptyText || this.#localize.term('noFilteredRows');
       this.#syncFooter();
       return;
     }
@@ -391,8 +398,9 @@ export class KDataGrid<
         const td = document.createElement('div');
         td.className = 'td select-cell';
         td.setAttribute('role', 'gridcell');
+        const rowLabel = this.#localize.term('selectRow', String(i + 1));
         td.append(
-          this.#makeCheckbox(isSelected ? 'true' : 'false', `Select row ${i + 1}`, () => {
+          this.#makeCheckbox(isSelected ? 'true' : 'false', rowLabel, () => {
             const next = new Set(this.selectedKeys);
             if (next.has(entry.key)) next.delete(entry.key);
             else next.add(entry.key);
@@ -431,13 +439,15 @@ export class KDataGrid<
     const total = this.data.length;
     const filtered = this.#processed.length;
     const selCount = this.selectedKeys.length;
+    const t = this.#localize;
     const base =
       filtered === total
-        ? `${total.toLocaleString()} rows`
-        : `${filtered.toLocaleString()} / ${total.toLocaleString()} rows`;
+        ? t.term('rowCount', t.number(total))
+        : t.term('filteredRowCount', t.number(filtered), t.number(total));
     this.#footerStats.textContent =
-      this.selectable && selCount > 0 ? `${base} · ${selCount.toLocaleString()} selected` : base;
-    this.#footerVirtual.textContent = `DOM window: ${this.#lastWindow.renderedCount} rows`;
+      this.selectable && selCount > 0 ? t.term('selectedRows', base, t.number(selCount)) : base;
+    const rendered = t.number(this.#lastWindow.renderedCount);
+    this.#footerVirtual.textContent = t.term('renderedRows', rendered);
   }
 
   #commitSelection(nextKeys: string[]): void {

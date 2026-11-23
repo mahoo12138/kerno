@@ -54,7 +54,7 @@ export const toastStyles = css`
     align-items: flex-start;
     gap: ${token('spacing.md')};
     padding: 12px 12px 12px 16px;
-    border-radius: var(--k-toast-radius, 0px);
+    border-radius: var(--k-toast-radius, ${token('shape.radius.overlay')});
     border: 1px solid var(--k-toast-border-color, ${token('color.stroke.control')});
     background: var(--k-toast-bg, ${token('color.bg.layer')});
     color: ${token('color.fg.default')};

@@ -1,4 +1,4 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import { KernoElement, LocalizeController, emit, prop, type PropertyValues } from '@kerno/core';
 import { token } from '@kerno/tokens';
 import { ringProgressStyles } from './ring-progress.styles.js';
 
@@ -35,6 +35,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 export class KRingProgress extends KernoElement {
   static override styles = ringProgressStyles;
   static override template = /* html */ `<svg part="svg" class="svg" role="img"></svg><div part="label" class="label"><slot></slot></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ attribute: false }) accessor sections: readonly RingProgressSection[] = [];
   /** Single-section convenience value (`0`–`100`) used when `sections` is empty. */
@@ -43,7 +44,7 @@ export class KRingProgress extends KernoElement {
   @prop({ type: Number, reflect: true }) accessor thickness = 12;
   @prop({ type: Boolean, attribute: 'round-caps', reflect: true }) accessor roundCaps = false;
   @prop({ attribute: 'root-color', reflect: true }) accessor rootColor = '';
-  @prop({ reflect: true }) accessor label = 'Progress ring';
+  @prop({ reflect: true }) accessor label = '';
 
   #svg!: SVGSVGElement;
 
@@ -61,7 +62,7 @@ export class KRingProgress extends KernoElement {
     this.#svg.setAttribute('width', String(size));
     this.#svg.setAttribute('height', String(size));
     this.#svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-    this.#svg.setAttribute('aria-label', this.label || 'Progress ring');
+    this.#svg.setAttribute('aria-label', this.label || this.#localize.term('progressRing'));
 
     if (this.rootColor) {
       this.style.setProperty('--k-ring-root-color', this.rootColor);

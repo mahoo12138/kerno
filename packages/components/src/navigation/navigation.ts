@@ -1,4 +1,4 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import { KernoElement, LocalizeController, emit, prop, type PropertyValues } from '@kerno/core';
 import { navItemStyles, navStyles } from './navigation.styles.js';
 
 export type NavOrientation = 'horizontal' | 'vertical';
@@ -81,10 +81,11 @@ export class KNavItem extends KernoElement {
 export class KNav extends KernoElement {
   static override styles = navStyles;
   static override template = /* html */ `<nav part="base" class="base"><slot></slot></nav>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor value = '';
   @prop({ reflect: true }) accessor orientation: NavOrientation = 'horizontal';
-  @prop({ reflect: true }) accessor label = 'Navigation';
+  @prop({ reflect: true }) accessor label = '';
 
   #nav!: HTMLElement;
 
@@ -112,7 +113,7 @@ export class KNav extends KernoElement {
   }
 
   protected override update(_changed: PropertyValues): void {
-    this.#nav.setAttribute('aria-label', this.label);
+    this.#nav.setAttribute('aria-label', this.label || this.#localize.term('navigation'));
     this.#syncItems();
   }
 

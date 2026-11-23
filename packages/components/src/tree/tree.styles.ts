@@ -128,7 +128,7 @@ export const treeItemStyles = css`
   }
 
   .toggle.spinning svg {
-    animation: k-tree-spin 0.85s linear infinite;
+    animation: k-tree-spin ${token('motion.loop.spin')} linear infinite;
     color: ${token('color.accent.text')};
   }
 

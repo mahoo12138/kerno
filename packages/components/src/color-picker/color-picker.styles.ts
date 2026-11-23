@@ -70,7 +70,7 @@ export const colorPickerStyles = css`
     position: absolute;
     width: 14px;
     height: 14px;
-    border-radius: 9999px;
+    border-radius: ${token('radius.full')};
     border: 2px solid #ffffff;
     box-shadow:
       0 0 0 1px rgba(0, 0, 0, 0.55),
@@ -183,7 +183,7 @@ export const colorPickerStyles = css`
     cursor: pointer;
     background-image: ${CHECKERBOARD};
     background-size: 8px 8px;
-    transition: transform 90ms ease;
+    transition: transform ${token('motion.duration.fast')} ${token('motion.easing.standard')};
   }
 
   .swatch:hover {
@@ -213,7 +213,7 @@ export const colorInputStyles = css`
     --_height: ${token('control.height.md')};
     --_padding-x: ${token('control.paddingX.md')};
     --_font-size: ${token('font.size.sm')};
-    --_radius: var(--k-color-input-radius, 0px);
+    --_radius: var(--k-color-input-radius, ${token('shape.radius.control')});
     --_border: var(--k-color-input-border-color, ${token('color.stroke.strong')});
 
     display: inline-flex;
@@ -230,7 +230,7 @@ export const colorInputStyles = css`
   :host([shape='chamfer']),
   :host([shape='scallop']),
   :host([shape='notch']) {
-    --_radius: 6px;
+    --_radius: ${token('shape.radius.parametric')};
   }
 
   :host([size='sm']) {
@@ -367,7 +367,7 @@ export const colorInputStyles = css`
     margin: 0;
     padding: 12px;
     border: 1px solid ${token('color.stroke.control')};
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.overlay')};
     background: ${token('color.bg.layer')};
     color: ${token('color.fg.default')};
     box-shadow: ${token('elevation.3')};

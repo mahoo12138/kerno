@@ -1,4 +1,5 @@
 import {
+  AriaForwardingController,
   FormAssociatedElement,
   autoPosition,
   emit,
@@ -6,11 +7,13 @@ import {
   exitTopLayer,
   overlayManager,
   prop,
+  setLabels,
   uniqueId,
   type PropertyValues,
 } from '@kerno/core';
 import { fadeOut, slideIn, type MotionHandle } from '@kerno/effects/motion';
-import { ShapeOutlineController, type CornerKind } from '@kerno/effects/shape';
+import type { CornerKind } from '@kerno/effects/shape';
+import { LazyShapeOutlineController } from '@kerno/effects/shape/lazy';
 import { getIcon } from '@kerno/primitives/icon';
 import { cascaderStyles } from './cascader.styles.js';
 
@@ -68,7 +71,7 @@ export class KCascader extends FormAssociatedElement {
   @prop({ attribute: false }) accessor options: readonly CascaderOption[] = [];
   /** Serialized selected path joined by `'/'` (e.g. `"asia/china/hangzhou"`). */
   @prop({ reflect: true }) accessor value = '';
-  @prop({ reflect: true }) accessor placeholder = 'Select option';
+  @prop({ reflect: true }) accessor placeholder = '';
   @prop({ reflect: true }) accessor separator = ' / ';
   @prop({ reflect: true }) accessor size: CascaderSize = 'md';
   @prop({ reflect: true }) accessor shape: CornerKind = 'rounded';
@@ -99,10 +102,16 @@ export class KCascader extends FormAssociatedElement {
   #defaultValue = '';
   #defaultCaptured = false;
 
-  readonly #shapeOutline = new ShapeOutlineController(this, {
+  readonly #shapeOutline = new LazyShapeOutlineController(this, {
     getTarget: () => this.#trigger ?? null,
     getKind: () => this.shape,
   });
+
+  constructor() {
+    super();
+    // Forward host aria-label / aria-labelledby / <label for> to the focused trigger button.
+    new AriaForwardingController(this, { getTarget: () => this.#trigger });
+  }
 
   /** Selected value segments as an array. */
   get valuePath(): string[] {
@@ -170,6 +179,11 @@ export class KCascader extends FormAssociatedElement {
   }
 
   protected override update(changed: PropertyValues): void {
+    // Localized labels; re-applied whenever the language changes.
+    setLabels(this.renderRoot, [
+      ['.clear-btn', this.localize.term('clearSelection')],
+      ['.panel', this.localize.term('cascaderOptions')],
+    ]);
     const disabled = this.isDisabled;
     this.#trigger.disabled = disabled;
     this.#trigger.setAttribute('aria-expanded', this.open ? 'true' : 'false');
@@ -182,7 +196,8 @@ export class KCascader extends FormAssociatedElement {
           ? resolved.map((o) => o.label).join(this.separator)
           : resolved[resolved.length - 1]!.label;
 
-    this.#display.textContent = label || this.placeholder;
+    this.#display.textContent =
+      label || this.placeholder || this.localize.term('optionPlaceholder');
     this.#display.classList.toggle('placeholder', !label);
     this.#clearBtn.hidden = !this.clearable || disabled || !label;
 
@@ -290,7 +305,7 @@ export class KCascader extends FormAssociatedElement {
     if (cols.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'empty';
-      empty.textContent = 'No options available';
+      empty.textContent = this.localize.term('noOptions');
       this.#menusEl.append(empty);
       return;
     }
@@ -433,7 +448,7 @@ export class KCascader extends FormAssociatedElement {
       return;
     }
     if (this.required && !this.value) {
-      this.setValidity({ valueMissing: true }, 'Please select an option.', this.#trigger);
+      this.setValidity({ valueMissing: true }, this.localize.term('optionRequired'), this.#trigger);
     } else {
       this.setValidity({});
     }

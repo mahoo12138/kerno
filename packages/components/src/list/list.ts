@@ -1,4 +1,4 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import { KernoElement, LocalizeController, emit, prop, type PropertyValues } from '@kerno/core';
 import { listItemStyles, listStyles } from './list.styles.js';
 
 export type ListSelectionMode = 'none' | 'single' | 'multiple';
@@ -99,12 +99,13 @@ export class KListItem extends KernoElement {
 export class KList extends KernoElement {
   static override styles = listStyles;
   static override template = /* html */ `<div part="base" class="base"><slot></slot></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor selection: ListSelectionMode = 'none';
   @prop({ type: Boolean, reflect: true }) accessor bordered = true;
   @prop({ type: Boolean, reflect: true }) accessor divided = true;
   @prop({ type: Boolean, reflect: true }) accessor dense = false;
-  @prop({ reflect: true }) accessor label = 'List';
+  @prop({ reflect: true }) accessor label = '';
 
   #base!: HTMLDivElement;
   #slot!: HTMLSlotElement;
@@ -138,7 +139,7 @@ export class KList extends KernoElement {
   protected override update(_changed: PropertyValues): void {
     const selectable = this.selection !== 'none';
     this.#base.setAttribute('role', selectable ? 'listbox' : 'list');
-    this.#base.setAttribute('aria-label', this.label || 'List');
+    this.#base.setAttribute('aria-label', this.label || this.#localize.term('list'));
     if (selectable) {
       this.#base.setAttribute(
         'aria-multiselectable',

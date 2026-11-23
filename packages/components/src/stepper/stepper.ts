@@ -1,4 +1,4 @@
-import { KernoElement, emit, prop, type PropertyValues } from '@kerno/core';
+import { KernoElement, LocalizeController, emit, prop, type PropertyValues } from '@kerno/core';
 import { getIcon } from '@kerno/primitives/icon';
 import { stepperStepStyles, stepperStyles } from './stepper.styles.js';
 
@@ -65,13 +65,14 @@ export class KStepperStep extends KernoElement {
 export class KStepper extends KernoElement {
   static override styles = stepperStyles;
   static override template = /* html */ `<div part="base" class="base"><div part="steps" class="steps" role="tablist"></div><div part="content" class="content"><slot></slot><div class="completed" hidden><slot name="completed"></slot></div></div></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ type: Number, reflect: true }) accessor active = 0;
   @prop({ reflect: true }) accessor orientation: StepperOrientation = 'horizontal';
   @prop({ reflect: true }) accessor size: StepperSize = 'md';
   @prop({ type: Boolean, attribute: 'allow-next-steps-select', reflect: true })
   accessor allowNextStepsSelect = true;
-  @prop({ reflect: true }) accessor label = 'Progress steps';
+  @prop({ reflect: true }) accessor label = '';
 
   #stepsEl!: HTMLDivElement;
   #completedEl!: HTMLDivElement;
@@ -94,7 +95,7 @@ export class KStepper extends KernoElement {
   }
 
   protected override update(_changed: PropertyValues): void {
-    this.#stepsEl.setAttribute('aria-label', this.label || 'Progress steps');
+    this.#stepsEl.setAttribute('aria-label', this.label || this.#localize.term('progressSteps'));
     this.#sync();
   }
 

@@ -50,7 +50,7 @@ export const breadcrumbItemStyles = css`
     gap: 4px;
     min-height: 28px;
     padding: 2px 6px;
-    border-radius: 0px;
+    border-radius: ${token('shape.radius.control')};
     white-space: nowrap;
   }
 

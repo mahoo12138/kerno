@@ -1,4 +1,4 @@
-import { KernoElement, prop, type PropertyValues } from '@kerno/core';
+import { KernoElement, LocalizeController, prop, type PropertyValues } from '@kerno/core';
 import { getIcon } from '@kerno/primitives/icon';
 import { emptyStateStyles } from './empty-state.styles.js';
 
@@ -18,9 +18,10 @@ import { emptyStateStyles } from './empty-state.styles.js';
 export class KEmptyState extends KernoElement {
   static override styles = emptyStateStyles;
   static override template = /* html */ `<div part="base" class="base"><div part="icon" class="icon" aria-hidden="true"></div><h3 part="title" class="title"></h3><p part="description" class="description"></p><div part="actions" class="actions"><slot></slot></div></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor icon = 'info';
-  @prop({ reflect: true }) override accessor title = 'No data';
+  @prop({ reflect: true }) override accessor title = '';
   @prop({ reflect: true }) accessor description = '';
 
   #iconEl!: HTMLDivElement;
@@ -43,7 +44,7 @@ export class KEmptyState extends KernoElement {
   protected override update(_changed: PropertyValues): void {
     const svg = getIcon(this.icon) ?? getIcon('info') ?? '';
     this.#iconEl.innerHTML = `<svg viewBox="0 0 16 16">${svg}</svg>`;
-    this.#titleEl.textContent = this.title;
+    this.#titleEl.textContent = this.title || this.#localize.term('noData');
     this.#descEl.textContent = this.description;
   }
 }

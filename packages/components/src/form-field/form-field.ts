@@ -1,4 +1,10 @@
-import { FormAssociatedElement, KernoElement, prop, type PropertyValues } from '@kerno/core';
+import {
+  FormAssociatedElement,
+  KernoElement,
+  LocalizeController,
+  prop,
+  type PropertyValues,
+} from '@kerno/core';
 import { formFieldStyles } from './form-field.styles.js';
 
 /**
@@ -17,6 +23,7 @@ import { formFieldStyles } from './form-field.styles.js';
 export class KFormField extends KernoElement {
   static override styles = formFieldStyles;
   static override template = /* html */ `<label part="label" class="label"><span class="label-text"></span><span class="required-mark" hidden>*</span></label><div part="control" class="control"><slot></slot></div><div part="help" class="help"></div><div part="error" class="error" role="alert"></div>`;
+  readonly #localize = new LocalizeController(this);
 
   @prop({ reflect: true }) accessor label = '';
   @prop({ reflect: true }) accessor help = '';
@@ -66,6 +73,9 @@ export class KFormField extends KernoElement {
     const isRequired = this.required || Boolean(control?.required);
     this.#requiredMark.hidden = !this.label || !isRequired;
     this.#helpEl.textContent = this.help;
+    if (this.#autoError && control) {
+      this.#autoError = control.validationMessage || this.#localize.term('invalidValue');
+    }
     this.#errorEl.textContent = this.error || this.#autoError;
   }
 
@@ -96,7 +106,8 @@ export class KFormField extends KernoElement {
       (control instanceof FormAssociatedElement
         ? control.hasAttribute('data-user-invalid')
         : Boolean(control.validity && !control.validity.valid));
-    this.#autoError = isInvalid ? control.validationMessage || 'Invalid value' : '';
+    const fallback = this.#localize.term('invalidValue');
+    this.#autoError = isInvalid ? control.validationMessage || fallback : '';
     this.#errorEl.textContent = this.error || this.#autoError;
   };
 }
