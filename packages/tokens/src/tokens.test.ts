@@ -147,3 +147,75 @@ describe('tokens.css', () => {
     style.remove();
   });
 });
+
+/** WCAG 2.x contrast ratio of `fg` (alpha-composited onto `bg`) against `bg`. */
+function contrast(fg: string, bg: string): number {
+  const parse = (c: string): number[] => {
+    if (c.startsWith('#')) {
+      const h = c.slice(1);
+      return [0, 2, 4].map((i) => Number.parseInt(h.slice(i, i + 2), 16)).concat(1);
+    }
+    const parts = c
+      .slice(c.indexOf('(') + 1, -1)
+      .split(',')
+      .map(Number);
+    return parts.length === 3 ? parts.concat(1) : parts;
+  };
+  const [fr, fgG, fb, fa] = parse(fg) as [number, number, number, number];
+  const [br, bgG, bb] = parse(bg) as [number, number, number, number];
+  const mix = [fr * fa + br * (1 - fa), fgG * fa + bgG * (1 - fa), fb * fa + bb * (1 - fa)];
+  const lum = (rgb: number[]): number => {
+    const [r, g, b] = rgb.map((v) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    }) as [number, number, number];
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const [hi, lo] = [lum(mix), lum([br, bgG, bb])].sort((a, b) => b - a) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe('contrast', () => {
+  for (const theme of [lightTheme, darkTheme]) {
+    const { color } = theme.tokens;
+    const layers = [color.bg.canvas, color.bg.layer, color.bg.layerAlt];
+
+    it(`keeps ${theme.name} text at WCAG AA (4.5:1) on every layer`, () => {
+      const text = {
+        'fg.default': color.fg.default,
+        'fg.secondary': color.fg.secondary,
+        'fg.tertiary': color.fg.tertiary,
+        'accent.text': color.accent.text,
+        ...Object.fromEntries(
+          Object.entries(color.status).map(([name, s]) => [`status.${name}.fg`, s.fg]),
+        ),
+      };
+      for (const [name, value] of Object.entries(text)) {
+        for (const bg of layers) {
+          expect(contrast(value, bg), `${name} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    });
+
+    it(`keeps ${theme.name} status pairs at WCAG AA`, () => {
+      for (const [name, s] of Object.entries(color.status)) {
+        expect(contrast(s.fg, s.bg), `${name}.fg on ${name}.bg`).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(s.onSolid, s.solid), `${name}.onSolid`).toBeGreaterThanOrEqual(4.5);
+      }
+      expect(contrast(color.accent.fg, color.accent.default)).toBeGreaterThanOrEqual(4.5);
+    });
+  }
+});
+
+describe('shape and motion tokens', () => {
+  it('emits shape tokens and reduced-motion loop overrides', () => {
+    const css = generateTokensCss();
+    expect(css).toContain('--k-shape-radius-control: 0px;');
+    expect(css).toContain('--k-shape-radius-parametric: 6px;');
+    const reduced = css.slice(css.indexOf('prefers-reduced-motion'));
+    expect(reduced).toContain('--k-motion-duration-fast: 0ms !important;');
+    expect(reduced).toContain('--k-motion-loop-pulse: 0ms !important;');
+    expect(reduced).toContain('--k-motion-loop-spin: 2200ms !important;');
+    expect(reduced).not.toContain('--k-motion-loop-indeterminate');
+  });
+});

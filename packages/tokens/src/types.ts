@@ -16,6 +16,8 @@ export interface StatusColor {
   bg: string;
   /** Solid fill (e.g. badges). */
   solid: string;
+  /** Text / icon color on top of `solid` (≥ 4.5:1). */
+  onSolid: string;
 }
 
 export interface ColorTokens {
@@ -74,11 +76,17 @@ export interface ColorTokens {
     success: StatusColor;
     warning: StatusColor;
   };
+  /** Scrim behind modal overlays (dialog, drawer, command palette). */
+  backdrop: string;
 }
 
 export interface FontTokens {
   family: { sans: string; mono: string };
   size: {
+    /** 10px — dense meta text (kbd, compact badges). */
+    '3xs': string;
+    /** 11px — captions, group headings, hints. */
+    '2xs': string;
     xs: string;
     sm: string;
     md: string;
@@ -123,8 +131,31 @@ export interface ElevationTokens {
 }
 
 export interface MotionTokens {
+  /** Transition durations. All collapse to `0ms` under `prefers-reduced-motion`. */
   duration: { instant: string; fast: string; normal: string; slow: string; slower: string };
   easing: { standard: string; decelerate: string; accelerate: string; emphasized: string };
+  /**
+   * Periods of looping animations. Under `prefers-reduced-motion`, `pulse`
+   * (decorative) stops and `spin` (a busy indicator) slows down; `indeterminate`
+   * progress keeps running.
+   */
+  loop: { spin: string; pulse: string; indeterminate: string };
+}
+
+/**
+ * Corner geometry. Controls render with the `rounded` corner family by default;
+ * its radius comes from here, so a theme can round (or square) every control at
+ * once. Fluent 1 (the default look) is square.
+ */
+export interface ShapeTokens {
+  radius: {
+    /** Controls and their inner items (buttons, inputs, options, cells). */
+    control: string;
+    /** Floating surfaces: menus, listboxes, picker panels, the command palette. */
+    overlay: string;
+    /** Base radius for the `chamfer` / `scallop` / `notch` corner families. */
+    parametric: string;
+  };
 }
 
 /**
@@ -179,6 +210,7 @@ export interface KernoTokens {
   font: FontTokens;
   spacing: SpacingTokens;
   radius: RadiusTokens;
+  shape: ShapeTokens;
   elevation: ElevationTokens;
   motion: MotionTokens;
   surface: SurfaceTokens;

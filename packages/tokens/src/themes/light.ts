@@ -26,7 +26,8 @@ export const lightTheme: Theme = {
       fg: {
         default: 'rgba(0, 0, 0, 0.89)',
         secondary: 'rgba(0, 0, 0, 0.62)',
-        tertiary: 'rgba(0, 0, 0, 0.45)',
+        // 0.56 keeps hint/placeholder text ≥ 4.5:1 on every background layer.
+        tertiary: 'rgba(0, 0, 0, 0.56)',
         disabled: 'rgba(0, 0, 0, 0.36)',
       },
       control: {
@@ -50,11 +51,28 @@ export const lightTheme: Theme = {
         focusInner: p.neutral['0'],
       },
       status: {
-        info: { fg: p.azure['700'], bg: p.azure['50'], solid: p.azure['600'] },
-        danger: { fg: p.red['600'], bg: p.red['50'], solid: p.red['600'] },
-        success: { fg: p.green['600'], bg: p.green['50'], solid: p.green['600'] },
-        warning: { fg: p.amber['700'], bg: p.amber['50'], solid: p.amber['500'] },
+        info: {
+          fg: p.azure['700'],
+          bg: p.azure['50'],
+          solid: p.azure['600'],
+          onSolid: p.neutral['0'],
+        },
+        danger: { fg: p.red['600'], bg: p.red['50'], solid: p.red['600'], onSolid: p.neutral['0'] },
+        // green-700: green-600 text was 4.25:1 on the canvas.
+        success: {
+          fg: p.green['700'],
+          bg: p.green['50'],
+          solid: p.green['600'],
+          onSolid: p.neutral['0'],
+        },
+        warning: {
+          fg: p.amber['700'],
+          bg: p.amber['50'],
+          solid: p.amber['500'],
+          onSolid: p.neutral['1000'],
+        },
       },
+      backdrop: 'rgba(0, 0, 0, 0.45)',
     },
     elevation: {
       '0': 'none',

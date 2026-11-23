@@ -20,16 +20,22 @@ const attr = (value: string): string => `[${THEME_ATTRIBUTE}="${value}"]`;
  * - `:root` carries the palette and the light theme.
  * - With no explicit theme, the root follows `prefers-color-scheme`.
  * - `[data-k-theme="light" | "dark" | "auto"]` scopes a theme to any subtree.
- * - `prefers-reduced-motion` collapses motion durations everywhere.
+ * - `prefers-reduced-motion` collapses motion durations and decorative loops everywhere.
  */
 export function generateTokensCss(): string {
   const paletteVars = flattenTokens(palette, `--${PREFIX}-palette`);
   const lightVars = flattenTokens(lightTheme.tokens);
   const darkDiff = diffTokens(lightTheme.tokens, darkTheme.tokens);
 
-  const durations = Object.keys(lightTheme.tokens.motion.duration)
-    .map((k) => tokenName(`motion.duration.${k}` as 'motion.duration.fast'))
-    .map((name) => `    ${name}: 0ms !important;`)
+  const reducedMotion = [
+    ...Object.keys(lightTheme.tokens.motion.duration).map(
+      (k) => [tokenName(`motion.duration.${k}` as 'motion.duration.fast'), '0ms'] as const,
+    ),
+    // Decorative loops stop; busy spinners keep turning, slowly.
+    [tokenName('motion.loop.pulse'), '0ms'] as const,
+    [tokenName('motion.loop.spin'), '2200ms'] as const,
+  ]
+    .map(([name, value]) => `    ${name}: ${value} !important;`)
     .join('\n');
 
   return `${HEADER}
@@ -60,7 +66,7 @@ ${declarations(darkDiff)}
 @media (prefers-reduced-motion: reduce) {
   :root,
   [${THEME_ATTRIBUTE}] {
-${durations}
+${reducedMotion}
   }
 }
 `;

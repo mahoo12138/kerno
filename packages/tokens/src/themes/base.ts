@@ -10,6 +10,8 @@ export const baseTokens: SchemeIndependentTokens = {
       mono: "ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace",
     },
     size: {
+      '3xs': '0.625rem',
+      '2xs': '0.6875rem',
       xs: '0.75rem',
       sm: '0.875rem',
       md: '1rem',
@@ -33,6 +35,7 @@ export const baseTokens: SchemeIndependentTokens = {
     '3xl': '48px',
   },
   radius: { none: '0', sm: '2px', md: '4px', lg: '8px', xl: '12px', full: '9999px' },
+  shape: { radius: { control: '0px', overlay: '0px', parametric: '6px' } },
   motion: {
     duration: { instant: '0ms', fast: '83ms', normal: '167ms', slow: '250ms', slower: '333ms' },
     easing: {
@@ -41,6 +44,7 @@ export const baseTokens: SchemeIndependentTokens = {
       accelerate: 'cubic-bezier(0.9, 0.1, 1, 0.2)',
       emphasized: 'cubic-bezier(0.2, 0, 0, 1)',
     },
+    loop: { spin: '850ms', pulse: '1500ms', indeterminate: '1200ms' },
   },
   zIndex: {
     base: '0',
