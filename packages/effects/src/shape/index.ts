@@ -777,6 +777,7 @@ export {
   type TiltParams,
 } from './homography.js';
 export { ShapeOutlineController, type ShapeOutlineConfig } from './outline.js';
+export { LazyShapeOutlineController, loadShapeOutline } from './lazy.js';
 export type {
   ArcSegment,
   Clamp,

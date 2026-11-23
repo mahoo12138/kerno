@@ -47,6 +47,11 @@
       "source": "./src/shape/index.ts",
       "default": "./dist/shape/index.js"
     },
+    "./shape/lazy": {
+      "types": "./dist/shape/lazy.d.ts",
+      "source": "./src/shape/lazy.ts",
+      "default": "./dist/shape/lazy.js"
+    },
     "./surface": {
       "types": "./dist/surface/index.d.ts",
       "source": "./src/surface/index.ts",

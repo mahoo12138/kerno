@@ -26,13 +26,10 @@ export interface MotionHandle {
   finish(): void;
 }
 
-const DEFAULT_DURATIONS: Record<MotionDuration, number> = {
-  instant: 0,
-  fast: 83,
-  normal: 167,
-  slow: 250,
-  slower: 333,
-};
+/** Token defaults in milliseconds, used when the token stylesheet is not loaded. */
+const DEFAULT_DURATIONS = Object.fromEntries(
+  Object.entries(baseTokens.motion.duration).map(([name, value]) => [name, parseDurationMs(value)]),
+) as Record<MotionDuration, number>;
 
 const DEFAULT_EASINGS: Record<MotionEasing, string> = baseTokens.motion.easing;
 
