@@ -41,7 +41,11 @@ kerno/
 
 - **两层令牌架构**：
   - **Primitive（`palette.ts`）**：中性色与功能色阶原始值，输出为 `--k-palette-*`，组件不直接引用。
-  - **Semantic（`types.ts` / `themes/*.ts`）**：`color`、`font`、`spacing`、`radius`、`elevation`、`motion`、`surface`、`zIndex`、`control`、`focus` 十大语义分组，输出为 `--k-*`。
+  - **Semantic（`types.ts` / `themes/*.ts`）**：`color`、`font`、`spacing`、`radius`、`shape`、`elevation`、`motion`、`surface`、`zIndex`、`control`、`focus` 十一个语义分组，输出为 `--k-*`。
+- **形状与动效令牌**：
+  - `shape.radius.control` / `overlay` / `parametric`：控件（及其内部选项、单元格）、浮层面板、`chamfer|scallop|notch` 的基准圆角。默认 Fluent 1 直角（`0px`），主题改一处即可整体圆角化；`shape="rounded"` 指 CSS 圆角这一族几何，圆角值来自令牌。
+  - `motion.loop.spin` / `pulse` / `indeterminate`：循环动画周期。减弱动效时 `pulse` 停止、`spin` 变慢、`indeterminate` 保留。
+  - 组件样式中不再出现写死的时长、圆角、字号与遮罩颜色；组件级 `--k-*` 变量仍可单独覆盖。
 - **主题切换与嵌套**：
   - 内置 `light`、`dark`、`auto`（默认跟随系统 `prefers-color-scheme`，仅覆盖与配色相关的语义变量 diff）。
   - 任意 DOM 节点或 ShadowRoot 内部可通过 `data-k-theme="light|dark|auto|<custom>"` 实现局部主题嵌套。
